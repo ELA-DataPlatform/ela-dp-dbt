@@ -1,0 +1,13 @@
+ela_dp:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth  # ou service_account
+      project: your-gcp-project-id
+      dataset: your_dev_dataset
+      threads: 4
+      timeout_seconds: 300
+      location: EU
+      # Pour service_account, ajouter:
+      # keyfile: /path/to/keyfile.json

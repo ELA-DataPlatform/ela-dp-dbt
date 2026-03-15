@@ -1,0 +1,19 @@
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Credentials - ne jamais commiter
+profiles.yml
