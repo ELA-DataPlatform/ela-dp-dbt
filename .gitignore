@@ -15,5 +15,3 @@ __pycache__/
 # OS
 .DS_Store
 
-# Credentials - ne jamais commiter
-profiles.yml
