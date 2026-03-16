@@ -11,13 +11,13 @@
     )
 }}
 
-select
-    album.id as album_id,
+SELECT
+    album.id AS album_id,
     album,
     added_at,
     _ingested_at
-from {{ ref('stg_spotify__saved_albums') }}
+FROM {{ ref('stg_spotify__saved_albums') }}
 
 {% if is_incremental() %}
-where _ingested_at > (select max(_ingested_at) from {{ this }})
+    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
 {% endif %}

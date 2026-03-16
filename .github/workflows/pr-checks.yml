@@ -22,16 +22,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install sqlfluff==3.3.1 sqlfluff-templater-dbt==3.3.1 dbt-bigquery
+        run: uv sync
 
       - name: Run SQLFluff
-        run: sqlfluff lint models/ macros/ snapshots/
+        run: uv run sqlfluff lint --templater jinja --ignore templating models/ macros/ snapshots/
 
   dbt-parse:
     name: dbt Parse
@@ -39,19 +42,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install dbt-bigquery
+        run: uv sync
 
       - name: Install dbt packages
-        run: dbt deps --profiles-dir .
+        run: uv run dbt deps --profiles-dir .
 
       - name: Parse dbt project
-        run: dbt parse --profiles-dir .
+        run: uv run dbt parse --profiles-dir .
         env:
           DBT_TARGET: dev
 
