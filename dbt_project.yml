@@ -30,6 +30,11 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   ela_dp:
-    # Config indicated by + and applies to all files under models/example/
-    example:
-      +materialized: view
+    lake:
+      spotify:
+        +schema: "dp_lake_spotify_{{ target.name }}"
+        +tags: ["spotify"]
+    hub:
+      +schema: "dp_hub_{{ target.name }}"
+    product:
+      +schema: "dp_product_{{ target.name }}"
