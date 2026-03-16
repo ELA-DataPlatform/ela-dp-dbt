@@ -7,7 +7,7 @@ ela_dp:
       method: oauth
       project: ela-dp-dev
       dataset: dp_lake_dev
-      location: europe-west1
+      location: EU
       threads: 2
 
     prd:
@@ -15,5 +15,5 @@ ela_dp:
       method: oauth
       project: ela-dp-prd
       dataset: dp_lake_prd
-      location: europe-west1
+      location: EU
       threads: 2
