@@ -5,20 +5,20 @@
     )
 }}
 
-with source as (
-    select * from {{ source('spotify', 'normalized_recently_played') }}
+WITH source AS (
+    SELECT * FROM {{ source('spotify', 'normalized_recently_played') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by played_at, track.id
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY played_at, track.id
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

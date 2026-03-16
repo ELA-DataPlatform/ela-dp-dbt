@@ -5,14 +5,14 @@
     )
 }}
 
-with latest_ingestion as (
-    select *
-    from {{ source('spotify', 'normalized_saved_albums') }}
-    where _ingested_at = (
-        select max(_ingested_at)
-        from {{ source('spotify', 'normalized_saved_albums') }}
+WITH latest_ingestion AS (
+    SELECT *
+    FROM {{ source('spotify', 'normalized_saved_albums') }}
+    WHERE _ingested_at = (
+        SELECT max(_ingested_at)
+        FROM {{ source('spotify', 'normalized_saved_albums') }}
     )
 )
 
-select *
-from latest_ingestion
+SELECT *
+FROM latest_ingestion

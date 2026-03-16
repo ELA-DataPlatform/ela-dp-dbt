@@ -16,14 +16,14 @@
     )
 }}
 
-select
+SELECT
     played_at,
-    track.id as track_id,
+    track.id AS track_id,
     track,
     context,
     _ingested_at
-from {{ ref('stg_spotify__recently_played') }}
+FROM {{ ref('stg_spotify__recently_played') }}
 
 {% if is_incremental() %}
-where _ingested_at > (select max(_ingested_at) from {{ this }})
+    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
 {% endif %}

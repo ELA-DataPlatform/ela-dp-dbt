@@ -1,0 +1,11 @@
+[project]
+name = "ela-dp-dbt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-bigquery>=1.9.0",
+    "sqlfluff>=4.0.4",
+    "sqlfluff-templater-dbt>=4.0.1",
+]
