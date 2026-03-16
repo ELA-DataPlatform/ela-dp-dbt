@@ -1,0 +1,34 @@
+# Python / venv
+.venv/
+__pycache__/
+*.pyc
+
+# dbt artifacts (rebuilt in container)
+target/
+dbt_packages/
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# CI / linting (not needed at runtime)
+.github/
+.pre-commit-config.yaml
+.sqlfluff
+.sqlfluff_cache/
+.yamllint.yml
+
+# OS
+.DS_Store
+
+# Docs / config not needed in image
+README.md
+CLAUDE.md
+pyproject.toml
+uv.lock
+*.example.yml
