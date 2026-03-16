@@ -40,3 +40,20 @@ models:
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
+  - name: stg_spotify__saved_albums
+    description: >
+      View of saved albums from the latest ingestion only.
+      Each row represents an album saved in the user's Spotify library.
+    columns:
+      - name: added_at
+        description: Timestamp when the album was saved to the user's library.
+        tests:
+          - not_null
+      - name: album
+        description: >
+          Nested record containing full album metadata including id, name, artists,
+          tracks, label, release date, and images.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null

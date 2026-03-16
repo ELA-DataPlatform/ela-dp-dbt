@@ -50,3 +50,26 @@ models:
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
+  - name: svc_spotify__saved_albums
+    description: >
+      Service table for Spotify saved albums. Incrementally merges new data
+      from the staging view, ensuring uniqueness on album_id.
+      This is the authoritative table for downstream consumption in the hub layer.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier, extracted from the album record.
+        tests:
+          - unique
+          - not_null
+      - name: album
+        description: >
+          Nested record containing full album metadata including name, artists,
+          tracks, label, release date, and images.
+      - name: added_at
+        description: Timestamp when the album was saved to the user's library.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null

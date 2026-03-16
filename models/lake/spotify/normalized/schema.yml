@@ -34,3 +34,16 @@ sources:
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
+      - name: normalized_saved_albums
+        description: Raw saved albums from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: added_at
+            description: Timestamp when the album was saved to the user's library.
+            tests:
+              - not_null
+          - name: album
+            description: Nested record containing full album metadata (id, name, artists, tracks, label, etc.).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
