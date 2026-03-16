@@ -1,0 +1,19 @@
+ela_dp:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: ela-dp-dev
+      dataset: dp_lake_dev
+      location: europe-west1
+      threads: 2
+
+    prd:
+      type: bigquery
+      method: oauth
+      project: ela-dp-prd
+      dataset: dp_lake_prd
+      location: europe-west1
+      threads: 2
