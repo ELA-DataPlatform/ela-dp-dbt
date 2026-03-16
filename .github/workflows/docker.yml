@@ -1,0 +1,66 @@
+name: Build & Push Docker Image
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'snapshots/**'
+      - 'seeds/**'
+      - 'analyses/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - 'profiles.yml'
+      - 'Dockerfile'
+      - 'entrypoint.sh'
+      - '.github/workflows/docker.yml'
+
+env:
+  REGION: europe-docker.pkg.dev
+  AR_REPO: ela-dp-dev/dbt
+  IMAGE_NAME: ela-dp-dbt
+
+jobs:
+  build-and-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.ref == 'refs/heads/main' && 'prd' || 'dev' }}
+
+    permissions:
+      contents: read
+      id-token: write # Required for Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=prd" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Authenticate to GCP via Workload Identity Federation (no SA key needed)
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }} --quiet
+
+      - name: Build image
+        run: |
+          docker build \
+            --tag ${{ env.REGION }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }} \
+            --tag ${{ env.REGION }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }}-${{ github.sha }} \
+            .
+
+      - name: Push image
+        run: |
+          docker push ${{ env.REGION }}/${{ env.AR_REPO }}/${{ env.IMAGE_NAME }} --all-tags
