@@ -27,6 +27,11 @@ models:
         description: Timestamp when the record was ingested into the normalized table.
         tests:
           - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - played_at
+            - track_id
   - name: svc_spotify__saved_tracks
     description: >
       Service table for Spotify saved tracks. Incrementally merges new data
