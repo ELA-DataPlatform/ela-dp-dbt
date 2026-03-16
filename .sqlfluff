@@ -22,21 +22,21 @@ indented_on_contents = true
 [sqlfluff:layout:type:comma]
 line_position = trailing
 
-# Capitalisation — lowercase pour tout (aligné sur le style existant)
+# Capitalisation — UPPERCASE pour les mots-clés, fonctions, types et litéraux
 [sqlfluff:rules:capitalisation.keywords]
-capitalisation_policy = lower
+capitalisation_policy = upper
 
 [sqlfluff:rules:capitalisation.identifiers]
 capitalisation_policy = lower
 
 [sqlfluff:rules:capitalisation.functions]
-capitalisation_policy = lower
+capitalisation_policy = upper
 
 [sqlfluff:rules:capitalisation.literals]
-capitalisation_policy = lower
+capitalisation_policy = upper
 
 [sqlfluff:rules:capitalisation.types]
-capitalisation_policy = lower
+capitalisation_policy = upper
 
 # Aliasing — toujours utiliser AS explicitement
 [sqlfluff:rules:aliasing.table]
