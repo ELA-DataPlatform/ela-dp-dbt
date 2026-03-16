@@ -25,10 +25,8 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy dbt project files (order: least-changing first for layer cache)
-COPY packages.yml ./
+COPY dbt_project.yml packages.yml profiles.yml ./
 RUN dbt deps
-
-COPY dbt_project.yml profiles.yml ./
 COPY macros/ macros/
 COPY models/ models/
 COPY snapshots/ snapshots/
