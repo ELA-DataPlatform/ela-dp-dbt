@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: stg_spotify__recently_played
+    description: >
+      Deduplicated view of raw Spotify recently played data from the normalized layer.
+      Each row represents a unique track play event, identified by the combination of
+      played_at timestamp and track ID.
+    columns:
+      - name: played_at
+        description: Timestamp indicating when the track was played.
+        tests:
+          - not_null
+      - name: track
+        description: >
+          Nested record containing full track metadata including id, name, popularity,
+          duration_ms, explicit flag, album details, and artist information.
+      - name: context
+        description: >
+          Nested record containing playback context — the URI and type of the context
+          in which the track was played (e.g., playlist, album, artist).
+      - name: _ingested_at
+        description: Timestamp when the record was ingested into the normalized table.
+        tests:
+          - not_null
+  - name: stg_spotify__saved_tracks
+    description: >
+      View of saved tracks from the latest ingestion only.
+      Each row represents a track saved in the user's Spotify library.
+    columns:
+      - name: added_at
+        description: Timestamp when the track was saved to the user's library.
+        tests:
+          - not_null
+      - name: track
+        description: >
+          Nested record containing full track metadata including id, name, popularity,
+          duration_ms, explicit flag, album details, and artist information.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null

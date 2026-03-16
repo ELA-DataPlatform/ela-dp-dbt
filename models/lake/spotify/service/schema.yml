@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: svc_spotify__recently_played
+    description: >
+      Service table for Spotify recently played tracks. Incrementally merges new data
+      from the staging view, ensuring uniqueness on played_at + track_id.
+      This is the authoritative table for downstream consumption in the hub layer.
+    columns:
+      - name: played_at
+        description: Timestamp indicating when the track was played.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify unique track identifier, extracted from the track record.
+        tests:
+          - not_null
+      - name: track
+        description: >
+          Nested record containing full track metadata including name, popularity,
+          duration_ms, explicit flag, album details, and artist information.
+      - name: context
+        description: >
+          Nested record containing playback context — the URI and type of the context
+          in which the track was played (e.g., playlist, album, artist).
+      - name: _ingested_at
+        description: Timestamp when the record was ingested into the normalized table.
+        tests:
+          - not_null
+  - name: svc_spotify__saved_tracks
+    description: >
+      Service table for Spotify saved tracks. Incrementally merges new data
+      from the staging view, ensuring uniqueness on track_id.
+      This is the authoritative table for downstream consumption in the hub layer.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier, extracted from the track record.
+        tests:
+          - unique
+          - not_null
+      - name: track
+        description: >
+          Nested record containing full track metadata including name, popularity,
+          duration_ms, explicit flag, album details, and artist information.
+      - name: added_at
+        description: Timestamp when the track was saved to the user's library.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
