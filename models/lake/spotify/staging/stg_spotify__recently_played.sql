@@ -19,6 +19,6 @@ deduplicated as (
     from source
 )
 
-select * except(_row_number)
+select * except (_row_number)
 from deduplicated
 where _row_number = 1

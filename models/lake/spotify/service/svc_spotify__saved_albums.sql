@@ -17,3 +17,7 @@ select
     added_at,
     _ingested_at
 from {{ ref('stg_spotify__saved_albums') }}
+
+{% if is_incremental() %}
+where _ingested_at > (select max(_ingested_at) from {{ this }})
+{% endif %}

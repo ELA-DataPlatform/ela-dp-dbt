@@ -1,0 +1,73 @@
+name: dbt PR Checks
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'snapshots/**'
+      - 'seeds/**'
+      - 'tests/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - '.sqlfluff'
+      - '.yamllint.yml'
+      - '.github/workflows/pr-checks.yml'
+
+jobs:
+  sqlfluff-lint:
+    name: SQLFluff Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install sqlfluff==3.3.1 sqlfluff-templater-dbt==3.3.1 dbt-bigquery
+
+      - name: Run SQLFluff
+        run: sqlfluff lint models/ macros/ snapshots/
+
+  dbt-parse:
+    name: dbt Parse
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install dbt-bigquery
+
+      - name: Install dbt packages
+        run: dbt deps --profiles-dir .
+
+      - name: Parse dbt project
+        run: dbt parse --profiles-dir .
+        env:
+          DBT_TARGET: dev
+
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint.yml .

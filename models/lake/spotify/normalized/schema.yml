@@ -5,6 +5,10 @@ sources:
     database: "{{ target.project }}"
     schema: "dp_lake_spotify_{{ target.name }}"
     description: Raw Spotify data loaded by the ingestion pipeline.
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+    loaded_at_field: _ingested_at
     tables:
       - name: normalized_recently_played
         description: Raw recently played tracks from the Spotify API, loaded by the ingestion pipeline.
