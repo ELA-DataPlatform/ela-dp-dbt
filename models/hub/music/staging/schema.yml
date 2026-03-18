@@ -1,0 +1,158 @@
+version: 2
+
+models:
+  - name: stg_hub__fact_played
+    description: >
+      Deduplicated view of play events from the Spotify recently played service table.
+      One row per (played_at, track_id). Flattens context and album_id for downstream use.
+    columns:
+      - name: played_at
+        description: Timestamp when the track was played.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: album_id
+        description: Spotify unique album identifier, extracted from the track record.
+        tests:
+          - not_null
+      - name: context_type
+        description: Type of playback context (e.g., playlist, album, artist).
+      - name: context_uri
+        description: Spotify URI of the playback context.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch from the source normalized table.
+        tests:
+          - not_null
+
+  - name: stg_hub__ref_track
+    description: >
+      Deduplicated view of tracks extracted from recently played data.
+      One row per track_id, keeping the latest known metadata.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - unique
+          - not_null
+      - name: track_name
+        description: Display name of the track.
+        tests:
+          - not_null
+      - name: track_uri
+        description: Spotify URI of the track.
+      - name: duration_ms
+        description: Duration of the track in milliseconds.
+      - name: explicit
+        description: Whether the track contains explicit content.
+      - name: track_number
+        description: Track number within the album.
+      - name: disc_number
+        description: Disc number within the album.
+      - name: popularity
+        description: Spotify popularity score (0–100).
+      - name: isrc
+        description: International Standard Recording Code.
+      - name: album_id
+        description: Spotify unique album identifier this track belongs to.
+        tests:
+          - not_null
+      - name: is_local
+        description: Whether the track is a local file.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this track.
+        tests:
+          - not_null
+
+  - name: stg_hub__ref_album
+    description: >
+      Deduplicated view of albums extracted from recently played data.
+      One row per album_id, keeping the latest known metadata.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - unique
+          - not_null
+      - name: album_name
+        description: Display name of the album.
+        tests:
+          - not_null
+      - name: album_type
+        description: Type of the album (album, single, compilation).
+      - name: total_tracks
+        description: Total number of tracks in the album.
+      - name: release_date
+        description: Release date of the album.
+      - name: release_date_precision
+        description: Precision of the release date (year, month, or day).
+      - name: album_uri
+        description: Spotify URI of the album.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this album.
+        tests:
+          - not_null
+
+  - name: stg_hub__ref_artist
+    description: >
+      Deduplicated view of artists extracted from recently played data.
+      Combines artists from both track.artists and track.album.artists.
+      One row per artist_id, keeping the latest known metadata.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: artist_name
+        description: Display name of the artist.
+        tests:
+          - not_null
+      - name: artist_uri
+        description: Spotify URI of the artist.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this artist.
+        tests:
+          - not_null
+
+  - name: stg_hub__bridge_track_artist
+    description: >
+      Bridge view mapping tracks to their artists. Handles multi-artist tracks.
+      One row per (track_id, artist_id) pair.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: artist_position
+        description: 0-based position of the artist in the track's artist list.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this pair.
+        tests:
+          - not_null
+
+  - name: stg_hub__bridge_album_artist
+    description: >
+      Bridge view mapping albums to their artists. Handles multi-artist albums.
+      One row per (album_id, artist_id) pair.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: artist_position
+        description: 0-based position of the artist in the album's artist list.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this pair.
+        tests:
+          - not_null
