@@ -137,6 +137,29 @@ models:
         tests:
           - not_null
 
+  - name: stg_hub__all_album_ids
+    description: >
+      Union distinct of all album IDs across all Spotify sources (recently played, saved tracks, saved albums).
+      Used as a reference list of known albums for downstream enrichment.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_hub__all_artist_ids
+    description: >
+      Union distinct of all artist IDs across all Spotify sources (recently played, saved tracks, saved albums).
+      Covers both track artists and album artists from each source.
+      Used as a reference list of known artists for downstream enrichment.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+
   - name: stg_hub__bridge_album_artist
     description: >
       Bridge view mapping albums to their artists. Handles multi-artist albums.
