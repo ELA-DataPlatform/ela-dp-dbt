@@ -1,0 +1,174 @@
+version: 2
+
+models:
+  - name: svc_hub__fact_played
+    description: >
+      Incremental service table for play events. Merges new data from stg_hub__fact_played,
+      ensuring uniqueness on (played_at, track_id). Partitioned by month on played_at.
+      This is the authoritative fact table for downstream music analytics.
+    columns:
+      - name: played_at
+        description: Timestamp when the track was played.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+      - name: context_type
+        description: Type of playback context (e.g., playlist, album, artist).
+      - name: context_uri
+        description: Spotify URI of the playback context.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch from the source normalized table.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - played_at
+            - track_id
+
+  - name: svc_hub__ref_track
+    description: >
+      Incremental service table for track reference data. One row per track_id.
+      Updated with latest metadata on each run.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - unique
+          - not_null
+      - name: track_name
+        description: Display name of the track.
+        tests:
+          - not_null
+      - name: track_uri
+        description: Spotify URI of the track.
+      - name: duration_ms
+        description: Duration of the track in milliseconds.
+      - name: explicit
+        description: Whether the track contains explicit content.
+      - name: track_number
+        description: Track number within the album.
+      - name: disc_number
+        description: Disc number within the album.
+      - name: popularity
+        description: Spotify popularity score (0–100).
+      - name: isrc
+        description: International Standard Recording Code.
+      - name: album_id
+        description: Spotify unique album identifier this track belongs to.
+        tests:
+          - not_null
+      - name: is_local
+        description: Whether the track is a local file.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this track.
+        tests:
+          - not_null
+
+  - name: svc_hub__ref_album
+    description: >
+      Incremental service table for album reference data. One row per album_id.
+      Updated with latest metadata on each run.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - unique
+          - not_null
+      - name: album_name
+        description: Display name of the album.
+        tests:
+          - not_null
+      - name: album_type
+        description: Type of the album (album, single, compilation).
+      - name: total_tracks
+        description: Total number of tracks in the album.
+      - name: release_date
+        description: Release date of the album.
+      - name: release_date_precision
+        description: Precision of the release date (year, month, or day).
+      - name: album_uri
+        description: Spotify URI of the album.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this album.
+        tests:
+          - not_null
+
+  - name: svc_hub__ref_artist
+    description: >
+      Incremental service table for artist reference data. One row per artist_id.
+      Consolidates artists from both track and album contexts.
+      Updated with latest metadata on each run.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: artist_name
+        description: Display name of the artist.
+        tests:
+          - not_null
+      - name: artist_uri
+        description: Spotify URI of the artist.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this artist.
+        tests:
+          - not_null
+
+  - name: svc_hub__bridge_track_artist
+    description: >
+      Incremental service bridge table mapping tracks to their artists.
+      Handles multi-artist tracks. One row per (track_id, artist_id) pair.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: artist_position
+        description: 0-based position of the artist in the track's artist list.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this pair.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - track_id
+            - artist_id
+
+  - name: svc_hub__bridge_album_artist
+    description: >
+      Incremental service bridge table mapping albums to their artists.
+      Handles multi-artist albums. One row per (album_id, artist_id) pair.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: artist_position
+        description: 0-based position of the artist in the album's artist list.
+      - name: _ingested_at
+        description: Timestamp of the most recent ingestion batch for this pair.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - album_id
+            - artist_id
