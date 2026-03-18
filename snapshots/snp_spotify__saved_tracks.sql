@@ -11,14 +11,14 @@
     )
 }}
 
-select
-    track_id,
-    track.name as track_name,
-    track.artists[safe_offset(0)].id as artist_id,
-    track.artists[safe_offset(0)].name as artist_name,
-    track.album.id as album_id,
-    track.album.name as album_name,
-    added_at
-from {{ ref('svc_spotify__saved_tracks') }}
+    SELECT
+        track_id,
+        track.name AS track_name,
+        track.album.id AS album_id,
+        track.album.name AS album_name,
+        added_at,
+        track.artists[safe_offset(0)].id AS artist_id,
+        track.artists[safe_offset(0)].name AS artist_name
+    FROM {{ ref('svc_spotify__saved_tracks') }}
 
 {% endsnapshot %}

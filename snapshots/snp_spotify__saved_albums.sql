@@ -11,12 +11,12 @@
     )
 }}
 
-select
-    album_id,
-    album.name as album_name,
-    album.artists[safe_offset(0)].id as artist_id,
-    album.artists[safe_offset(0)].name as artist_name,
-    added_at
-from {{ ref('svc_spotify__saved_albums') }}
+    SELECT
+        album_id,
+        album.name AS album_name,
+        added_at,
+        album.artists[safe_offset(0)].id AS artist_id,
+        album.artists[safe_offset(0)].name AS artist_name
+    FROM {{ ref('svc_spotify__saved_albums') }}
 
 {% endsnapshot %}
