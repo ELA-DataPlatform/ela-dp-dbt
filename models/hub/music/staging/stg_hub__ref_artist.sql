@@ -12,7 +12,7 @@ WITH track_artists AS (
         artist.uri AS artist_uri,
         _ingested_at
     FROM {{ ref('svc_spotify__recently_played') }},
-    UNNEST(track.artists) AS artist
+        UNNEST(track.artists) AS artist
 ),
 
 album_artists AS (
@@ -22,7 +22,7 @@ album_artists AS (
         artist.uri AS artist_uri,
         _ingested_at
     FROM {{ ref('svc_spotify__recently_played') }},
-    UNNEST(track.album.artists) AS artist
+        UNNEST(track.album.artists) AS artist
 ),
 
 all_artists AS (

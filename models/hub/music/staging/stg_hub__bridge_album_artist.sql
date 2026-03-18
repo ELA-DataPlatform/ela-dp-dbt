@@ -12,7 +12,7 @@ WITH source AS (
         artist_position,
         _ingested_at
     FROM {{ ref('svc_spotify__recently_played') }},
-    UNNEST(track.album.artists) AS artist WITH OFFSET AS artist_position
+        UNNEST(track.album.artists) AS artist WITH OFFSET AS artist_position
 ),
 
 deduplicated AS (
