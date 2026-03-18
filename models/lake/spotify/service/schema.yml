@@ -78,3 +78,169 @@ models:
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
+  - name: svc_spotify__album_detail
+    description: >
+      Service table for Spotify album detail. Incrementally merges new data
+      from the staging view, ensuring uniqueness on album_id.
+      This is the authoritative catalog of album metadata for downstream consumption.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Album name.
+      - name: artists
+        description: Repeated record of artists associated with the album.
+      - name: genres
+        description: Repeated list of genres associated with the album.
+      - name: label
+        description: Record label that released the album.
+      - name: popularity
+        description: Album popularity score (0–100).
+      - name: total_tracks
+        description: Total number of tracks in the album.
+      - name: release_date
+        description: Album release date as a string.
+      - name: release_date_precision
+        description: Precision of the release date (year, month, or day).
+      - name: album_type
+        description: Type of album (album, single, or compilation).
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+  - name: svc_spotify__album_tracks
+    description: >
+      Service table for Spotify album tracks. Incrementally merges new data
+      from the staging view, ensuring uniqueness on the combination of album_id and track_id.
+      This is the authoritative track listing for each album.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Track name.
+      - name: artists
+        description: Repeated record of artists featured on the track.
+      - name: duration_ms
+        description: Track duration in milliseconds.
+      - name: explicit
+        description: Whether the track contains explicit content.
+      - name: track_number
+        description: Track position within the album.
+      - name: disc_number
+        description: Disc number within the album.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - album_id
+            - track_id
+  - name: svc_spotify__artist_detail
+    description: >
+      Service table for Spotify artist detail. Incrementally merges new data
+      from the staging view, ensuring uniqueness on artist_id.
+      This is the authoritative catalog of artist metadata for downstream consumption.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Artist name.
+      - name: genres
+        description: Repeated list of genres associated with the artist.
+      - name: popularity
+        description: Artist popularity score (0–100).
+      - name: followers
+        description: Nested record containing the artist's follower count.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+  - name: svc_spotify__playlists
+    description: >
+      Service table for the user's Spotify playlists. Incrementally merges new data
+      from the staging view, ensuring uniqueness on playlist_id.
+      This is the authoritative table for downstream consumption.
+    columns:
+      - name: playlist_id
+        description: Spotify unique playlist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Playlist name.
+      - name: description
+        description: Playlist description.
+      - name: collaborative
+        description: Whether the playlist is collaborative.
+      - name: public
+        description: Whether the playlist is public.
+      - name: snapshot_id
+        description: Version identifier for the playlist snapshot.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+  - name: svc_spotify__top_artists
+    description: >
+      Service table for the user's top Spotify artists. Incrementally merges new data
+      from the staging view, ensuring uniqueness on artist_id.
+      This is the authoritative table for downstream consumption.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Artist name.
+      - name: genres
+        description: Repeated list of genres associated with the artist.
+      - name: popularity
+        description: Artist popularity score (0–100).
+      - name: followers
+        description: Nested record containing the artist's follower count.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+  - name: svc_spotify__top_tracks
+    description: >
+      Service table for the user's top Spotify tracks. Incrementally merges new data
+      from the staging view, ensuring uniqueness on track_id.
+      This is the authoritative table for downstream consumption.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: Track name.
+      - name: artists
+        description: Repeated record of artists featured on the track.
+      - name: album
+        description: Nested record containing album metadata.
+      - name: duration_ms
+        description: Track duration in milliseconds.
+      - name: popularity
+        description: Track popularity score (0–100).
+      - name: explicit
+        description: Whether the track contains explicit content.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null

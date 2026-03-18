@@ -51,3 +51,141 @@ sources:
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
+      - name: normalized_album_detail
+        description: Detailed album metadata from the Spotify API, fetched for specific album IDs.
+        columns:
+          - name: id
+            description: Spotify unique album identifier.
+            tests:
+              - not_null
+          - name: name
+            description: Album name.
+          - name: artists
+            description: Repeated record of artists associated with the album.
+          - name: genres
+            description: Repeated list of genres associated with the album.
+          - name: label
+            description: Record label that released the album.
+          - name: popularity
+            description: Album popularity score (0–100).
+          - name: total_tracks
+            description: Total number of tracks in the album.
+          - name: release_date
+            description: Album release date as a string.
+          - name: release_date_precision
+            description: Precision of the release date (year, month, or day).
+          - name: album_type
+            description: Type of album (album, single, or compilation).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_album_tracks
+        description: Track listings for specific albums from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique track identifier.
+            tests:
+              - not_null
+          - name: album_id
+            description: Spotify unique album identifier this track belongs to.
+            tests:
+              - not_null
+          - name: name
+            description: Track name.
+          - name: artists
+            description: Repeated record of artists featured on the track.
+          - name: duration_ms
+            description: Track duration in milliseconds.
+          - name: explicit
+            description: Whether the track contains explicit content.
+          - name: track_number
+            description: Track position within the album.
+          - name: disc_number
+            description: Disc number within the album.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_artist_detail
+        description: Detailed artist metadata from the Spotify API, fetched for specific artist IDs.
+        columns:
+          - name: id
+            description: Spotify unique artist identifier.
+            tests:
+              - not_null
+          - name: name
+            description: Artist name.
+          - name: genres
+            description: Repeated list of genres associated with the artist.
+          - name: popularity
+            description: Artist popularity score (0–100).
+          - name: followers
+            description: Nested record containing the artist's follower count.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_playlists
+        description: User's Spotify playlists, loaded as a full snapshot per ingestion.
+        columns:
+          - name: id
+            description: Spotify unique playlist identifier.
+            tests:
+              - not_null
+          - name: name
+            description: Playlist name.
+          - name: description
+            description: Playlist description.
+          - name: collaborative
+            description: Whether the playlist is collaborative.
+          - name: public
+            description: Whether the playlist is public.
+          - name: snapshot_id
+            description: Version identifier for the playlist snapshot.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_top_artists
+        description: User's top artists from the Spotify API, loaded as a full snapshot per ingestion.
+        columns:
+          - name: id
+            description: Spotify unique artist identifier.
+            tests:
+              - not_null
+          - name: name
+            description: Artist name.
+          - name: genres
+            description: Repeated list of genres associated with the artist.
+          - name: popularity
+            description: Artist popularity score (0–100).
+          - name: followers
+            description: Nested record containing the artist's follower count.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_top_tracks
+        description: User's top tracks from the Spotify API, loaded as a full snapshot per ingestion.
+        columns:
+          - name: id
+            description: Spotify unique track identifier.
+            tests:
+              - not_null
+          - name: name
+            description: Track name.
+          - name: artists
+            description: Repeated record of artists featured on the track.
+          - name: album
+            description: Nested record containing album metadata.
+          - name: duration_ms
+            description: Track duration in milliseconds.
+          - name: popularity
+            description: Track popularity score (0–100).
+          - name: explicit
+            description: Whether the track contains explicit content.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null

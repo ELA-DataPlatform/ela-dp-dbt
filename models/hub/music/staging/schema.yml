@@ -29,8 +29,8 @@ models:
 
   - name: stg_hub__ref_track
     description: >
-      Deduplicated view of tracks extracted from recently played data.
-      One row per track_id, keeping the latest known metadata.
+      Deduplicated view of track metadata. Consolidates data from top tracks and recently
+      played, favouring top tracks (richer source). One row per track_id.
     columns:
       - name: track_id
         description: Spotify unique track identifier.
@@ -68,8 +68,8 @@ models:
 
   - name: stg_hub__ref_album
     description: >
-      Deduplicated view of albums extracted from recently played data.
-      One row per album_id, keeping the latest known metadata.
+      Deduplicated view of album metadata. Consolidates data from album detail (primary,
+      richer) and recently played (fallback). One row per album_id.
     columns:
       - name: album_id
         description: Spotify unique album identifier.
@@ -90,6 +90,12 @@ models:
         description: Precision of the release date (year, month, or day).
       - name: album_uri
         description: Spotify URI of the album.
+      - name: genres
+        description: Repeated list of genres associated with the album. Populated from album_detail only.
+      - name: label
+        description: Record label that released the album. Populated from album_detail only.
+      - name: popularity
+        description: Album popularity score (0–100). Populated from album_detail only.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this album.
         tests:
@@ -97,9 +103,8 @@ models:
 
   - name: stg_hub__ref_artist
     description: >
-      Deduplicated view of artists extracted from recently played data.
-      Combines artists from both track.artists and track.album.artists.
-      One row per artist_id, keeping the latest known metadata.
+      Deduplicated view of artist metadata. Consolidates data from artist detail and top
+      artists (primary, richer) and recently played (fallback). One row per artist_id.
     columns:
       - name: artist_id
         description: Spotify unique artist identifier.
@@ -112,15 +117,54 @@ models:
           - not_null
       - name: artist_uri
         description: Spotify URI of the artist.
+      - name: genres
+        description: Repeated list of genres associated with the artist. Populated from artist_detail and top_artists only.
+      - name: followers_total
+        description: Total number of Spotify followers. Populated from artist_detail and top_artists only.
+      - name: popularity
+        description: Artist popularity score (0–100). Populated from artist_detail and top_artists only.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this artist.
         tests:
           - not_null
 
+  - name: stg_hub__ref_playlist
+    description: >
+      View of playlist metadata from the Spotify playlists service table.
+      One row per playlist_id.
+    columns:
+      - name: playlist_id
+        description: Spotify unique playlist identifier.
+        tests:
+          - unique
+          - not_null
+      - name: playlist_name
+        description: Display name of the playlist.
+        tests:
+          - not_null
+      - name: description
+        description: Playlist description.
+      - name: collaborative
+        description: Whether the playlist is collaborative.
+      - name: public
+        description: Whether the playlist is public.
+      - name: snapshot_id
+        description: Version identifier for the playlist snapshot.
+      - name: owner_id
+        description: Spotify user ID of the playlist owner.
+      - name: total_tracks
+        description: Total number of tracks in the playlist.
+      - name: playlist_uri
+        description: Spotify URI of the playlist.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
   - name: stg_hub__bridge_track_artist
     description: >
-      Bridge view mapping tracks to their artists. Handles multi-artist tracks.
-      One row per (track_id, artist_id) pair.
+      Bridge view mapping tracks to their artists. Consolidates data from album tracks,
+      top tracks, and recently played. One row per (track_id, artist_id) pair.
     columns:
       - name: track_id
         description: Spotify unique track identifier.
@@ -137,10 +181,33 @@ models:
         tests:
           - not_null
 
+  - name: stg_hub__all_album_ids
+    description: >
+      Union distinct of all album IDs across all Spotify sources (recently played, saved tracks, saved albums).
+      Used as a reference list of known albums for downstream enrichment.
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_hub__all_artist_ids
+    description: >
+      Union distinct of all artist IDs across all Spotify sources (recently played, saved tracks, saved albums).
+      Covers both track artists and album artists from each source.
+      Used as a reference list of known artists for downstream enrichment.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier.
+        tests:
+          - unique
+          - not_null
+
   - name: stg_hub__bridge_album_artist
     description: >
-      Bridge view mapping albums to their artists. Handles multi-artist albums.
-      One row per (album_id, artist_id) pair.
+      Bridge view mapping albums to their artists. Consolidates data from album detail
+      and recently played. One row per (album_id, artist_id) pair.
     columns:
       - name: album_id
         description: Spotify unique album identifier.
