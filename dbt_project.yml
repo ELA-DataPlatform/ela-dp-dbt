@@ -19,6 +19,9 @@ models:
       spotify:
         +schema: "dp_lake_spotify_{{ target.name }}"
         +tags: ["spotify"]
+      garmin:
+        +schema: "dp_lake_garmin_{{ target.name }}"
+        +tags: ["garmin"]
     hub:
       +schema: "dp_hub_{{ target.name }}"
       music:

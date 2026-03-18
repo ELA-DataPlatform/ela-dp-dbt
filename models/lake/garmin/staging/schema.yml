@@ -1,0 +1,556 @@
+version: 2
+
+
+models:
+  - name: stg_garmin__activities
+    description: >
+      Deduplicated view of Garmin activity summaries. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activityName
+        description: Display name of the activity.
+      - name: startTimeGMT
+        description: Activity start time in UTC.
+      - name: startTimeLocal
+        description: Activity start time in local timezone.
+      - name: duration
+        description: Total activity duration in seconds.
+      - name: distance
+        description: Total distance in meters.
+      - name: calories
+        description: Total calories burned.
+      - name: averageHR
+        description: Average heart rate.
+      - name: maxHR
+        description: Maximum heart rate.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_details
+    description: >
+      Deduplicated view of Garmin activity details. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: detailed_data
+        description: Nested record containing granular activity metrics.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_exercise_sets
+    description: >
+      Deduplicated view of Garmin exercise set data. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: exercise_sets_data
+        description: Nested record containing exercise set details.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_hr_zones
+    description: >
+      Deduplicated view of Garmin HR zone data per activity. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: hr_zones_data
+        description: Repeated record containing HR zone distribution.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_splits
+    description: >
+      Deduplicated view of Garmin activity splits. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: splits
+        description: Nested record containing lap-level split data.
+      - name: typed_splits
+        description: Nested record containing typed split data.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_weather
+    description: >
+      Deduplicated view of weather conditions per activity. One row per activityId.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: weather_data
+        description: Nested record containing weather metrics.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__all_day_events
+    description: >
+      Deduplicated view of all-day wellness events. One row per (startTimestampGMT, activityType).
+    columns:
+      - name: startTimestampGMT
+        description: Event start timestamp in UTC.
+        tests:
+          - unique
+          - not_null
+      - name: activityType
+        description: Type of event (e.g., walking, sedentary).
+        tests:
+          - unique
+          - not_null
+      - name: duration
+        description: Event duration in seconds.
+      - name: date
+        description: Calendar date of the event.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - startTimestampGMT
+            - activityType
+
+  - name: stg_garmin__body_battery
+    description: >
+      Deduplicated view of daily body battery data. One row per date.
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: charged
+        description: Body battery charged during the day.
+      - name: drained
+        description: Body battery drained during the day.
+      - name: bodyBatteryValuesArray
+        description: Repeated record of timestamped body battery readings.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__device_info
+    description: >
+      Deduplicated view of Garmin device metadata. One row per deviceId.
+    columns:
+      - name: deviceId
+        description: Garmin unique device identifier.
+        tests:
+          - unique
+          - not_null
+      - name: displayName
+        description: Device display name.
+      - name: deviceTypePk
+        description: Device type identifier.
+      - name: serialNumber
+        description: Device serial number.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__endurance_score
+    description: >
+      Deduplicated view of endurance scores over rolling periods. One row per (startDate, endDate).
+    columns:
+      - name: startDate
+        description: Start date of the scoring period.
+        tests:
+          - unique
+          - not_null
+      - name: endDate
+        description: End date of the scoring period.
+        tests:
+          - unique
+          - not_null
+      - name: avg
+        description: Average endurance score over the period.
+      - name: max
+        description: Maximum endurance score over the period.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - startDate
+            - endDate
+
+  - name: stg_garmin__floors
+    description: >
+      Deduplicated view of daily floors climbed data. One row per date.
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: floorValuesArray
+        description: Repeated record of timestamped floor readings.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__heart_rate
+    description: >
+      Deduplicated view of daily heart rate data. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: restingHeartRate
+        description: Resting heart rate for the day.
+      - name: minHeartRate
+        description: Minimum heart rate recorded.
+      - name: maxHeartRate
+        description: Maximum heart rate recorded.
+      - name: heartRateValues
+        description: Repeated record of timestamped heart rate readings.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__hill_score
+    description: >
+      Deduplicated view of hill scores over rolling periods. One row per (startDate, endDate).
+    columns:
+      - name: startDate
+        description: Start date of the scoring period.
+        tests:
+          - unique
+          - not_null
+      - name: endDate
+        description: End date of the scoring period.
+        tests:
+          - unique
+          - not_null
+      - name: maxScore
+        description: Maximum hill score over the period.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - startDate
+            - endDate
+
+  - name: stg_garmin__hrv
+    description: >
+      Deduplicated view of daily HRV data. One row per date.
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: hrvSummary
+        description: Nested record containing HRV summary metrics.
+      - name: hrvReadings
+        description: Repeated record of timestamped HRV readings.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__intensity_minutes
+    description: >
+      Deduplicated view of daily intensity minutes. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: moderateMinutes
+        description: Minutes of moderate intensity activity.
+      - name: vigorousMinutes
+        description: Minutes of vigorous intensity activity.
+      - name: weeklyTotal
+        description: Weekly total intensity minutes.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__race_predictions
+    description: >
+      Deduplicated view of daily race time predictions. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: time5K
+        description: Predicted 5K finish time in seconds.
+      - name: time10K
+        description: Predicted 10K finish time in seconds.
+      - name: timeHalfMarathon
+        description: Predicted half marathon finish time in seconds.
+      - name: timeMarathon
+        description: Predicted marathon finish time in seconds.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__respiration
+    description: >
+      Deduplicated view of daily respiration data. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: avgWakingRespirationValue
+        description: Average waking respiration rate (breaths/min).
+      - name: avgSleepRespirationValue
+        description: Average sleep respiration rate (breaths/min).
+      - name: highestRespirationValue
+        description: Highest respiration rate of the day.
+      - name: lowestRespirationValue
+        description: Lowest respiration rate of the day.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__rhr_daily
+    description: >
+      Deduplicated view of daily resting heart rate. One row per date.
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: allMetrics
+        description: Nested record with resting HR metrics and rolling averages.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__sleep
+    description: >
+      Deduplicated view of daily sleep data. One row per date.
+    columns:
+      - name: date
+        description: Calendar date of the sleep session.
+        tests:
+          - unique
+          - not_null
+      - name: dailySleepDTO
+        description: Nested record containing sleep summary metrics.
+      - name: sleepLevels
+        description: Repeated record of sleep stage readings.
+      - name: restingHeartRate
+        description: Resting heart rate during sleep.
+      - name: avgOvernightHrv
+        description: Average overnight HRV.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__spo2
+    description: >
+      Deduplicated view of daily SpO2 data. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: averageSpO2
+        description: Daily average SpO2 percentage.
+      - name: lowestSpO2
+        description: Lowest SpO2 reading of the day.
+      - name: avgSleepSpO2
+        description: Average SpO2 during sleep.
+      - name: spO2HourlyAverages
+        description: Repeated record of hourly SpO2 averages.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__stats_and_body
+    description: >
+      Deduplicated view of daily wellness summary. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: totalSteps
+        description: Total steps for the day.
+      - name: totalKilocalories
+        description: Total kilocalories burned.
+      - name: restingHeartRate
+        description: Resting heart rate.
+      - name: averageStressLevel
+        description: Average stress level (0-100).
+      - name: bodyBatteryMostRecentValue
+        description: Most recent body battery value.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__steps
+    description: >
+      Deduplicated view of intraday steps in 15-minute intervals. One row per (date, startGMT).
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: startGMT
+        description: Interval start timestamp in UTC.
+        tests:
+          - unique
+          - not_null
+      - name: endGMT
+        description: Interval end timestamp in UTC.
+      - name: steps
+        description: Number of steps in the interval.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - date
+            - startGMT
+
+  - name: stg_garmin__stress
+    description: >
+      Deduplicated view of daily stress data. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: avgStressLevel
+        description: Average stress level for the day (0-100).
+      - name: maxStressLevel
+        description: Maximum stress level for the day.
+      - name: stressValuesArray
+        description: Repeated record of timestamped stress readings.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__training_readiness
+    description: >
+      Deduplicated view of daily training readiness scores. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: score
+        description: Training readiness score (0-100).
+      - name: level
+        description: Readiness level label (e.g., low, moderate, high).
+      - name: sleepScore
+        description: Sleep factor score.
+      - name: recoveryTime
+        description: Suggested recovery time in hours.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__training_status
+    description: >
+      Deduplicated view of daily training status. One row per date.
+    columns:
+      - name: date
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: mostRecentVO2Max
+        description: Nested record with the most recent VO2 max estimate.
+      - name: mostRecentTrainingStatus
+        description: Nested record with the current training status label.
+      - name: mostRecentTrainingLoadBalance
+        description: Nested record with training load balance metrics.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__user_summary
+    description: >
+      Deduplicated view of daily user wellness summary. One row per calendarDate.
+    columns:
+      - name: calendarDate
+        description: Calendar date.
+        tests:
+          - unique
+          - not_null
+      - name: totalSteps
+        description: Total steps for the day.
+      - name: totalKilocalories
+        description: Total kilocalories burned.
+      - name: restingHeartRate
+        description: Resting heart rate.
+      - name: averageStressLevel
+        description: Average stress level (0-100).
+      - name: bodyBatteryMostRecentValue
+        description: Most recent body battery value.
+      - name: _ingested_at
+        description: Timestamp when the record was last ingested.
+        tests:
+          - not_null
+

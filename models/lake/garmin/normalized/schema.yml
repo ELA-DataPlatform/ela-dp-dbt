@@ -1,0 +1,487 @@
+version: 2
+
+sources:
+  - name: garmin
+    database: "{{ target.project }}"
+    schema: "dp_lake_garmin_{{ target.name }}"
+    description: Raw Garmin data loaded by the ingestion pipeline.
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+    loaded_at_field: _ingested_at
+    tables:
+      - name: normalized_activities
+        description: Raw Garmin activity summaries (runs, rides, tennis, etc.).
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: activityName
+            description: Name of the activity.
+          - name: startTimeGMT
+            description: Activity start time in UTC.
+          - name: startTimeLocal
+            description: Activity start time in local timezone.
+          - name: duration
+            description: Total activity duration in seconds.
+          - name: distance
+            description: Total distance in meters.
+          - name: calories
+            description: Total calories burned.
+          - name: averageHR
+            description: Average heart rate during the activity.
+          - name: maxHR
+            description: Maximum heart rate during the activity.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_activity_details
+        description: Detailed activity data including split-level metrics and nested detailed_data.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: detailed_data
+            description: Nested record containing granular activity metrics.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_activity_exercise_sets
+        description: Exercise set data for strength/gym activities.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: exercise_sets_data
+            description: Nested record containing exercise set details.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_activity_hr_zones
+        description: Heart rate zone breakdown per activity.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: hr_zones_data
+            description: Repeated record containing HR zone data.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_activity_splits
+        description: Split data (laps, typed splits) per activity.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: splits
+            description: Nested record containing lap-level split data.
+          - name: typed_splits
+            description: Nested record containing typed splits (e.g., run/walk intervals).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_activity_weather
+        description: Weather conditions recorded during each activity.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: weather_data
+            description: Nested record containing weather metrics (temperature, wind, humidity, etc.).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_all_day_events
+        description: All-day wellness events (e.g., walking bursts, sedentary periods).
+        columns:
+          - name: startTimestampGMT
+            description: Event start timestamp in UTC.
+            tests:
+              - not_null
+          - name: activityType
+            description: Type of event (e.g., walking, sedentary).
+            tests:
+              - not_null
+          - name: duration
+            description: Event duration in seconds.
+          - name: date
+            description: Calendar date of the event.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_body_battery
+        description: Daily body battery charge and drain data.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: charged
+            description: Body battery charged during the day.
+          - name: drained
+            description: Body battery drained during the day.
+          - name: bodyBatteryValuesArray
+            description: Repeated record of timestamped body battery readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_device_info
+        description: Garmin device metadata and capabilities.
+        columns:
+          - name: deviceId
+            description: Garmin unique device identifier.
+            tests:
+              - not_null
+          - name: displayName
+            description: Device display name.
+          - name: deviceTypePk
+            description: Device type identifier.
+          - name: serialNumber
+            description: Device serial number.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_endurance_score
+        description: Endurance score over a rolling period.
+        columns:
+          - name: startDate
+            description: Start date of the scoring period.
+            tests:
+              - not_null
+          - name: endDate
+            description: End date of the scoring period.
+            tests:
+              - not_null
+          - name: avg
+            description: Average endurance score over the period.
+          - name: max
+            description: Maximum endurance score over the period.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_floors
+        description: Daily floors climbed data.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: floorValuesArray
+            description: Repeated record of timestamped floor readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_heart_rate
+        description: Daily heart rate summary and intraday readings.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: restingHeartRate
+            description: Resting heart rate for the day.
+          - name: minHeartRate
+            description: Minimum heart rate recorded.
+          - name: maxHeartRate
+            description: Maximum heart rate recorded.
+          - name: heartRateValues
+            description: Repeated record of timestamped heart rate readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_hill_score
+        description: Hill score over a rolling period.
+        columns:
+          - name: startDate
+            description: Start date of the scoring period.
+            tests:
+              - not_null
+          - name: endDate
+            description: End date of the scoring period.
+            tests:
+              - not_null
+          - name: maxScore
+            description: Maximum hill score over the period.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_hrv
+        description: Daily HRV (heart rate variability) summary and readings.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: hrvSummary
+            description: Nested record containing HRV summary metrics.
+          - name: hrvReadings
+            description: Repeated record of timestamped HRV readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_intensity_minutes
+        description: Daily intensity minutes (moderate and vigorous).
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: moderateMinutes
+            description: Minutes of moderate intensity activity.
+          - name: vigorousMinutes
+            description: Minutes of vigorous intensity activity.
+          - name: weeklyTotal
+            description: Weekly total intensity minutes.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_race_predictions
+        description: Daily predicted race finish times (5K, 10K, half, full marathon).
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: time5K
+            description: Predicted 5K finish time in seconds.
+          - name: time10K
+            description: Predicted 10K finish time in seconds.
+          - name: timeHalfMarathon
+            description: Predicted half marathon finish time in seconds.
+          - name: timeMarathon
+            description: Predicted marathon finish time in seconds.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_respiration
+        description: Daily respiration rate summary and intraday readings.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: avgWakingRespirationValue
+            description: Average respiration rate while awake (breaths/min).
+          - name: avgSleepRespirationValue
+            description: Average respiration rate during sleep (breaths/min).
+          - name: highestRespirationValue
+            description: Highest respiration rate of the day.
+          - name: lowestRespirationValue
+            description: Lowest respiration rate of the day.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_rhr_daily
+        description: Daily resting heart rate and rolling statistics.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: allMetrics
+            description: Nested record containing resting HR metrics and rolling averages.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_sleep
+        description: Daily sleep data including stages, HRV, SpO2, and body battery.
+        columns:
+          - name: date
+            description: Calendar date of the sleep session.
+            tests:
+              - not_null
+          - name: dailySleepDTO
+            description: Nested record containing sleep summary metrics.
+          - name: sleepLevels
+            description: Repeated record of sleep stage readings.
+          - name: restingHeartRate
+            description: Resting heart rate during sleep.
+          - name: avgOvernightHrv
+            description: Average overnight HRV.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_spo2
+        description: Daily blood oxygen saturation (SpO2) summary and hourly averages.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: averageSpO2
+            description: Daily average SpO2 percentage.
+          - name: lowestSpO2
+            description: Lowest SpO2 reading of the day.
+          - name: avgSleepSpO2
+            description: Average SpO2 during sleep.
+          - name: spO2HourlyAverages
+            description: Repeated record of hourly SpO2 averages.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_stats_and_body
+        description: Daily wellness summary combining steps, calories, stress, body battery, and more.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: totalSteps
+            description: Total steps for the day.
+          - name: totalKilocalories
+            description: Total kilocalories burned.
+          - name: restingHeartRate
+            description: Resting heart rate.
+          - name: averageStressLevel
+            description: Average stress level (0–100).
+          - name: bodyBatteryMostRecentValue
+            description: Most recent body battery value.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_steps
+        description: Intraday step counts in 15-minute intervals.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: startGMT
+            description: Interval start timestamp in UTC.
+            tests:
+              - not_null
+          - name: endGMT
+            description: Interval end timestamp in UTC.
+          - name: steps
+            description: Number of steps in the interval.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_stress
+        description: Daily stress level summary and intraday readings.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: avgStressLevel
+            description: Average stress level for the day (0–100).
+          - name: maxStressLevel
+            description: Maximum stress level for the day.
+          - name: stressValuesArray
+            description: Repeated record of timestamped stress readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_training_readiness
+        description: Daily training readiness score and contributing factors.
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: score
+            description: Training readiness score (0–100).
+          - name: level
+            description: Readiness level label (e.g., low, moderate, high).
+          - name: sleepScore
+            description: Sleep factor score.
+          - name: recoveryTime
+            description: Suggested recovery time in hours.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_training_status
+        description: Daily training status including VO2 max and training load balance.
+        columns:
+          - name: date
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: mostRecentVO2Max
+            description: Nested record with the most recent VO2 max estimate.
+          - name: mostRecentTrainingStatus
+            description: Nested record with the current training status label.
+          - name: mostRecentTrainingLoadBalance
+            description: Nested record with training load balance metrics.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      - name: normalized_user_summary
+        description: Daily user wellness summary (same structure as stats_and_body, broader scope).
+        columns:
+          - name: calendarDate
+            description: Calendar date.
+            tests:
+              - not_null
+          - name: totalSteps
+            description: Total steps for the day.
+          - name: totalKilocalories
+            description: Total kilocalories burned.
+          - name: restingHeartRate
+            description: Resting heart rate.
+          - name: averageStressLevel
+            description: Average stress level (0–100).
+          - name: bodyBatteryMostRecentValue
+            description: Most recent body battery value.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
