@@ -1,0 +1,138 @@
+{{
+    config(
+        materialized='table',
+        tags=['spotify']
+    )
+}}
+
+WITH periods AS (
+    SELECT
+        period_name,
+        period_start,
+        period_end,
+        previous_period_start,
+        previous_period_end
+    FROM UNNEST([
+        STRUCT(
+            'all_time' AS period_name,
+            CAST(NULL AS TIMESTAMP) AS period_start,
+            CURRENT_TIMESTAMP() AS period_end,
+            CAST(NULL AS TIMESTAMP) AS previous_period_start,
+            CAST(NULL AS TIMESTAMP) AS previous_period_end
+        ),
+        STRUCT(
+            'last_365_days',
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 365 DAY),
+            CURRENT_TIMESTAMP(),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 730 DAY),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 365 DAY)
+        ),
+        STRUCT(
+            'last_30_days',
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY),
+            CURRENT_TIMESTAMP(),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+        ),
+        STRUCT(
+            'last_7_days',
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY),
+            CURRENT_TIMESTAMP(),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY),
+            TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+        ),
+        STRUCT(
+            'yesterday',
+            TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)),
+            TIMESTAMP(CURRENT_DATE()),
+            TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)),
+            TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+        )
+    ])
+),
+
+fact_with_artist AS (
+    SELECT
+        fp.played_at,
+        fp.track_id,
+        bta.artist_id
+    FROM {{ ref('svc_hub__fact_played') }} AS fp
+    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+        ON fp.track_id = bta.track_id
+),
+
+current_period_stats AS (
+    SELECT
+        p.period_name,
+        f.artist_id,
+        COUNT(*) AS play_count,
+        SUM(t.duration_ms) AS total_listening_time_ms
+    FROM fact_with_artist AS f
+    CROSS JOIN periods AS p
+    INNER JOIN {{ ref('svc_hub__ref_track') }} AS t
+        ON f.track_id = t.track_id
+    WHERE
+        (p.period_start IS NULL OR f.played_at >= p.period_start)
+        AND f.played_at < p.period_end
+    GROUP BY p.period_name, f.artist_id
+),
+
+previous_period_stats AS (
+    SELECT
+        p.period_name,
+        f.artist_id,
+        COUNT(*) AS play_count,
+        SUM(t.duration_ms) AS total_listening_time_ms
+    FROM fact_with_artist AS f
+    CROSS JOIN periods AS p
+    INNER JOIN {{ ref('svc_hub__ref_track') }} AS t
+        ON f.track_id = t.track_id
+    WHERE
+        p.previous_period_start IS NOT NULL
+        AND f.played_at >= p.previous_period_start
+        AND f.played_at < p.previous_period_end
+    GROUP BY p.period_name, f.artist_id
+),
+
+current_ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY period_name
+            ORDER BY total_listening_time_ms DESC
+        ) AS rank
+    FROM current_period_stats
+),
+
+previous_ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY period_name
+            ORDER BY total_listening_time_ms DESC
+        ) AS rank
+    FROM previous_period_stats
+)
+
+SELECT
+    c.period_name,
+    c.rank,
+    a.artist_name,
+    a.image_url,
+    c.total_listening_time_ms,
+    c.play_count,
+    prev.rank AS previous_period_rank,
+    FORMAT(
+        '%d:%02d:%02d',
+        DIV(c.total_listening_time_ms, 3600000),
+        MOD(DIV(c.total_listening_time_ms, 60000), 60),
+        MOD(DIV(c.total_listening_time_ms, 1000), 60)
+    ) AS total_listening_time_formatted
+FROM current_ranked AS c
+INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a
+    ON c.artist_id = a.artist_id
+LEFT JOIN previous_ranked AS prev
+    ON
+        c.period_name = prev.period_name
+        AND c.artist_id = prev.artist_id
+ORDER BY c.period_name, c.rank

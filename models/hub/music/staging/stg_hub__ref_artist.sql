@@ -13,6 +13,7 @@ WITH from_artist_detail AS (
         genres,
         followers.total AS followers_total,
         popularity,
+        images[SAFE_OFFSET(0)].url AS image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify__artist_detail') }}
@@ -26,6 +27,7 @@ from_top_artists AS (
         genres,
         followers.total AS followers_total,
         popularity,
+        CAST(NULL AS STRING) AS image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify__top_artists') }}
@@ -39,6 +41,7 @@ from_recently_played_track AS (
         CAST(NULL AS ARRAY<STRING>) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }},
@@ -53,6 +56,7 @@ from_recently_played_album AS (
         CAST(NULL AS ARRAY<STRING>) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }},

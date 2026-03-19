@@ -96,6 +96,8 @@ models:
         description: Record label that released the album. Populated from album_detail only.
       - name: popularity
         description: Album popularity score (0–100). Populated from album_detail only.
+      - name: image_url
+        description: URL of the album's primary cover image (first image from Spotify). Populated from album_detail only.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this album.
         tests:
@@ -123,6 +125,8 @@ models:
         description: Total number of Spotify followers. Populated from artist_detail and top_artists only.
       - name: popularity
         description: Artist popularity score (0–100). Populated from artist_detail and top_artists only.
+      - name: image_url
+        description: URL of the artist's primary image (first image from Spotify). Populated from artist_detail only.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this artist.
         tests:
