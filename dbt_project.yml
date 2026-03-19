@@ -28,3 +28,6 @@ models:
           +materialized: incremental
     product:
       +schema: "dp_product_{{ target.name }}"
+      +materialized: table
+      ranking:
+        +tags: ["spotify"]

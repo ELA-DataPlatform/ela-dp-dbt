@@ -17,6 +17,7 @@ WITH from_album_detail AS (
         genres,
         label,
         popularity,
+        images[SAFE_OFFSET(0)].url AS image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify__album_detail') }}
@@ -34,6 +35,7 @@ from_recently_played AS (
         CAST(NULL AS ARRAY<STRING>) AS genres,
         CAST(NULL AS STRING) AS label,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }}

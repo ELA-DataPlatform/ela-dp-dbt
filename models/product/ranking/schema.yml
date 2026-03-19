@@ -1,0 +1,124 @@
+version: 2
+
+models:
+  - name: prd__ranking_top_artists
+    description: >
+      Top artists ranking across multiple time periods (all time, last 365 days,
+      last 30 days, last 7 days, yesterday). Ranked by total listening time.
+      Includes the rank from the equivalent previous period for trend analysis.
+    columns:
+      - name: period_name
+        description: "Time period for the ranking: all_time, last_365_days, last_30_days, last_7_days, yesterday."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['all_time', 'last_365_days', 'last_30_days', 'last_7_days', 'yesterday']
+      - name: rank
+        description: Artist rank within the period, ordered by total listening time descending.
+        tests:
+          - not_null
+      - name: artist_name
+        description: Display name of the artist.
+        tests:
+          - not_null
+      - name: image_url
+        description: URL of the artist's primary image from Spotify.
+      - name: total_listening_time_ms
+        description: Total listening time in milliseconds for the period.
+        tests:
+          - not_null
+      - name: total_listening_time_formatted
+        description: "Total listening time formatted as h:mm:ss."
+        tests:
+          - not_null
+      - name: play_count
+        description: Number of plays (track listens) for the period.
+        tests:
+          - not_null
+      - name: previous_period_rank
+        description: >
+          Rank of the artist in the equivalent previous period (e.g., days 31-60
+          for last_30_days). NULL for all_time or if the artist was not ranked
+          in the previous period.
+
+  - name: prd__ranking_top_tracks
+    description: >
+      Top tracks ranking across multiple time periods (all time, last 365 days,
+      last 30 days, last 7 days, yesterday). Ranked by total listening time.
+      Includes the rank from the equivalent previous period for trend analysis.
+    columns:
+      - name: period_name
+        description: "Time period for the ranking: all_time, last_365_days, last_30_days, last_7_days, yesterday."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['all_time', 'last_365_days', 'last_30_days', 'last_7_days', 'yesterday']
+      - name: rank
+        description: Track rank within the period, ordered by total listening time descending.
+        tests:
+          - not_null
+      - name: track_name
+        description: Display name of the track.
+        tests:
+          - not_null
+      - name: artist_name
+        description: Display name of the primary artist (position 0) for the track.
+      - name: artist_image_url
+        description: URL of the primary artist's image from Spotify.
+      - name: total_listening_time_ms
+        description: Total listening time in milliseconds for the period.
+        tests:
+          - not_null
+      - name: total_listening_time_formatted
+        description: "Total listening time formatted as h:mm:ss."
+        tests:
+          - not_null
+      - name: play_count
+        description: Number of plays for the period.
+        tests:
+          - not_null
+      - name: previous_period_rank
+        description: >
+          Rank of the track in the equivalent previous period. NULL for all_time
+          or if the track was not ranked in the previous period.
+
+  - name: prd__ranking_top_albums
+    description: >
+      Top albums ranking across multiple time periods (all time, last 365 days,
+      last 30 days, last 7 days, yesterday). Ranked by total listening time.
+      Includes the rank from the equivalent previous period for trend analysis.
+    columns:
+      - name: period_name
+        description: "Time period for the ranking: all_time, last_365_days, last_30_days, last_7_days, yesterday."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['all_time', 'last_365_days', 'last_30_days', 'last_7_days', 'yesterday']
+      - name: rank
+        description: Album rank within the period, ordered by total listening time descending.
+        tests:
+          - not_null
+      - name: album_name
+        description: Display name of the album.
+        tests:
+          - not_null
+      - name: artist_name
+        description: Display name of the primary artist (position 0) for the album.
+      - name: image_url
+        description: URL of the album's cover image from Spotify.
+      - name: total_listening_time_ms
+        description: Total listening time in milliseconds for the period.
+        tests:
+          - not_null
+      - name: total_listening_time_formatted
+        description: "Total listening time formatted as h:mm:ss."
+        tests:
+          - not_null
+      - name: play_count
+        description: Number of plays (track listens from this album) for the period.
+        tests:
+          - not_null
+      - name: previous_period_rank
+        description: >
+          Rank of the album in the equivalent previous period. NULL for all_time
+          or if the album was not ranked in the previous period.
