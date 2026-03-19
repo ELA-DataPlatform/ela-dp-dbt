@@ -71,7 +71,8 @@ current_period_stats AS (
     CROSS JOIN periods AS p
     INNER JOIN {{ ref('svc_hub__ref_track') }} AS t
         ON f.track_id = t.track_id
-    WHERE (p.period_start IS NULL OR f.played_at >= p.period_start)
+    WHERE
+        (p.period_start IS NULL OR f.played_at >= p.period_start)
         AND f.played_at < p.period_end
     GROUP BY p.period_name, f.artist_id
 ),
@@ -86,7 +87,8 @@ previous_period_stats AS (
     CROSS JOIN periods AS p
     INNER JOIN {{ ref('svc_hub__ref_track') }} AS t
         ON f.track_id = t.track_id
-    WHERE p.previous_period_start IS NOT NULL
+    WHERE
+        p.previous_period_start IS NOT NULL
         AND f.played_at >= p.previous_period_start
         AND f.played_at < p.previous_period_end
     GROUP BY p.period_name, f.artist_id
@@ -118,18 +120,19 @@ SELECT
     a.artist_name,
     a.image_url,
     c.total_listening_time_ms,
+    c.play_count,
+    prev.rank AS previous_period_rank,
     FORMAT(
         '%d:%02d:%02d',
         DIV(c.total_listening_time_ms, 3600000),
         MOD(DIV(c.total_listening_time_ms, 60000), 60),
         MOD(DIV(c.total_listening_time_ms, 1000), 60)
-    ) AS total_listening_time_formatted,
-    c.play_count,
-    prev.rank AS previous_period_rank
+    ) AS total_listening_time_formatted
 FROM current_ranked AS c
 INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a
     ON c.artist_id = a.artist_id
 LEFT JOIN previous_ranked AS prev
-    ON c.period_name = prev.period_name
-    AND c.artist_id = prev.artist_id
+    ON
+        c.period_name = prev.period_name
+        AND c.artist_id = prev.artist_id
 ORDER BY c.period_name, c.rank
