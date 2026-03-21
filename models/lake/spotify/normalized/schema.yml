@@ -10,43 +10,219 @@ sources:
       error_after: {count: 48, period: hour}
     loaded_at_field: _ingested_at
     tables:
+      # ── recently_played ──────────────────────────────────────────────
       - name: normalized_recently_played
-        description: Raw recently played tracks from the Spotify API, loaded by the ingestion pipeline.
+        description: >
+          New-format recently played tracks (JSON STRING columns) from the Spotify API.
         columns:
           - name: played_at
             description: Timestamp indicating when the track was played.
             tests:
               - not_null
           - name: track
-            description: Nested record containing full track metadata (id, name, album, artists, duration, etc.).
+            description: JSON string containing full track metadata.
           - name: context
-            description: Nested record containing playback context (playlist, album, or artist URI).
+            description: JSON string containing playback context.
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
+      - name: normalized_recently_played_legacy
+        description: >
+          Legacy recently played tracks (native RECORD columns) from the Spotify API.
+        columns:
+          - name: played_at
+            description: Timestamp indicating when the track was played.
+            tests:
+              - not_null
+          - name: track
+            description: Nested record containing full track metadata.
+          - name: context
+            description: Nested record containing playback context.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── saved_tracks ─────────────────────────────────────────────────
       - name: normalized_saved_tracks
-        description: Raw saved (liked) tracks from the Spotify API, loaded by the ingestion pipeline.
+        description: >
+          New-format saved (liked) tracks (JSON STRING columns) from the Spotify API.
         columns:
           - name: added_at
             description: Timestamp when the track was saved to the user's library.
             tests:
               - not_null
           - name: track
-            description: Nested record containing full track metadata (id, name, album, artists, duration, etc.).
+            description: JSON string containing full track metadata.
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
+      - name: normalized_saved_tracks_legacy
+        description: >
+          Legacy saved (liked) tracks (native RECORD columns) from the Spotify API.
+        columns:
+          - name: added_at
+            description: Timestamp when the track was saved to the user's library.
+            tests:
+              - not_null
+          - name: track
+            description: Nested record containing full track metadata.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── saved_albums ─────────────────────────────────────────────────
       - name: normalized_saved_albums
-        description: Raw saved albums from the Spotify API, loaded by the ingestion pipeline.
+        description: >
+          New-format saved albums (JSON STRING columns) from the Spotify API.
         columns:
           - name: added_at
             description: Timestamp when the album was saved to the user's library.
             tests:
               - not_null
           - name: album
-            description: Nested record containing full album metadata (id, name, artists, tracks, label, etc.).
+            description: JSON string containing full album metadata.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_saved_albums_legacy
+        description: >
+          Legacy saved albums (native RECORD columns) from the Spotify API.
+        columns:
+          - name: added_at
+            description: Timestamp when the album was saved to the user's library.
+            tests:
+              - not_null
+          - name: album
+            description: Nested record containing full album metadata.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── top_artists ──────────────────────────────────────────────────
+      - name: normalized_top_artists
+        description: >
+          New-format top artists (JSON STRING columns for nested fields) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique artist identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_top_artists_legacy
+        description: >
+          Legacy top artists (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique artist identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── top_tracks ───────────────────────────────────────────────────
+      - name: normalized_top_tracks
+        description: >
+          New-format top tracks (JSON STRING columns for nested fields) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique track identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_top_tracks_legacy
+        description: >
+          Legacy top tracks (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique track identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── playlists ──────────────────────────────────────────────────────
+      - name: normalized_playlists
+        description: >
+          New-format playlists (JSON STRING columns for nested fields) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique playlist identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+      - name: normalized_playlists_legacy
+        description: >
+          Legacy playlists (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique playlist identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── album_detail (legacy only) ───────────────────────────────────
+      - name: normalized_album_detail_legacy
+        description: >
+          Legacy album details (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique album identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── album_tracks (legacy only) ───────────────────────────────────
+      - name: normalized_album_tracks_legacy
+        description: >
+          Legacy album tracks (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique track identifier.
+            tests:
+              - not_null
+          - name: album_id
+            description: Spotify unique album identifier for which this track belongs.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── artist_detail (legacy only) ──────────────────────────────────
+      - name: normalized_artist_detail_legacy
+        description: >
+          Legacy artist details (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique artist identifier.
+            tests:
+              - not_null
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:

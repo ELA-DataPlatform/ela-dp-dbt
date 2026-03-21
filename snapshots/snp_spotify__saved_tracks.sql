@@ -1,5 +1,8 @@
 {% snapshot snp_spotify__saved_tracks %}
 
+{%- set has_legacy = spotify_table_exists('normalized_saved_tracks_legacy') -%}
+{%- set has_new = spotify_table_exists('normalized_saved_tracks') -%}
+
 {{
     config(
         target_schema='dp_lake_spotify_' ~ target.name,
@@ -7,7 +10,8 @@
         strategy='check',
         check_cols=['track_name', 'artist_name', 'album_name', 'added_at'],
         invalidate_hard_deletes=True,
-        tags=['spotify']
+        tags=['spotify'],
+        enabled=(has_legacy or has_new)
     )
 }}
 
