@@ -1,0 +1,545 @@
+version: 2
+
+sources:
+  - name: garmin
+    database: "{{ target.project }}"
+    schema: "dp_lake_garmin_{{ target.name }}"
+    description: Raw Garmin data loaded by the ingestion pipeline.
+    freshness:
+      warn_after: {count: 24, period: hour}
+      error_after: {count: 48, period: hour}
+    loaded_at_field: _ingested_at
+    tables:
+      # ── activities ──────────────────────────────────────────────────────
+      - name: normalized_activities
+        description: >
+          Raw activity summary data from the Garmin API. Contains ~127 scalar fields
+          covering distance, duration, calories, heart rate, elevation, power, cadence,
+          training effect, and activity metadata.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── activity_details ────────────────────────────────────────────────
+      - name: normalized_activity_details
+        description: >
+          Detailed activity data including GPS metrics. Contains all activity summary
+          fields plus a detailed_data JSON string with granular GPS/metric timeseries.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: detailed_data
+            description: JSON string containing GPS tracks and granular metric timeseries.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── activity_exercise_sets ──────────────────────────────────────────
+      - name: normalized_activity_exercise_sets
+        description: >
+          Exercise sets data for strength/workout activities.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: exercise_sets_data
+            description: JSON string containing exercise sets details.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── activity_hr_zones ───────────────────────────────────────────────
+      - name: normalized_activity_hr_zones
+        description: >
+          Heart rate zone distribution for activities.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: hr_zones_data
+            description: JSON array of heart rate zones with zoneNumber, secsInZone, zoneLowBoundary.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── activity_splits ─────────────────────────────────────────────────
+      - name: normalized_activity_splits
+        description: >
+          Activity split/lap data including split summaries, typed splits, and detailed lap info.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: split_summaries
+            description: JSON string with split summary statistics by split type.
+          - name: typed_splits
+            description: JSON string with detailed typed split data.
+          - name: splits
+            description: JSON string with detailed lap/split data including GPS coordinates.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── activity_weather ────────────────────────────────────────────────
+      - name: normalized_activity_weather
+        description: >
+          Weather conditions during activities.
+        columns:
+          - name: activityId
+            description: Garmin unique activity identifier.
+            tests:
+              - not_null
+          - name: weather_data
+            description: JSON object with temperature, humidity, wind, and weather station data.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── all_day_events ──────────────────────────────────────────────────
+      - name: normalized_all_day_events
+        description: >
+          All-day activity events such as vigorous/moderate intensity minutes blocks.
+        columns:
+          - name: deviceId
+            description: Garmin device identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the event.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── body_battery ────────────────────────────────────────────────────
+      - name: normalized_body_battery
+        description: >
+          Daily body battery data including timeseries values, activity events,
+          and dynamic feedback events.
+        columns:
+          - name: date
+            description: Date of the body battery reading.
+            tests:
+              - not_null
+          - name: bodyBatteryValuesArray
+            description: JSON array of body battery values over time.
+          - name: bodyBatteryActivityEvent
+            description: JSON array of activity events impacting body battery.
+          - name: bodyBatteryDynamicFeedbackEvent
+            description: JSON object with dynamic feedback event data.
+          - name: endOfDayBodyBatteryDynamicFeedbackEvent
+            description: JSON object with end-of-day feedback event data.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── body_composition ────────────────────────────────────────────────
+      - name: normalized_body_composition
+        description: >
+          Body composition measurements including weight, body fat, BMI,
+          muscle mass, bone mass, body water, and visceral fat.
+        columns:
+          - name: date
+            description: Date of the measurement.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── device_info ─────────────────────────────────────────────────────
+      - name: normalized_device_info
+        description: >
+          Device metadata and capability flags. Contains ~386 fields covering
+          device type, firmware, GPS/Bluetooth/WiFi capabilities, and feature support.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── endurance_score ─────────────────────────────────────────────────
+      - name: normalized_endurance_score
+        description: >
+          Endurance score metrics including overall score, classification,
+          and contributor breakdown.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: enduranceScoreDTO
+            description: JSON object with endurance score details and contributors.
+          - name: groupMap
+            description: JSON object with date-keyed group averages and contributors.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── floors ──────────────────────────────────────────────────────────
+      - name: normalized_floors
+        description: >
+          Daily floors ascended/descended data with 15-minute interval timeseries.
+        columns:
+          - name: date
+            description: Date of the floors data.
+            tests:
+              - not_null
+          - name: floorValuesArray
+            description: JSON array of floor values per 15-minute interval.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── heart_rate ──────────────────────────────────────────────────────
+      - name: normalized_heart_rate
+        description: >
+          Daily heart rate data including resting/max/min HR and timeseries values.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the heart rate data.
+            tests:
+              - not_null
+          - name: heartRateValues
+            description: JSON array of timestamped heart rate readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── hill_score ──────────────────────────────────────────────────────
+      - name: normalized_hill_score
+        description: >
+          Hill score metrics including strength and endurance sub-scores.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: hillScoreDTOList
+            description: JSON array of hill score entries by date.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── hrv ─────────────────────────────────────────────────────────────
+      - name: normalized_hrv
+        description: >
+          Heart rate variability data including nightly summary and readings.
+        columns:
+          - name: userProfilePk
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the HRV data.
+            tests:
+              - not_null
+          - name: hrvSummary
+            description: JSON object with HRV summary metrics (weekly avg, last night avg, baseline, status).
+          - name: hrvReadings
+            description: JSON array of individual HRV readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── intensity_minutes ───────────────────────────────────────────────
+      - name: normalized_intensity_minutes
+        description: >
+          Daily intensity minutes data including weekly goals and moderate/vigorous breakdowns.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the intensity minutes data.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── max_metrics ─────────────────────────────────────────────────────
+      - name: normalized_max_metrics
+        description: >
+          Max metrics including VO2 max and heat/altitude acclimation data.
+        columns:
+          - name: userId
+            description: Garmin user identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the max metrics data.
+            tests:
+              - not_null
+          - name: generic
+            description: JSON object with VO2 max values and category.
+          - name: heatAltitudeAcclimation
+            description: JSON object with heat and altitude acclimation data.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── race_predictions ────────────────────────────────────────────────
+      - name: normalized_race_predictions
+        description: >
+          Predicted race times for 5K, 10K, half marathon, and marathon distances.
+        columns:
+          - name: userId
+            description: Garmin user identifier.
+            tests:
+              - not_null
+          - name: calendarDate
+            description: Date of the prediction.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── respiration ─────────────────────────────────────────────────────
+      - name: normalized_respiration
+        description: >
+          Daily respiration data including average sleep/waking values and timeseries.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the respiration data.
+            tests:
+              - not_null
+          - name: respirationValuesArray
+            description: JSON array of timestamped respiration readings.
+          - name: respirationAveragesValuesArray
+            description: JSON array of hourly respiration averages.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── rhr_daily ───────────────────────────────────────────────────────
+      - name: normalized_rhr_daily
+        description: >
+          Daily resting heart rate data with nested metrics.
+        columns:
+          - name: userProfileId
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the RHR data.
+            tests:
+              - not_null
+          - name: allMetrics
+            description: JSON object containing metricsMap with WELLNESS_RESTING_HEART_RATE values.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── sleep ───────────────────────────────────────────────────────────
+      - name: normalized_sleep
+        description: >
+          Comprehensive sleep data including daily sleep summary, sleep levels,
+          heart rate, body battery, stress, HRV, movement, and SpO2 during sleep.
+        columns:
+          - name: date
+            description: Date of the sleep data.
+            tests:
+              - not_null
+          - name: dailySleepDTO
+            description: JSON object with sleep summary (sleep time, nap time, deep/light/REM/awake seconds, timestamps).
+          - name: wellnessSpO2SleepSummaryDTO
+            description: JSON object with SpO2 sleep summary (average, lowest SpO2).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── spo2 ────────────────────────────────────────────────────────────
+      - name: normalized_spo2
+        description: >
+          Daily SpO2 data including averages and hourly readings.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the SpO2 data.
+            tests:
+              - not_null
+          - name: spO2HourlyAverages
+            description: JSON array of hourly SpO2 averages.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── stats_and_body ──────────────────────────────────────────────────
+      - name: normalized_stats_and_body
+        description: >
+          Comprehensive daily wellness summary (~154 scalar fields) including steps,
+          distance, calories, heart rate, stress, body battery, respiration, SpO2,
+          body composition, and intensity minutes.
+        columns:
+          - name: userProfileId
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the summary.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── steps ───────────────────────────────────────────────────────────
+      - name: normalized_steps
+        description: >
+          Step count data with activity level classification.
+        columns:
+          - name: date
+            description: Date of the step data.
+            tests:
+              - not_null
+          - name: startGMT
+            description: Start timestamp of the step interval.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── stress ──────────────────────────────────────────────────────────
+      - name: normalized_stress
+        description: >
+          Daily stress data including average/max stress levels and timeseries values.
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the stress data.
+            tests:
+              - not_null
+          - name: stressValuesArray
+            description: JSON array of timestamped stress readings.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── training_readiness ──────────────────────────────────────────────
+      - name: normalized_training_readiness
+        description: >
+          Training readiness score with contributing factors (sleep, HRV, stress, recovery).
+        columns:
+          - name: userProfilePK
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the training readiness data.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── training_status ─────────────────────────────────────────────────
+      - name: normalized_training_status
+        description: >
+          Training status data including VO2 max, training load balance,
+          and training status classification.
+        columns:
+          - name: userId
+            description: Garmin user identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the training status data.
+            tests:
+              - not_null
+          - name: mostRecentTrainingStatus
+            description: JSON object with latest training status by device (dynamic device ID keys).
+          - name: mostRecentVO2Max
+            description: JSON object with latest VO2 max and acclimation data.
+          - name: mostRecentTrainingLoadBalance
+            description: JSON object with training load balance by device (dynamic device ID keys).
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── user_summary ────────────────────────────────────────────────────
+      - name: normalized_user_summary
+        description: >
+          Daily user wellness summary (~152 scalar fields). Similar to stats_and_body
+          with minor field differences.
+        columns:
+          - name: userProfileId
+            description: Garmin user profile identifier.
+            tests:
+              - not_null
+          - name: date
+            description: Date of the summary.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null
+
+      # ── weight ──────────────────────────────────────────────────────────
+      - name: normalized_weight
+        description: >
+          Weight and body composition measurements from the scale.
+        columns:
+          - name: date
+            description: Date of the weight measurement.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested.
+            tests:
+              - not_null

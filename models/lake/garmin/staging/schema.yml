@@ -1,0 +1,577 @@
+version: 2
+
+models:
+  # ── GROUP 1: Simple tables (no JSON parsing) ────────────────────────────
+
+  - name: stg_garmin__activities
+    description: >
+      Deduplicated view of raw Garmin activity data. Contains ~127 scalar fields
+      covering distance, duration, calories, heart rate, elevation, power, and cadence.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_details
+    description: >
+      Deduplicated view of detailed activity data including GPS metrics.
+      The detailed_data field contains granular GPS/metric timeseries as a JSON string.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: detailed_data
+        description: JSON string with GPS tracks and granular metric timeseries.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__body_composition
+    description: >
+      Deduplicated view of body composition measurements (weight, body fat, BMI,
+      muscle mass, bone mass, body water, visceral fat).
+    columns:
+      - name: date
+        description: Date of the measurement.
+        tests:
+          - not_null
+      - name: samplePk
+        description: Sample primary key for the measurement.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__race_predictions
+    description: >
+      Deduplicated view of predicted race times for 5K, 10K, half marathon, and marathon.
+    columns:
+      - name: userId
+        description: Garmin user identifier.
+        tests:
+          - not_null
+      - name: calendarDate
+        description: Date of the prediction.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__steps
+    description: >
+      Deduplicated view of step count data with activity level classification.
+    columns:
+      - name: date
+        description: Date of the step data.
+        tests:
+          - not_null
+      - name: startGMT
+        description: Start timestamp of the step interval.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__all_day_events
+    description: >
+      Deduplicated view of all-day activity events (vigorous/moderate intensity minutes blocks).
+    columns:
+      - name: deviceId
+        description: Garmin device identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the event.
+        tests:
+          - not_null
+      - name: startTimestampGMT
+        description: Start timestamp of the event.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__weight
+    description: >
+      Deduplicated view of weight and body composition measurements from the scale.
+    columns:
+      - name: date
+        description: Date of the weight measurement.
+        tests:
+          - not_null
+      - name: timestampGMT
+        description: GMT timestamp of the measurement.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__training_readiness
+    description: >
+      Deduplicated view of training readiness scores with contributing factors
+      (sleep, HRV, stress history, recovery time).
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the training readiness data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  # ── GROUP 2: Timeseries tables (arrays kept as-is) ──────────────────────
+
+  - name: stg_garmin__heart_rate
+    description: >
+      Deduplicated view of daily heart rate data. Scalar summary fields
+      (resting/max/min HR) are directly accessible. Timeseries arrays kept as JSON strings.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the heart rate data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__stress
+    description: >
+      Deduplicated view of daily stress data. Scalar fields (avg/max stress level)
+      directly accessible. Timeseries arrays kept as JSON strings.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the stress data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__respiration
+    description: >
+      Deduplicated view of daily respiration data. Scalar fields (avg sleep/waking respiration)
+      directly accessible. Timeseries arrays kept as JSON strings.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the respiration data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__spo2
+    description: >
+      Deduplicated view of daily SpO2 data. Scalar fields (avg/latest/lowest SpO2)
+      directly accessible. Hourly averages array kept as JSON string.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the SpO2 data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__intensity_minutes
+    description: >
+      Deduplicated view of daily intensity minutes. Scalar fields (weekly goal/total,
+      moderate/vigorous minutes) directly accessible.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the intensity minutes data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__floors
+    description: >
+      Deduplicated view of daily floors data. Floor values timeseries kept as JSON string.
+    columns:
+      - name: date
+        description: Date of the floors data.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__body_battery
+    description: >
+      Deduplicated view of daily body battery data. Timeseries arrays kept as JSON strings.
+      Dynamic feedback events parsed into flat columns.
+    columns:
+      - name: date
+        description: Date of the body battery data.
+        tests:
+          - not_null
+      - name: dynamic_feedback_timestamp_gmt
+        description: Timestamp of the dynamic feedback event.
+      - name: dynamic_feedback_battery_level
+        description: Body battery level at dynamic feedback event (e.g., HIGH, MEDIUM, LOW).
+      - name: dynamic_feedback_short_type
+        description: Short feedback type classification.
+      - name: eod_feedback_timestamp_gmt
+        description: Timestamp of the end-of-day feedback event.
+      - name: eod_feedback_battery_level
+        description: Body battery level at end-of-day feedback event.
+      - name: eod_feedback_short_type
+        description: End-of-day short feedback type classification.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  # ── GROUP 3: JSON object tables (parsed into typed columns) ─────────────
+
+  - name: stg_garmin__sleep
+    description: >
+      Deduplicated view of comprehensive sleep data. dailySleepDTO and
+      wellnessSpO2SleepSummaryDTO parsed into typed columns. Timeseries arrays
+      (sleepLevels, sleepHeartRate, sleepStress, etc.) kept as JSON strings.
+    columns:
+      - name: date
+        description: Date of the sleep data.
+        tests:
+          - not_null
+      - name: sleep_time_seconds
+        description: Total sleep time in seconds.
+      - name: deep_sleep_seconds
+        description: Deep sleep duration in seconds.
+      - name: light_sleep_seconds
+        description: Light sleep duration in seconds.
+      - name: rem_sleep_seconds
+        description: REM sleep duration in seconds.
+      - name: awake_sleep_seconds
+        description: Awake time during sleep window in seconds.
+      - name: sleep_overall_score
+        description: Overall sleep score (0-100).
+      - name: sleep_quality_key
+        description: Sleep quality classification key.
+      - name: spo2_sleep_avg
+        description: Average SpO2 during sleep.
+      - name: spo2_sleep_lowest
+        description: Lowest SpO2 during sleep.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__hrv
+    description: >
+      Deduplicated view of HRV data. hrvSummary parsed into typed columns
+      (weekly avg, last night avg, baseline, status). hrvReadings kept as JSON string.
+    columns:
+      - name: userProfilePk
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the HRV data.
+        tests:
+          - not_null
+      - name: hrv_weekly_avg
+        description: Weekly average HRV.
+      - name: hrv_last_night_avg
+        description: Last night average HRV.
+      - name: hrv_last_night_5min_high
+        description: Last night 5-minute high HRV.
+      - name: hrv_baseline_balanced_low
+        description: HRV baseline balanced low threshold.
+      - name: hrv_baseline_balanced_upper
+        description: HRV baseline balanced upper threshold.
+      - name: hrv_status
+        description: HRV status classification (BALANCED, LOW, etc.).
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__max_metrics
+    description: >
+      Deduplicated view of max metrics. generic and heatAltitudeAcclimation
+      JSON objects parsed into typed columns (VO2 max, acclimation data).
+    columns:
+      - name: userId
+        description: Garmin user identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the max metrics data.
+        tests:
+          - not_null
+      - name: vo2_max_precise
+        description: Precise VO2 max value.
+      - name: vo2_max
+        description: Rounded VO2 max value.
+      - name: altitude_acclimation
+        description: Current altitude acclimation level.
+      - name: heat_acclimation_pct
+        description: Heat acclimation percentage.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__training_status
+    description: >
+      Deduplicated view of training status data. mostRecentVO2Max parsed for
+      generic VO2 max and acclimation fields. mostRecentTrainingStatus and
+      mostRecentTrainingLoadBalance kept as JSON strings (dynamic device ID keys).
+    columns:
+      - name: userId
+        description: Garmin user identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the training status data.
+        tests:
+          - not_null
+      - name: recent_vo2_max_precise
+        description: Most recent precise VO2 max value.
+      - name: recent_vo2_max
+        description: Most recent rounded VO2 max value.
+      - name: recent_vo2_max_date
+        description: Date of the most recent VO2 max measurement.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__endurance_score
+    description: >
+      Deduplicated view of endurance score data. enduranceScoreDTO parsed into
+      typed columns (score, classification, gauge limits). groupMap kept as JSON string.
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: startDate
+        description: Start date of the endurance score period.
+        tests:
+          - not_null
+      - name: endurance_overall_score
+        description: Overall endurance score.
+      - name: endurance_classification
+        description: Endurance classification level.
+      - name: endurance_contributors
+        description: JSON array of score contributors.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__hill_score
+    description: >
+      Deduplicated view of hill score data. hillScoreDTOList kept as JSON array
+      (contains multiple entries per row, parsing would change cardinality).
+    columns:
+      - name: userProfilePK
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: startDate
+        description: Start date of the hill score period.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__rhr_daily
+    description: >
+      Deduplicated view of daily resting heart rate. allMetrics JSON parsed
+      to extract the resting heart rate value directly.
+    columns:
+      - name: userProfileId
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the RHR data.
+        tests:
+          - not_null
+      - name: resting_heart_rate
+        description: Resting heart rate value extracted from allMetrics JSON.
+      - name: rhr_calendar_date
+        description: Calendar date associated with the RHR measurement.
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  # ── GROUP 4: Activity sub-tables ────────────────────────────────────────
+
+  - name: stg_garmin__activity_exercise_sets
+    description: >
+      Deduplicated view of exercise sets data for strength/workout activities.
+      Exercise sets data kept as JSON string.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_hr_zones
+    description: >
+      Deduplicated view of heart rate zone distribution for activities.
+      HR zones data kept as JSON array.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_splits
+    description: >
+      Deduplicated view of activity split/lap data. Split summaries,
+      typed splits, and detailed laps kept as JSON strings.
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__activity_weather
+    description: >
+      Deduplicated view of weather conditions during activities. weather_data
+      JSON object parsed into typed columns (temp, humidity, wind, station).
+    columns:
+      - name: activityId
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: weather_temp
+        description: Temperature during the activity (Fahrenheit).
+      - name: weather_apparent_temp
+        description: Apparent/feels-like temperature.
+      - name: weather_relative_humidity
+        description: Relative humidity percentage.
+      - name: weather_wind_speed
+        description: Wind speed.
+      - name: weather_wind_direction_compass
+        description: Wind direction compass point (e.g., ene, nw).
+      - name: weather_station_name
+        description: Name of the weather station.
+      - name: weather_type
+        description: Weather type description (e.g., Fair, Cloudy).
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  # ── GROUP 5: Large scalar tables ────────────────────────────────────────
+
+  - name: stg_garmin__stats_and_body
+    description: >
+      Deduplicated view of the comprehensive daily wellness summary (~154 scalar fields).
+      Covers steps, distance, calories, heart rate, stress, body battery, respiration,
+      SpO2, body composition, and intensity minutes.
+    columns:
+      - name: userProfileId
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the summary.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__user_summary
+    description: >
+      Deduplicated view of the daily user wellness summary (~152 scalar fields).
+      Similar to stats_and_body with minor field differences.
+    columns:
+      - name: userProfileId
+        description: Garmin user profile identifier.
+        tests:
+          - not_null
+      - name: date
+        description: Date of the summary.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
+
+  - name: stg_garmin__device_info
+    description: >
+      Deduplicated view of device metadata and capability flags (~386 fields).
+    columns:
+      - name: deviceId
+        description: Garmin device identifier.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the record was ingested.
+        tests:
+          - not_null
