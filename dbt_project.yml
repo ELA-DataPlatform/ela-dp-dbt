@@ -22,6 +22,12 @@ models:
       spotify_legacy:
         +schema: "dp_lake_spotify_{{ target.name }}"
         +tags: ["spotify"]
+      lyrics:
+        +schema: "dp_lake_lyrics_{{ target.name }}"
+        +tags: ["lyrics"]
+    product:
+      +schema: "dp_product_{{ target.name }}"
+      +materialized: table
     hub:
       +schema: "dp_hub_{{ target.name }}"
       music:

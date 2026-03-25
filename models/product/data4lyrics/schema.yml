@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: prd__data4lyrics
+    description: >
+      Product table for Data4Lyrics: one row per track with main artist,
+      album title, track title, and duration in seconds.
+      Sources data from the music hub reference and bridge tables.
+    columns:
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - unique
+          - not_null
+      - name: main_artist
+        description: Name of the primary artist (position 0 in the track's artist list).
+      - name: album_name
+        description: Name of the album the track belongs to.
+      - name: track_name
+        description: Display name of the track.
+        tests:
+          - not_null
+      - name: duration_seconds
+        description: Duration of the track in seconds (rounded).

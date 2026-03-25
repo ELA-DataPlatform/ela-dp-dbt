@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: lyrics
+    database: "{{ target.project }}"
+    schema: "dp_lake_lyrics_{{ target.name }}"
+    description: Lyrics data fetched from LRCLIB, loaded by the ingestion pipeline.
+    config:
+      loaded_at_field: _ingested_at
+      freshness:
+        warn_after: {count: 24, period: hour}
+        error_after: {count: 48, period: hour}
+    tables:
+      - name: normalized__lyrics
+        description: >
+          Raw lyrics lookup results from LRCLIB for each track.
+          One row per (track_id, _ingested_at) batch.
+        columns:
+          - name: track_id
+            description: Spotify unique track identifier used as lookup key.
+            tests:
+              - not_null
+          - name: track_name
+            description: Track name used for the lyrics lookup.
+          - name: artist_name
+            description: Artist name used for the lyrics lookup.
+          - name: album_name
+            description: Album name used for the lyrics lookup.
+          - name: duration_s
+            description: Track duration in seconds used for the lyrics lookup.
+          - name: found
+            description: Whether lyrics were found for this track.
+          - name: lrclib_id
+            description: LRCLIB unique identifier for the lyrics entry.
+          - name: instrumental
+            description: Whether the track is instrumental (no lyrics).
+          - name: plain_lyrics
+            description: Plain text lyrics content.
+          - name: fetched_at
+            description: Timestamp when the lyrics were fetched from LRCLIB.
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
