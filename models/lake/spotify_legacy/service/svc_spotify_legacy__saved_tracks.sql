@@ -1,6 +1,7 @@
 {{
     config(
         materialized='incremental',
+        enabled=(target.name != 'prd'),
         unique_key='track_id',
         merge_update_columns=[
             'track',
@@ -16,7 +17,7 @@ SELECT
     track,
     added_at,
     _ingested_at
-FROM {{ ref('stg_spotify__saved_tracks') }}
+FROM {{ ref('stg_spotify_legacy__saved_tracks') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

@@ -1,6 +1,3 @@
-{%- set has_legacy = spotify_table_exists('normalized_saved_albums_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_saved_albums') -%}
-
 {{
     config(
         materialized='incremental',
@@ -10,8 +7,7 @@
             'added_at',
             '_ingested_at'
         ],
-        tags=['spotify'],
-        enabled=(has_legacy or has_new)
+        tags=['spotify']
     )
 }}
 

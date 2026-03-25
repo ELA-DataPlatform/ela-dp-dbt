@@ -1,9 +1,5 @@
-{%- set has_legacy = spotify_table_exists('normalized_recently_played_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_recently_played') -%}
-
 {{
     config(
-        enabled=(has_legacy or has_new),
         materialized='incremental',
         unique_key='track_id',
         merge_update_columns=[

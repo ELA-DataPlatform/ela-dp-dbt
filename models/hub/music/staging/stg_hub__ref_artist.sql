@@ -1,15 +1,11 @@
-{%- set has_legacy = spotify_table_exists('normalized_recently_played_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_recently_played') -%}
-
 {{
     config(
-        enabled=(has_legacy or has_new),
         materialized='view',
         tags=['spotify']
     )
 }}
 
-WITH track_artists AS (
+WITH new_track_artists AS (
     SELECT
         artist.id AS artist_id,
         artist.name AS artist_name,
@@ -19,7 +15,7 @@ WITH track_artists AS (
         UNNEST(track.artists) AS artist
 ),
 
-album_artists AS (
+new_album_artists AS (
     SELECT
         artist.id AS artist_id,
         artist.name AS artist_name,
@@ -29,10 +25,34 @@ album_artists AS (
         UNNEST(track.album.artists) AS artist
 ),
 
+legacy_track_artists AS (
+    SELECT
+        artist.id AS artist_id,
+        artist.name AS artist_name,
+        artist.uri AS artist_uri,
+        _ingested_at
+    FROM {{ ref('svc_spotify_legacy__recently_played') }},
+        UNNEST(track.artists) AS artist
+),
+
+legacy_album_artists AS (
+    SELECT
+        artist.id AS artist_id,
+        artist.name AS artist_name,
+        artist.uri AS artist_uri,
+        _ingested_at
+    FROM {{ ref('svc_spotify_legacy__recently_played') }},
+        UNNEST(track.album.artists) AS artist
+),
+
 all_artists AS (
-    SELECT * FROM track_artists
+    SELECT * FROM new_track_artists
     UNION ALL
-    SELECT * FROM album_artists
+    SELECT * FROM new_album_artists
+    UNION ALL
+    SELECT * FROM legacy_track_artists
+    UNION ALL
+    SELECT * FROM legacy_album_artists
 ),
 
 deduplicated AS (

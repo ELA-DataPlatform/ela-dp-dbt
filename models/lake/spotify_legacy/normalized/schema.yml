@@ -1,10 +1,10 @@
 version: 2
 
 sources:
-  - name: spotify
+  - name: spotify_legacy
     database: "{{ target.project }}"
     schema: "dp_lake_spotify_{{ target.name }}"
-    description: Raw Spotify data loaded by the ingestion pipeline.
+    description: Legacy Spotify data with native RECORD columns, loaded by the ingestion pipeline.
     config:
       loaded_at_field: _ingested_at
       freshness:
@@ -12,59 +12,59 @@ sources:
         error_after: {count: 48, period: hour}
     tables:
       # ── recently_played ──────────────────────────────────────────────
-      - name: normalized_recently_played
+      - name: normalized_recently_played_legacy
         description: >
-          Recently played tracks (JSON STRING columns) from the Spotify API.
+          Legacy recently played tracks (native RECORD columns) from the Spotify API.
         columns:
           - name: played_at
             description: Timestamp indicating when the track was played.
             tests:
               - not_null
           - name: track
-            description: JSON string containing full track metadata.
+            description: Nested record containing full track metadata.
           - name: context
-            description: JSON string containing playback context.
+            description: Nested record containing playback context.
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
 
       # ── saved_tracks ─────────────────────────────────────────────────
-      - name: normalized_saved_tracks
+      - name: normalized_saved_tracks_legacy
         description: >
-          Saved (liked) tracks (JSON STRING columns) from the Spotify API.
+          Legacy saved (liked) tracks (native RECORD columns) from the Spotify API.
         columns:
           - name: added_at
             description: Timestamp when the track was saved to the user's library.
             tests:
               - not_null
           - name: track
-            description: JSON string containing full track metadata.
+            description: Nested record containing full track metadata.
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
 
       # ── saved_albums ─────────────────────────────────────────────────
-      - name: normalized_saved_albums
+      - name: normalized_saved_albums_legacy
         description: >
-          Saved albums (JSON STRING columns) from the Spotify API.
+          Legacy saved albums (native RECORD columns) from the Spotify API.
         columns:
           - name: added_at
             description: Timestamp when the album was saved to the user's library.
             tests:
               - not_null
           - name: album
-            description: JSON string containing full album metadata.
+            description: Nested record containing full album metadata.
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
             tests:
               - not_null
 
       # ── top_artists ──────────────────────────────────────────────────
-      - name: normalized_top_artists
+      - name: normalized_top_artists_legacy
         description: >
-          Top artists (JSON STRING columns for nested fields) from the Spotify API.
+          Legacy top artists (native RECORD columns) from the Spotify API.
         columns:
           - name: id
             description: Spotify unique artist identifier.
@@ -76,9 +76,9 @@ sources:
               - not_null
 
       # ── top_tracks ───────────────────────────────────────────────────
-      - name: normalized_top_tracks
+      - name: normalized_top_tracks_legacy
         description: >
-          Top tracks (JSON STRING columns for nested fields) from the Spotify API.
+          Legacy top tracks (native RECORD columns) from the Spotify API.
         columns:
           - name: id
             description: Spotify unique track identifier.
@@ -89,10 +89,24 @@ sources:
             tests:
               - not_null
 
-      # ── album_detail ─────────────────────────────────────────────────
-      - name: normalized_album_detail
+      # ── playlists ────────────────────────────────────────────────────
+      - name: normalized_playlists_legacy
         description: >
-          Album details (JSON STRING columns for nested fields) from the Spotify API.
+          Legacy playlists (native RECORD columns) from the Spotify API.
+        columns:
+          - name: id
+            description: Spotify unique playlist identifier.
+            tests:
+              - not_null
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+            tests:
+              - not_null
+
+      # ── album_detail ─────────────────────────────────────────────────
+      - name: normalized_album_detail_legacy
+        description: >
+          Legacy album details (native RECORD columns) from the Spotify API.
         columns:
           - name: id
             description: Spotify unique album identifier.
@@ -104,9 +118,9 @@ sources:
               - not_null
 
       # ── album_tracks ─────────────────────────────────────────────────
-      - name: normalized_album_tracks
+      - name: normalized_album_tracks_legacy
         description: >
-          Album tracks (mixed native and JSON STRING columns) from the Spotify API.
+          Legacy album tracks (native RECORD columns) from the Spotify API.
         columns:
           - name: id
             description: Spotify unique track identifier.
@@ -122,9 +136,9 @@ sources:
               - not_null
 
       # ── artist_detail ────────────────────────────────────────────────
-      - name: normalized_artist_detail
+      - name: normalized_artist_detail_legacy
         description: >
-          Artist details (JSON STRING columns for nested fields) from the Spotify API.
+          Legacy artist details (native RECORD columns) from the Spotify API.
         columns:
           - name: id
             description: Spotify unique artist identifier.

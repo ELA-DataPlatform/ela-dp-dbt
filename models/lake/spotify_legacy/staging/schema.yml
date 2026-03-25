@@ -1,93 +1,64 @@
 version: 2
 
 models:
-  - name: svc_spotify__recently_played
+  - name: stg_spotify_legacy__recently_played
     description: >
-      Service table for Spotify recently played tracks. Incrementally merges new data
-      from the staging view, ensuring uniqueness on played_at + track_id.
+      Deduplicated view of legacy recently played tracks.
+      Each row represents a unique track play event, identified by played_at + track ID.
     columns:
       - name: played_at
         description: Timestamp indicating when the track was played.
         tests:
           - not_null
-      - name: track_id
-        description: Spotify unique track identifier, extracted from the track record.
-        tests:
-          - not_null
       - name: track
-        description: >
-          Nested record containing full track metadata including name, popularity,
-          duration_ms, explicit flag, album details, and artist information.
+        description: Nested record containing full track metadata.
       - name: context
-        description: >
-          Nested record containing playback context — the URI and type of the context
-          in which the track was played (e.g., playlist, album, artist).
+        description: Nested record containing playback context.
       - name: _ingested_at
         description: Timestamp when the record was ingested into the normalized table.
         tests:
           - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-            - played_at
-            - track_id
 
-  - name: svc_spotify__saved_tracks
+  - name: stg_spotify_legacy__saved_tracks
     description: >
-      Service table for Spotify saved tracks. Incrementally merges new data
-      from the staging view, ensuring uniqueness on track_id.
+      Deduplicated view of legacy saved tracks.
+      Each row represents a unique track in the user's Spotify library.
     columns:
-      - name: track_id
-        description: Spotify unique track identifier, extracted from the track record.
-        tests:
-          - unique
-          - not_null
-      - name: track
-        description: >
-          Nested record containing full track metadata including name, popularity,
-          duration_ms, explicit flag, album details, and artist information.
       - name: added_at
         description: Timestamp when the track was saved to the user's library.
         tests:
           - not_null
+      - name: track
+        description: Nested record containing full track metadata.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
 
-  - name: svc_spotify__saved_albums
+  - name: stg_spotify_legacy__saved_albums
     description: >
-      Service table for Spotify saved albums. Incrementally merges new data
-      from the staging view, ensuring uniqueness on album_id.
+      Deduplicated view of legacy saved albums.
+      Each row represents a unique album in the user's Spotify library.
     columns:
-      - name: album_id
-        description: Spotify unique album identifier, extracted from the album record.
-        tests:
-          - unique
-          - not_null
-      - name: album
-        description: >
-          Nested record containing full album metadata including name, artists,
-          tracks, label, release date, and images.
       - name: added_at
         description: Timestamp when the album was saved to the user's library.
         tests:
           - not_null
+      - name: album
+        description: Nested record containing full album metadata.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
 
-  - name: svc_spotify__top_artists
+  - name: stg_spotify_legacy__top_artists
     description: >
-      Service table for Spotify top artists. Incrementally merges new data
-      from the staging view, ensuring uniqueness on artist id.
+      Deduplicated view of legacy top artists.
+      Each row represents a unique artist from the user's top artists.
     columns:
       - name: id
         description: Spotify unique artist identifier.
         tests:
-          - unique
           - not_null
       - name: name
         description: Artist name.
@@ -96,7 +67,7 @@ models:
       - name: genres
         description: Array of genre strings associated with the artist.
       - name: images
-        description: Array of image objects for the artist.
+        description: Array of image records (width, height, url) for the artist.
       - name: followers
         description: Record containing follower count and href.
       - name: external_urls
@@ -106,15 +77,14 @@ models:
         tests:
           - not_null
 
-  - name: svc_spotify__top_tracks
+  - name: stg_spotify_legacy__top_tracks
     description: >
-      Service table for Spotify top tracks. Incrementally merges new data
-      from the staging view, ensuring uniqueness on track id.
+      Deduplicated view of legacy top tracks.
+      Each row represents a unique track from the user's top tracks.
     columns:
       - name: id
         description: Spotify unique track identifier.
         tests:
-          - unique
           - not_null
       - name: name
         description: Track name.
@@ -133,15 +103,34 @@ models:
         tests:
           - not_null
 
-  - name: svc_spotify__album_detail
+  - name: stg_spotify_legacy__playlists
     description: >
-      Service table for Spotify album details. Incrementally merges new data
-      from the staging view, ensuring uniqueness on album id.
+      Deduplicated view of legacy playlists.
+      Each row represents a unique playlist from the user's Spotify library.
+    columns:
+      - name: id
+        description: Spotify unique playlist identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Playlist name.
+      - name: description
+        description: Playlist description.
+      - name: owner
+        description: Record containing playlist owner information.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__album_detail
+    description: >
+      Deduplicated view of legacy album details.
+      Each row represents a unique album with full metadata.
     columns:
       - name: id
         description: Spotify unique album identifier.
         tests:
-          - unique
           - not_null
       - name: name
         description: Album name.
@@ -156,10 +145,10 @@ models:
         tests:
           - not_null
 
-  - name: svc_spotify__album_tracks
+  - name: stg_spotify_legacy__album_tracks
     description: >
-      Service table for Spotify album tracks. Incrementally merges new data
-      from the staging view, ensuring uniqueness on album_id + track id.
+      Deduplicated view of legacy album tracks.
+      Each row represents a unique track within an album.
     columns:
       - name: id
         description: Spotify unique track identifier.
@@ -181,22 +170,15 @@ models:
         description: Timestamp of the ingestion batch.
         tests:
           - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-            - album_id
-            - id
 
-  - name: svc_spotify__artist_detail
+  - name: stg_spotify_legacy__artist_detail
     description: >
-      Service table for Spotify artist details. Incrementally merges new data
-      from the staging view, ensuring uniqueness on artist id.
+      Deduplicated view of legacy artist details.
+      Each row represents a unique artist with full metadata.
     columns:
       - name: id
         description: Spotify unique artist identifier.
         tests:
-          - unique
           - not_null
       - name: name
         description: Artist name.

@@ -1,22 +1,28 @@
 {{
     config(
         materialized='incremental',
-        unique_key='track_id',
+        unique_key=['played_at', 'track_id'],
         merge_update_columns=[
             'track',
-            'added_at',
+            'context',
             '_ingested_at'
         ],
-        tags=['spotify']
+        tags=['spotify'],
+        partition_by={
+            'field': 'played_at',
+            'data_type': 'timestamp',
+            'granularity': 'month'
+        }
     )
 }}
 
 SELECT
+    played_at,
     track.id AS track_id,
     track,
-    added_at,
+    context,
     _ingested_at
-FROM {{ ref('stg_spotify__saved_tracks') }}
+FROM {{ ref('stg_spotify_legacy__recently_played') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

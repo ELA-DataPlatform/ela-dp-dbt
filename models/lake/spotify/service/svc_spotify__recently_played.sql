@@ -1,6 +1,3 @@
-{%- set has_legacy = spotify_table_exists('normalized_recently_played_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_recently_played') -%}
-
 {{
     config(
         materialized='incremental',
@@ -11,7 +8,6 @@
             '_ingested_at'
         ],
         tags=['spotify'],
-        enabled=(has_legacy or has_new),
         partition_by={
             'field': 'played_at',
             'data_type': 'timestamp',

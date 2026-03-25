@@ -1,61 +1,11 @@
-{%- set has_legacy = spotify_table_exists('normalized_recently_played_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_recently_played') -%}
-
 {{
     config(
         materialized='view',
-        tags=['spotify'],
-        enabled=(has_legacy or has_new)
+        tags=['spotify']
     )
 }}
 
-WITH
-
-{% if has_legacy %}
-from_legacy AS (
-    SELECT
-        played_at,
-        STRUCT(
-            track.type,
-            track.popularity,
-            track.uri,
-            track.name,
-            track.href,
-            track.id,
-            track.external_urls,
-            track.preview_url,
-            track.duration_ms,
-            track.explicit,
-            track.track_number,
-            track.external_ids,
-            track.is_local,
-            track.disc_number,
-            track.available_markets,
-            track.artists,
-            STRUCT(
-                track.album.type,
-                track.album.total_tracks,
-                CAST(track.album.release_date AS STRING) AS release_date,
-                track.album.uri,
-                track.album.name,
-                track.album.href,
-                track.album.id,
-                track.album.external_urls,
-                track.album.artists,
-                track.album.release_date_precision,
-                track.album.images,
-                track.album.available_markets,
-                track.album.album_type
-            ) AS album
-        ) AS track,
-        context,
-        _ingested_at
-    FROM {{ source('spotify', 'normalized_recently_played_legacy') }}
-),
-{% endif %}
-
-{% if has_new %}
-from_new AS (
+WITH source AS (
     SELECT
         played_at,
         STRUCT(
@@ -127,19 +77,6 @@ from_new AS (
         _ingested_at
     FROM {{ source('spotify', 'normalized_recently_played') }}
 ),
-{% endif %}
-
-unioned AS (
-    {% if has_legacy and has_new %}
-    SELECT * FROM from_legacy
-    UNION ALL
-    SELECT * FROM from_new
-    {% elif has_legacy %}
-    SELECT * FROM from_legacy
-    {% elif has_new %}
-    SELECT * FROM from_new
-    {% endif %}
-),
 
 deduplicated AS (
     SELECT
@@ -148,7 +85,7 @@ deduplicated AS (
             PARTITION BY played_at, track.id
             ORDER BY _ingested_at DESC
         ) AS _row_number
-    FROM unioned
+    FROM source
 )
 
 SELECT * EXCEPT(_row_number)

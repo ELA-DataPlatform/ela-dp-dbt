@@ -1,6 +1,7 @@
 {{
     config(
         materialized='incremental',
+        enabled=(target.name != 'prd'),
         unique_key='id',
         merge_update_columns=[
             'external_ids',
@@ -48,7 +49,7 @@ SELECT
     available_markets,
     album_type,
     _ingested_at
-FROM {{ ref('stg_spotify__album_detail') }}
+FROM {{ ref('stg_spotify_legacy__album_detail') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

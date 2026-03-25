@@ -1,15 +1,11 @@
-{%- set has_legacy = spotify_table_exists('normalized_recently_played_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_recently_played') -%}
-
 {{
     config(
-        enabled=(has_legacy or has_new),
         materialized='view',
         tags=['spotify']
     )
 }}
 
-WITH source AS (
+WITH from_new AS (
     SELECT
         track.id AS track_id,
         artist.id AS artist_id,
@@ -19,6 +15,22 @@ WITH source AS (
         UNNEST(track.artists) AS artist WITH OFFSET AS artist_position
 ),
 
+from_legacy AS (
+    SELECT
+        track.id AS track_id,
+        artist.id AS artist_id,
+        artist_position,
+        _ingested_at
+    FROM {{ ref('svc_spotify_legacy__recently_played') }},
+        UNNEST(track.artists) AS artist WITH OFFSET AS artist_position
+),
+
+unioned AS (
+    SELECT * FROM from_new
+    UNION ALL
+    SELECT * FROM from_legacy
+),
+
 deduplicated AS (
     SELECT
         *,
@@ -26,7 +38,7 @@ deduplicated AS (
             PARTITION BY track_id, artist_id
             ORDER BY _ingested_at DESC
         ) AS _row_number
-    FROM source
+    FROM unioned
 )
 
 SELECT * EXCEPT (_row_number)

@@ -1,15 +1,34 @@
-{%- set has_legacy = spotify_table_exists('normalized_artist_detail_legacy') -%}
-
 {{
     config(
         materialized='view',
-        tags=['spotify'],
-        enabled=has_legacy
+        tags=['spotify']
     )
 }}
 
 WITH source AS (
-    SELECT * FROM {{ source('spotify', 'normalized_artist_detail_legacy') }}
+    SELECT
+        _ingested_at,
+        id,
+        popularity,
+        name,
+        ARRAY(
+            SELECT STRUCT(
+                CAST(JSON_VALUE(img, '$.width') AS INT64) AS width,
+                JSON_VALUE(img, '$.url') AS url,
+                CAST(JSON_VALUE(img, '$.height') AS INT64) AS height
+            )
+            FROM UNNEST(JSON_QUERY_ARRAY(images, '$')) AS img
+        ) AS images,
+        uri,
+        type,
+        href,
+        JSON_VALUE_ARRAY(genres, '$') AS genres,
+        STRUCT(
+            CAST(JSON_VALUE(followers, '$.total') AS INT64) AS total,
+            JSON_VALUE(followers, '$.href') AS href
+        ) AS followers,
+        STRUCT(JSON_VALUE(external_urls, '$.spotify') AS spotify) AS external_urls
+    FROM {{ source('spotify', 'normalized_artist_detail') }}
 ),
 
 deduplicated AS (

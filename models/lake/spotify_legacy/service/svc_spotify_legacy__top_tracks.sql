@@ -46,7 +46,7 @@ SELECT
     artists,
     album,
     _ingested_at
-FROM {{ ref('stg_spotify__top_tracks') }}
+FROM {{ ref('stg_spotify_legacy__top_tracks') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

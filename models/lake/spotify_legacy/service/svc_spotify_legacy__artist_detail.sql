@@ -1,6 +1,7 @@
 {{
     config(
         materialized='incremental',
+        enabled=(target.name != 'prd'),
         unique_key='id',
         merge_update_columns=[
             'popularity',
@@ -30,7 +31,7 @@ SELECT
     followers,
     external_urls,
     _ingested_at
-FROM {{ ref('stg_spotify__top_artists') }}
+FROM {{ ref('stg_spotify_legacy__artist_detail') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

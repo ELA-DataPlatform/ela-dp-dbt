@@ -30,7 +30,7 @@ SELECT
     followers,
     external_urls,
     _ingested_at
-FROM {{ ref('stg_spotify__top_artists') }}
+FROM {{ ref('stg_spotify_legacy__top_artists') }}
 
 {% if is_incremental() %}
     WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})

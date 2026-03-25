@@ -29,7 +29,8 @@ models:
           - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
+          arguments:
+            combination_of_columns:
             - played_at
             - track_id
 
@@ -144,7 +145,8 @@ models:
           - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
+          arguments:
+            combination_of_columns:
             - track_id
             - artist_id
 
@@ -169,6 +171,7 @@ models:
           - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
+          arguments:
+            combination_of_columns:
             - album_id
             - artist_id

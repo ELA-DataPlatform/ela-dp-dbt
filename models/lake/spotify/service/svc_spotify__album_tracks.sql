@@ -1,11 +1,8 @@
-{%- set has_legacy = spotify_table_exists('normalized_album_tracks_legacy') -%}
-
 {{
     config(
         materialized='incremental',
         unique_key=['album_id', 'id'],
         merge_update_columns=[
-            'restrictions',
             'type',
             'duration_ms',
             'explicit',
@@ -21,15 +18,13 @@
             'artists',
             '_ingested_at'
         ],
-        tags=['spotify'],
-        enabled=has_legacy
+        tags=['spotify']
     )
 }}
 
 SELECT
     album_id,
     id,
-    restrictions,
     type,
     duration_ms,
     explicit,

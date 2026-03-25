@@ -3,7 +3,7 @@ version: 2
 models:
   - name: stg_spotify__recently_played
     description: >
-      Deduplicated view combining legacy (RECORD) and new (JSON STRING) recently played data.
+      Deduplicated view of recently played tracks.
       Each row represents a unique track play event, identified by played_at + track ID.
     columns:
       - name: played_at
@@ -25,7 +25,7 @@ models:
 
   - name: stg_spotify__saved_tracks
     description: >
-      Deduplicated view combining legacy (RECORD) and new (JSON STRING) saved tracks.
+      Deduplicated view of saved tracks.
       Each row represents a unique track in the user's Spotify library.
     columns:
       - name: added_at
@@ -43,7 +43,7 @@ models:
 
   - name: stg_spotify__saved_albums
     description: >
-      Deduplicated view combining legacy (RECORD) and new (JSON STRING) saved albums.
+      Deduplicated view of saved albums.
       Each row represents a unique album in the user's Spotify library.
     columns:
       - name: added_at
@@ -61,7 +61,7 @@ models:
 
   - name: stg_spotify__top_artists
     description: >
-      Deduplicated view combining legacy (RECORD) and new (JSON STRING) top artists.
+      Deduplicated view of top artists.
       Each row represents a unique artist from the user's top artists.
     columns:
       - name: id
@@ -87,7 +87,7 @@ models:
 
   - name: stg_spotify__top_tracks
     description: >
-      Deduplicated view combining legacy (RECORD) and new (JSON STRING) top tracks.
+      Deduplicated view of top tracks.
       Each row represents a unique track from the user's top tracks.
     columns:
       - name: id
@@ -111,29 +111,9 @@ models:
         tests:
           - not_null
 
-  - name: stg_spotify__playlists
-    description: >
-      Deduplicated view of playlists from the legacy normalized table.
-      Each row represents a unique playlist from the user's Spotify library.
-    columns:
-      - name: id
-        description: Spotify unique playlist identifier.
-        tests:
-          - not_null
-      - name: name
-        description: Playlist name.
-      - name: description
-        description: Playlist description.
-      - name: owner
-        description: Record containing playlist owner information.
-      - name: _ingested_at
-        description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
-
   - name: stg_spotify__album_detail
     description: >
-      Deduplicated view of album details from the legacy normalized table.
+      Deduplicated view of album details.
       Each row represents a unique album with full metadata.
     columns:
       - name: id
@@ -155,7 +135,7 @@ models:
 
   - name: stg_spotify__album_tracks
     description: >
-      Deduplicated view of album tracks from the legacy normalized table.
+      Deduplicated view of album tracks.
       Each row represents a unique track within an album.
     columns:
       - name: id
@@ -181,7 +161,7 @@ models:
 
   - name: stg_spotify__artist_detail
     description: >
-      Deduplicated view of artist details from the legacy normalized table.
+      Deduplicated view of artist details.
       Each row represents a unique artist with full metadata.
     columns:
       - name: id

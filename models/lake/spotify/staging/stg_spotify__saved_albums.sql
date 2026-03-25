@@ -1,28 +1,11 @@
-{%- set has_legacy = spotify_table_exists('normalized_saved_albums_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_saved_albums') -%}
-
 {{
     config(
         materialized='view',
-        tags=['spotify'],
-        enabled=(has_legacy or has_new)
+        tags=['spotify']
     )
 }}
 
-WITH
-
-{% if has_legacy %}
-from_legacy AS (
-    SELECT
-        added_at,
-        album,
-        _ingested_at
-    FROM {{ source('spotify', 'normalized_saved_albums_legacy') }}
-),
-{% endif %}
-
-{% if has_new %}
-from_new AS (
+WITH source AS (
     SELECT
         added_at,
         STRUCT(
@@ -116,19 +99,6 @@ from_new AS (
         _ingested_at
     FROM {{ source('spotify', 'normalized_saved_albums') }}
 ),
-{% endif %}
-
-unioned AS (
-    {% if has_legacy and has_new %}
-    SELECT * FROM from_legacy
-    UNION ALL
-    SELECT * FROM from_new
-    {% elif has_legacy %}
-    SELECT * FROM from_legacy
-    {% elif has_new %}
-    SELECT * FROM from_new
-    {% endif %}
-),
 
 deduplicated AS (
     SELECT
@@ -137,7 +107,7 @@ deduplicated AS (
             PARTITION BY album.id
             ORDER BY _ingested_at DESC
         ) AS _row_number
-    FROM unioned
+    FROM source
 )
 
 SELECT * EXCEPT(_row_number)

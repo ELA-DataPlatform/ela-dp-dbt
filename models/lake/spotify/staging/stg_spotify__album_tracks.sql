@@ -1,15 +1,39 @@
-{%- set has_legacy = spotify_table_exists('normalized_album_tracks_legacy') -%}
-
 {{
     config(
         materialized='view',
-        tags=['spotify'],
-        enabled=has_legacy
+        tags=['spotify']
     )
 }}
 
 WITH source AS (
-    SELECT * FROM {{ source('spotify', 'normalized_album_tracks_legacy') }}
+    SELECT
+        _ingested_at,
+        album_id,
+        id,
+        type,
+        duration_ms,
+        explicit,
+        preview_url,
+        uri,
+        name,
+        href,
+        STRUCT(JSON_VALUE(external_urls, '$.spotify') AS spotify) AS external_urls,
+        is_local,
+        disc_number,
+        JSON_VALUE_ARRAY(available_markets, '$') AS available_markets,
+        track_number,
+        ARRAY(
+            SELECT STRUCT(
+                JSON_VALUE(a, '$.name') AS name,
+                STRUCT(JSON_VALUE(a, '$.external_urls.spotify') AS spotify) AS external_urls,
+                JSON_VALUE(a, '$.id') AS id,
+                JSON_VALUE(a, '$.uri') AS uri,
+                JSON_VALUE(a, '$.href') AS href,
+                JSON_VALUE(a, '$.type') AS type
+            )
+            FROM UNNEST(JSON_QUERY_ARRAY(artists, '$')) AS a
+        ) AS artists
+    FROM {{ source('spotify', 'normalized_album_tracks') }}
 ),
 
 deduplicated AS (

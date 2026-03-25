@@ -1,5 +1,3 @@
-{%- set has_legacy = spotify_table_exists('normalized_artist_detail_legacy') -%}
-
 {{
     config(
         materialized='incremental',
@@ -16,8 +14,7 @@
             'external_urls',
             '_ingested_at'
         ],
-        tags=['spotify'],
-        enabled=has_legacy
+        tags=['spotify']
     )
 }}
 

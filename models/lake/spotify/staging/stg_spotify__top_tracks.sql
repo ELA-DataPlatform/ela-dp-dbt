@@ -1,44 +1,11 @@
-{%- set has_legacy = spotify_table_exists('normalized_top_tracks_legacy') -%}
-{%- set has_new = spotify_table_exists('normalized_top_tracks') -%}
-
 {{
     config(
         materialized='view',
-        tags=['spotify'],
-        enabled=(has_legacy or has_new)
+        tags=['spotify']
     )
 }}
 
-WITH
-
-{% if has_legacy %}
-from_legacy AS (
-    SELECT
-        _ingested_at,
-        type,
-        popularity,
-        uri,
-        name,
-        is_playable,
-        href,
-        id,
-        external_urls,
-        preview_url,
-        duration_ms,
-        explicit,
-        track_number,
-        external_ids,
-        is_local,
-        disc_number,
-        available_markets,
-        artists,
-        album
-    FROM {{ source('spotify', 'normalized_top_tracks_legacy') }}
-),
-{% endif %}
-
-{% if has_new %}
-from_new AS (
+WITH source AS (
     SELECT
         _ingested_at,
         type,
@@ -107,19 +74,6 @@ from_new AS (
         ) AS album
     FROM {{ source('spotify', 'normalized_top_tracks') }}
 ),
-{% endif %}
-
-unioned AS (
-    {% if has_legacy and has_new %}
-    SELECT * FROM from_legacy
-    UNION ALL
-    SELECT * FROM from_new
-    {% elif has_legacy %}
-    SELECT * FROM from_legacy
-    {% elif has_new %}
-    SELECT * FROM from_new
-    {% endif %}
-),
 
 deduplicated AS (
     SELECT
@@ -128,7 +82,7 @@ deduplicated AS (
             PARTITION BY id
             ORDER BY _ingested_at DESC
         ) AS _row_number
-    FROM unioned
+    FROM source
 )
 
 SELECT * EXCEPT(_row_number)
