@@ -2,31 +2,34 @@
 set -e
 
 # ---------------------------------------------------------------------------
-# Cloud Run Job entrypoint for dbt
+# Cloud Run Job entrypoint for dbt.
 #
-# Environment variables (set in Cloud Run Job configuration):
-#   DBT_TARGET       — dbt target (dev | prd). Default: dev
-#   DBT_SELECT       — dbt --select expression. Optional.
-#   DBT_EXCLUDE      — dbt --exclude expression. Optional.
-#   DBT_COMMAND      — dbt command to run (run | build | test | seed …). Default: run
-#   DBT_FULL_REFRESH — set to any non-empty value to add --full-refresh
+# Les arguments passes au container sont transmis tels quels a `dbt`.
+# Si aucun --target n'est fourni, on injecte `--target dev` par defaut.
+#
+# Exemples d'utilisation depuis un Cloud Run Job :
+#   args: ["run"]
+#   args: ["run", "--target", "prd"]
+#   args: ["run", "--target", "prd", "--select", "tag:spotify"]
+#   args: ["build", "--target", "dev", "--select", "hub.music"]
+#   args: ["test", "--target", "prd"]
 # ---------------------------------------------------------------------------
 
-CMD="${DBT_COMMAND:-run}"
-TARGET="${DBT_TARGET:-dev}"
-ARGS=""
-
-if [ -n "$DBT_SELECT" ]; then
-    ARGS="$ARGS --select $DBT_SELECT"
+# Defaut : `run` si aucun argument
+if [ "$#" -eq 0 ]; then
+    set -- run
 fi
 
-if [ -n "$DBT_EXCLUDE" ]; then
-    ARGS="$ARGS --exclude $DBT_EXCLUDE"
+# Injecte --target dev si ni --target ni -t n'est present
+has_target=0
+for arg in "$@"; do
+    case "$arg" in
+        --target|-t) has_target=1; break ;;
+    esac
+done
+if [ "$has_target" -eq 0 ]; then
+    set -- "$@" --target dev
 fi
 
-if [ -n "$DBT_FULL_REFRESH" ]; then
-    ARGS="$ARGS --full-refresh"
-fi
-
-echo "==> dbt ${CMD} --target ${TARGET} ${ARGS}"
-exec dbt ${CMD} --target "${TARGET}" ${ARGS}
+echo "==> dbt $*"
+exec dbt "$@"
