@@ -16,12 +16,16 @@ logs/
 .git/
 .gitignore
 
-# CI / linting (not needed at runtime)
+# CI / linting / tests (not needed at runtime)
 .github/
 .pre-commit-config.yaml
 .sqlfluff
+.sqlfluffignore
 .sqlfluff_cache/
 .yamllint.yml
+tests/
+.user.yml
+.python-version
 
 # OS
 .DS_Store

@@ -1,40 +1,51 @@
 # =============================================================================
-# Stage 1 : Install dbt-bigquery with uv (fast, cached)
+# Stage 1 : Build venv with dbt-bigquery (Alpine + uv for speed)
 # =============================================================================
-FROM ghcr.io/astral-sh/uv:0.7-python3.12-bookworm-slim AS builder
+FROM python:3.12-alpine AS builder
 
-WORKDIR /build
+# Build deps needed only if some wheels have to be compiled (musllinux fallbacks).
+# Kept in the builder stage so they never land in the runtime image.
+RUN apk add --no-cache \
+        build-base \
+        libffi-dev \
+        openssl-dev \
+        cargo
 
-# Install only dbt-bigquery — sqlfluff is not needed at runtime
+# uv: fast resolver/installer
+RUN pip install --no-cache-dir uv
+
 RUN uv venv /opt/venv \
     && VIRTUAL_ENV=/opt/venv uv pip install --no-cache "dbt-bigquery>=1.9.0,<2.0.0"
 
 # =============================================================================
-# Stage 2 : Lean runtime image
+# Stage 2 : Minimal Alpine runtime
 # =============================================================================
-FROM python:3.12-slim-bookworm
+FROM python:3.12-alpine
 
-# Avoid Python buffering (important for Cloud Run logs)
+# libstdc++ is required by some google-cloud / grpc wheels compiled against libc++.
+RUN apk add --no-cache libstdc++
+
 ENV PYTHONUNBUFFERED=1 \
-    DBT_PROFILES_DIR=/dbt
+    PYTHONDONTWRITEBYTECODE=1 \
+    DBT_PROFILES_DIR=/dbt \
+    PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /dbt
 
-# Copy virtualenv from builder
 COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy dbt project files (order: least-changing first for layer cache)
+# Copy least-changing files first to maximise layer cache hits
 COPY dbt_project.yml packages.yml profiles.yml ./
 RUN dbt deps
+
 COPY macros/ macros/
 COPY models/ models/
 COPY snapshots/ snapshots/
 COPY seeds/ seeds/
 COPY analyses/ analyses/
 
-# Entrypoint
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]
+CMD ["run"]
