@@ -1,0 +1,180 @@
+version: 2
+
+models:
+  - name: stg_spotify_legacy__recently_played
+    description: Deduplicated view of legacy recently played tracks. Each row is a unique play event identified by played_at + track.id.
+    columns:
+      - name: played_at
+        description: Timestamp indicating when the track was played.
+        tests:
+          - not_null
+      - name: track
+        description: Nested RECORD containing full track metadata (id, name, album, artists, etc.).
+      - name: context
+        description: Nested RECORD containing playback context (playlist, album, or artist URI).
+      - name: _ingested_at
+        description: Timestamp when the record was ingested into the normalized table.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__saved_tracks
+    description: Deduplicated view of legacy saved tracks. Each row is a unique track in the user's Spotify library.
+    columns:
+      - name: added_at
+        description: Timestamp when the track was saved to the user's library.
+        tests:
+          - not_null
+      - name: track
+        description: Nested RECORD containing full track metadata.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__saved_albums
+    description: Deduplicated view of legacy saved albums. Each row is a unique album in the user's Spotify library.
+    columns:
+      - name: added_at
+        description: Timestamp when the album was saved to the user's library.
+        tests:
+          - not_null
+      - name: album
+        description: Nested RECORD containing full album metadata.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__top_artists
+    description: Deduplicated view of legacy top artists. Each row is a unique artist from the user's Spotify top artists.
+    columns:
+      - name: id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Artist display name.
+      - name: popularity
+        description: Artist popularity score (0-100).
+      - name: genres
+        description: Repeated STRING array of genres associated with the artist.
+      - name: images
+        description: Repeated RECORD array of images (url, width, height).
+      - name: followers
+        description: RECORD containing follower count and href.
+      - name: external_urls
+        description: RECORD containing the Spotify URL for the artist.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__top_tracks
+    description: Deduplicated view of legacy top tracks. Each row is a unique track from the user's Spotify top tracks.
+    columns:
+      - name: id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Track name.
+      - name: popularity
+        description: Track popularity score (0-100).
+      - name: duration_ms
+        description: Track duration in milliseconds.
+      - name: artists
+        description: Repeated RECORD array of artist records associated with the track.
+      - name: album
+        description: RECORD containing album metadata for the track.
+      - name: external_urls
+        description: RECORD containing the Spotify URL for the track.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__playlists
+    description: Deduplicated view of legacy playlists. Each row is a unique playlist from the user's Spotify library.
+    columns:
+      - name: id
+        description: Spotify unique playlist identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Playlist display name.
+      - name: description
+        description: Playlist description.
+      - name: owner
+        description: RECORD containing playlist owner information.
+      - name: snapshot_id
+        description: Version identifier for the playlist state.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__album_detail
+    description: Deduplicated view of legacy album details. Each row is a unique album with full metadata.
+    columns:
+      - name: id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Album name.
+      - name: artists
+        description: Repeated RECORD array of artist records associated with the album.
+      - name: release_date
+        description: Album release date string.
+      - name: label
+        description: Record label that released the album.
+      - name: popularity
+        description: Album popularity score (0-100).
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__album_tracks
+    description: Deduplicated view of legacy album tracks. Each row is a unique track within an album.
+    columns:
+      - name: id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+      - name: album_id
+        description: Spotify unique album identifier to which this track belongs.
+        tests:
+          - not_null
+      - name: name
+        description: Track name.
+      - name: duration_ms
+        description: Track duration in milliseconds.
+      - name: track_number
+        description: Track position within the album.
+      - name: artists
+        description: Repeated RECORD array of artist records associated with the track.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null
+
+  - name: stg_spotify_legacy__artist_detail
+    description: Deduplicated view of legacy artist details. Each row is a unique artist with full metadata.
+    columns:
+      - name: id
+        description: Spotify unique artist identifier.
+        tests:
+          - not_null
+      - name: name
+        description: Artist display name.
+      - name: popularity
+        description: Artist popularity score (0-100).
+      - name: genres
+        description: Repeated STRING array of genres associated with the artist.
+      - name: followers
+        description: RECORD containing follower count and href.
+      - name: _ingested_at
+        description: Timestamp of the ingestion batch.
+        tests:
+          - not_null

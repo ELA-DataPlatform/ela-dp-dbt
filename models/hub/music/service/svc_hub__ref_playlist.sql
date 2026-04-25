@@ -1,6 +1,7 @@
 {{
     config(
         materialized='incremental',
+        enabled=false,
         unique_key='playlist_id',
         merge_update_columns=[
             'playlist_name', 'description', 'collaborative', 'public',

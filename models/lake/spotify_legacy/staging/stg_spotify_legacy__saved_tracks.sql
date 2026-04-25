@@ -6,14 +6,18 @@
 }}
 
 WITH source AS (
-    SELECT * FROM {{ source('spotify', 'normalized_recently_played') }}
+    SELECT
+        added_at,
+        track,
+        _ingested_at
+    FROM {{ source('spotify_legacy', 'normalized_saved_tracks_legacy') }}
 ),
 
 deduplicated AS (
     SELECT
         *,
-        row_number() OVER (
-            PARTITION BY played_at, json_value(track, '$.id')
+        ROW_NUMBER() OVER (
+            PARTITION BY track.id
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source
