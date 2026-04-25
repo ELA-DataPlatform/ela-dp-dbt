@@ -13,7 +13,7 @@ deduplicated AS (
     SELECT
         *,
         row_number() OVER (
-            PARTITION BY played_at, JSON_VALUE(track, '$.id')
+            PARTITION BY played_at, json_value(track, '$.id')
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source

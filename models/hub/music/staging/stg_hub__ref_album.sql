@@ -60,10 +60,10 @@ from_legacy_recently_played AS (
     SELECT
         track.album.id AS album_id,
         track.album.name AS album_name,
-        track.album.album_type AS album_type,
-        track.album.total_tracks AS total_tracks,
+        track.album.album_type,
+        track.album.total_tracks,
         CAST(track.album.release_date AS STRING) AS release_date,
-        track.album.release_date_precision AS release_date_precision,
+        track.album.release_date_precision,
         track.album.uri AS album_uri,
         CAST(NULL AS STRING) AS genres,
         CAST(NULL AS STRING) AS label,

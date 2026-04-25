@@ -12,12 +12,12 @@
 }}
 
 SELECT
-    JSON_VALUE(track, '$.id') AS track_id,
     track,
     added_at,
-    _ingested_at
+    _ingested_at,
+    JSON_VALUE(track, '$.id') AS track_id
 FROM {{ ref('stg_spotify__saved_tracks') }}
 
 {% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
+    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
 {% endif %}
