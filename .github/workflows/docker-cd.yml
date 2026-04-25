@@ -1,0 +1,78 @@
+name: Docker CD (push to Artifact Registry)
+
+# Push de l'image sur Artifact Registry GCP :
+#   - develop -> projet ela-dp-dev, tag `dev` (+ dev-<sha>)
+#   - main    -> projet ela-dp-prd, tag `prd` (+ prd-<sha>)
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'snapshots/**'
+      - 'seeds/**'
+      - 'analyses/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - 'profiles.yml'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'entrypoint.sh'
+      - '.github/workflows/docker-cd.yml'
+  workflow_dispatch: {}
+
+env:
+  REGION: europe-docker.pkg.dev
+  AR_REPOSITORY: dbt
+  IMAGE_NAME: ela-dp-dbt
+
+jobs:
+  push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.ref == 'refs/heads/main' && 'prd' || 'dev' }}
+
+    permissions:
+      contents: read
+      id-token: write  # Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=prd" >> "$GITHUB_OUTPUT"
+            echo "project=ela-dp-prd" >> "$GITHUB_OUTPUT"
+            echo "base=${{ env.REGION }}/ela-dp-prd/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=dev" >> "$GITHUB_OUTPUT"
+            echo "project=ela-dp-dev" >> "$GITHUB_OUTPUT"
+            echo "base=${{ env.REGION }}/ela-dp-dev/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }} --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}
+            ${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

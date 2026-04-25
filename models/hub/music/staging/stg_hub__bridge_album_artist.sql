@@ -5,14 +5,54 @@
     )
 }}
 
-WITH source AS (
+WITH from_album_detail AS (
+    SELECT
+        album_id,
+        JSON_VALUE(artist, '$.id') AS artist_id,
+        artist_position,
+        _ingested_at
+    FROM {{ ref('svc_spotify__album_detail') }},
+        UNNEST(JSON_QUERY_ARRAY(artists)) AS artist WITH OFFSET AS artist_position
+),
+
+from_recently_played AS (
+    SELECT
+        JSON_VALUE(track, '$.album.id') AS album_id,
+        JSON_VALUE(artist, '$.id') AS artist_id,
+        artist_position,
+        _ingested_at
+    FROM {{ ref('svc_spotify__recently_played') }},
+        UNNEST(JSON_QUERY_ARRAY(track, '$.album.artists')) AS artist WITH OFFSET AS artist_position
+),
+
+from_legacy_album_detail AS (
+    SELECT
+        alb.id AS album_id,
+        artist.id AS artist_id,
+        artist_position,
+        alb._ingested_at
+    FROM {{ ref('svc_spotify_legacy__album_detail') }} AS alb,
+        UNNEST(alb.artists) AS artist WITH OFFSET AS artist_position
+),
+
+from_legacy_recently_played AS (
     SELECT
         track.album.id AS album_id,
         artist.id AS artist_id,
         artist_position,
         _ingested_at
-    FROM {{ ref('svc_spotify__recently_played') }},
+    FROM {{ ref('svc_spotify_legacy__recently_played') }},
         UNNEST(track.album.artists) AS artist WITH OFFSET AS artist_position
+),
+
+combined AS (
+    SELECT * FROM from_album_detail
+    UNION ALL
+    SELECT * FROM from_recently_played
+    UNION ALL
+    SELECT * FROM from_legacy_album_detail
+    UNION ALL
+    SELECT * FROM from_legacy_recently_played
 ),
 
 deduplicated AS (
@@ -22,7 +62,7 @@ deduplicated AS (
             PARTITION BY album_id, artist_id
             ORDER BY _ingested_at DESC
         ) AS _row_number
-    FROM source
+    FROM combined
 )
 
 SELECT * EXCEPT (_row_number)

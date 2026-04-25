@@ -1,0 +1,46 @@
+name: Docker CI (build)
+
+# Build-only validation: s'assure que l'image Docker compile sur chaque PR
+# visant develop ou main. Aucun push vers Artifact Registry.
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'snapshots/**'
+      - 'seeds/**'
+      - 'analyses/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - 'profiles.yml'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'entrypoint.sh'
+      - '.github/workflows/docker-ci.yml'
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ela-dp-dbt:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (dbt --version + dbt parse)
+        run: |
+          docker run --rm --entrypoint dbt ela-dp-dbt:ci --version
+          docker run --rm ela-dp-dbt:ci parse --target dev

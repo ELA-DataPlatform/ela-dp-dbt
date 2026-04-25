@@ -18,12 +18,12 @@
 
 SELECT
     played_at,
-    track.id AS track_id,
     track,
     context,
-    _ingested_at
+    _ingested_at,
+    JSON_VALUE(track, '$.id') AS track_id
 FROM {{ ref('stg_spotify__recently_played') }}
 
 {% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
+    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
 {% endif %}
