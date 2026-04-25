@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,44 +5,48 @@
     )
 }}
 
-with source as (
-    select
-        * except(respirationValuesArray, respirationAveragesValuesArray,
-                 respirationValueDescriptorsDTOList, respirationAveragesValueDescriptorDTOList),
+WITH source AS (
+    SELECT
+        * EXCEPT (
+            respirationvaluesarray, respirationaveragesvaluesarray,
+            respirationvaluedescriptorsdtolist, respirationaveragesvaluedescriptordtolist
+        ),
 
         -- Parse respirationValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.timestamp') as int64) as timestamp,
-                cast(json_value(item, '$.value') as float64) as value
-            )
-            from unnest(json_query_array(respirationValuesArray)) as item
-        ) as respiration_values,
+            SELECT
+                struct(
+                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$.value') AS float64) AS `value`
+                )
+            FROM unnest(json_query_array(respirationvaluesarray)) AS item
+        ) AS respiration_values,
 
         -- Parse respirationAveragesValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.timestamp') as int64) as timestamp,
-                cast(json_value(item, '$.average') as float64) as average,
-                cast(json_value(item, '$.high') as float64) as high,
-                cast(json_value(item, '$.low') as float64) as low
-            )
-            from unnest(json_query_array(respirationAveragesValuesArray)) as item
-        ) as respiration_averages
+            SELECT
+                struct(
+                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$.average') AS float64) AS average,
+                    cast(json_value(item, '$.high') AS float64) AS high,
+                    cast(json_value(item, '$.low') AS float64) AS low
+                )
+            FROM unnest(json_query_array(respirationaveragesvaluesarray)) AS item
+        ) AS respiration_averages
 
-    from {{ source('garmin', 'normalized_respiration') }}
+    FROM {{ source('garmin', 'normalized_respiration') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by userProfilePK, date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY userprofilepk, date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,27 +5,28 @@
     )
 }}
 
-with source as (
-    select
-        * except(allMetrics),
+WITH source AS (
+    SELECT
+        * EXCEPT (allmetrics),
 
         -- Parse allMetrics (JSON object) → extract resting heart rate value
-        cast(json_value(allMetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].value') as float64) as resting_heart_rate,
-        json_value(allMetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].calendarDate') as rhr_calendar_date
+        cast(json_value(allmetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].value') AS float64)
+            AS resting_heart_rate,
+        json_value(allmetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].calendarDate') AS rhr_calendar_date
 
-    from {{ source('garmin', 'normalized_rhr_daily') }}
+    FROM {{ source('garmin', 'normalized_rhr_daily') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by userProfileId, date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY userprofileid, date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

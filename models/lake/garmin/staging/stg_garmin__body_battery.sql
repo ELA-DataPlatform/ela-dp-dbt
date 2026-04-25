@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,60 +5,64 @@
     )
 }}
 
-with source as (
-    select
-        * except(bodyBatteryValuesArray, bodyBatteryValueDescriptorDTOList,
-                 bodyBatteryActivityEvent,
-                 bodyBatteryDynamicFeedbackEvent, endOfDayBodyBatteryDynamicFeedbackEvent),
+WITH source AS (
+    SELECT
+        * EXCEPT (
+            bodybatteryvaluesarray, bodybatteryvaluedescriptordtolist,
+            bodybatteryactivityevent,
+            bodybatterydynamicfeedbackevent, endofdaybodybatterydynamicfeedbackevent
+        ),
 
         -- Parse bodyBatteryValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.timestamp') as int64) as timestamp,
-                cast(json_value(item, '$.value') as int64) as value
-            )
-            from unnest(json_query_array(bodyBatteryValuesArray)) as item
-        ) as body_battery_values,
+            SELECT
+                struct(
+                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$.value') AS int64) AS `value`
+                )
+            FROM unnest(json_query_array(bodybatteryvaluesarray)) AS item
+        ) AS body_battery_values,
 
         -- Parse bodyBatteryActivityEvent → ARRAY<STRUCT>
         array(
-            select struct(
-                json_value(item, '$.eventType') as event_type,
-                json_value(item, '$.eventStartTimeGmt') as event_start_time_gmt,
-                cast(json_value(item, '$.timezoneOffset') as int64) as timezone_offset,
-                cast(json_value(item, '$.durationInMilliseconds') as int64) as duration_in_milliseconds,
-                cast(json_value(item, '$.bodyBatteryImpact') as int64) as body_battery_impact,
-                json_value(item, '$.feedbackType') as feedback_type,
-                json_value(item, '$.shortFeedback') as short_feedback
-            )
-            from unnest(json_query_array(bodyBatteryActivityEvent)) as item
-        ) as body_battery_activity_events,
+            SELECT
+                struct(
+                    json_value(item, '$.eventType') AS event_type,
+                    json_value(item, '$.eventStartTimeGmt') AS event_start_time_gmt,
+                    cast(json_value(item, '$.timezoneOffset') AS int64) AS timezone_offset,
+                    cast(json_value(item, '$.durationInMilliseconds') AS int64) AS duration_in_milliseconds,
+                    cast(json_value(item, '$.bodyBatteryImpact') AS int64) AS body_battery_impact,
+                    json_value(item, '$.feedbackType') AS feedback_type,
+                    json_value(item, '$.shortFeedback') AS short_feedback
+                )
+            FROM unnest(json_query_array(bodybatteryactivityevent)) AS item
+        ) AS body_battery_activity_events,
 
         -- Parse bodyBatteryDynamicFeedbackEvent (JSON object)
-        json_value(bodyBatteryDynamicFeedbackEvent, '$.eventTimestampGmt') as dynamic_feedback_timestamp_gmt,
-        json_value(bodyBatteryDynamicFeedbackEvent, '$.bodyBatteryLevel') as dynamic_feedback_battery_level,
-        json_value(bodyBatteryDynamicFeedbackEvent, '$.feedbackShortType') as dynamic_feedback_short_type,
-        json_value(bodyBatteryDynamicFeedbackEvent, '$.feedbackLongType') as dynamic_feedback_long_type,
+        json_value(bodybatterydynamicfeedbackevent, '$.eventTimestampGmt') AS dynamic_feedback_timestamp_gmt,
+        json_value(bodybatterydynamicfeedbackevent, '$.bodyBatteryLevel') AS dynamic_feedback_battery_level,
+        json_value(bodybatterydynamicfeedbackevent, '$.feedbackShortType') AS dynamic_feedback_short_type,
+        json_value(bodybatterydynamicfeedbackevent, '$.feedbackLongType') AS dynamic_feedback_long_type,
 
         -- Parse endOfDayBodyBatteryDynamicFeedbackEvent (JSON object)
-        json_value(endOfDayBodyBatteryDynamicFeedbackEvent, '$.eventTimestampGmt') as eod_feedback_timestamp_gmt,
-        json_value(endOfDayBodyBatteryDynamicFeedbackEvent, '$.bodyBatteryLevel') as eod_feedback_battery_level,
-        json_value(endOfDayBodyBatteryDynamicFeedbackEvent, '$.feedbackShortType') as eod_feedback_short_type,
-        json_value(endOfDayBodyBatteryDynamicFeedbackEvent, '$.feedbackLongType') as eod_feedback_long_type
+        json_value(endofdaybodybatterydynamicfeedbackevent, '$.eventTimestampGmt') AS eod_feedback_timestamp_gmt,
+        json_value(endofdaybodybatterydynamicfeedbackevent, '$.bodyBatteryLevel') AS eod_feedback_battery_level,
+        json_value(endofdaybodybatterydynamicfeedbackevent, '$.feedbackShortType') AS eod_feedback_short_type,
+        json_value(endofdaybodybatterydynamicfeedbackevent, '$.feedbackLongType') AS eod_feedback_long_type
 
-    from {{ source('garmin', 'normalized_body_battery') }}
+    FROM {{ source('garmin', 'normalized_body_battery') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

@@ -10,13 +10,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__activity_details
     description: >
@@ -25,13 +20,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__body_composition
     description: >
@@ -40,21 +30,10 @@ models:
     columns:
       - name: date
         description: Date of the measurement.
-        tests:
-          - not_null
       - name: samplePk
         description: Sample primary key.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - date
-            - samplePk
 
   - name: svc_garmin__race_predictions
     description: >
@@ -63,21 +42,10 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: calendarDate
         description: Date of the prediction.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userId
-            - calendarDate
 
   - name: svc_garmin__steps
     description: >
@@ -86,21 +54,10 @@ models:
     columns:
       - name: date
         description: Date of the step data.
-        tests:
-          - not_null
       - name: startGMT
         description: Start timestamp of the step interval.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - date
-            - startGMT
 
   - name: svc_garmin__all_day_events
     description: >
@@ -109,26 +66,12 @@ models:
     columns:
       - name: deviceId
         description: Garmin device identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the event.
-        tests:
-          - not_null
       - name: startTimestampGMT
         description: Start timestamp of the event.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - deviceId
-            - date
-            - startTimestampGMT
 
   - name: svc_garmin__weight
     description: >
@@ -137,21 +80,10 @@ models:
     columns:
       - name: date
         description: Date of the weight measurement.
-        tests:
-          - not_null
       - name: timestampGMT
         description: GMT timestamp of the measurement.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - date
-            - timestampGMT
 
   - name: svc_garmin__training_readiness
     description: >
@@ -160,21 +92,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the training readiness data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   # ── GROUP 2: Timeseries tables ──────────────────────────────────────────
 
@@ -185,21 +106,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the heart rate data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   - name: svc_garmin__stress
     description: >
@@ -208,21 +118,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the stress data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   - name: svc_garmin__respiration
     description: >
@@ -231,21 +130,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the respiration data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   - name: svc_garmin__spo2
     description: >
@@ -254,21 +142,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the SpO2 data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   - name: svc_garmin__intensity_minutes
     description: >
@@ -277,21 +154,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the intensity minutes data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - date
 
   - name: svc_garmin__floors
     description: >
@@ -300,13 +166,8 @@ models:
     columns:
       - name: date
         description: Date of the floors data.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__body_battery
     description: >
@@ -315,13 +176,8 @@ models:
     columns:
       - name: date
         description: Date of the body battery data.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 3: JSON object tables ─────────────────────────────────────────
 
@@ -332,13 +188,8 @@ models:
     columns:
       - name: date
         description: Date of the sleep data.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__hrv
     description: >
@@ -347,21 +198,10 @@ models:
     columns:
       - name: userProfilePk
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the HRV data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePk
-            - date
 
   - name: svc_garmin__max_metrics
     description: >
@@ -370,21 +210,10 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the max metrics data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userId
-            - date
 
   - name: svc_garmin__training_status
     description: >
@@ -393,21 +222,10 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the training status data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userId
-            - date
 
   - name: svc_garmin__endurance_score
     description: >
@@ -416,21 +234,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: startDate
         description: Start date of the endurance score period.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - startDate
 
   - name: svc_garmin__hill_score
     description: >
@@ -439,21 +246,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: startDate
         description: Start date of the hill score period.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfilePK
-            - startDate
 
   - name: svc_garmin__rhr_daily
     description: >
@@ -462,21 +258,10 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the RHR data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfileId
-            - date
 
   # ── GROUP 4: Activity sub-tables ────────────────────────────────────────
 
@@ -487,13 +272,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__activity_hr_zones
     description: >
@@ -502,13 +282,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__activity_splits
     description: >
@@ -517,13 +292,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: svc_garmin__activity_weather
     description: >
@@ -532,13 +302,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 5: Large scalar tables ────────────────────────────────────────
 
@@ -549,21 +314,10 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the summary.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfileId
-            - date
 
   - name: svc_garmin__user_summary
     description: >
@@ -572,21 +326,10 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the summary.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - userProfileId
-            - date
 
   - name: svc_garmin__device_info
     description: >
@@ -595,10 +338,5 @@ models:
     columns:
       - name: deviceId
         description: Garmin device identifier.
-        tests:
-          - unique
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null

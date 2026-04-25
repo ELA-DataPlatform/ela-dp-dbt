@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,20 +5,20 @@
     )
 }}
 
-with source as (
-    select * from {{ source('garmin', 'normalized_race_predictions') }}
+WITH source AS (
+    SELECT * FROM {{ source('garmin', 'normalized_race_predictions') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by userId, calendarDate
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY userid, calendardate
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

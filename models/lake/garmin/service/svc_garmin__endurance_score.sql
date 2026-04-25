@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='incremental',
@@ -12,9 +11,9 @@
     )
 }}
 
-select *
-from {{ ref('stg_garmin__endurance_score') }}
+SELECT *
+FROM {{ ref('stg_garmin__endurance_score') }}
 
 {% if is_incremental() %}
-    where _ingested_at > (select max(_ingested_at) from {{ this }})
+    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
 {% endif %}

@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,43 +5,44 @@
     )
 }}
 
-with source as (
-    select
-        * except(splitSummaries, summarizedExerciseSets, summarizedDiveInfo),
+WITH source AS (
+    SELECT
+        * EXCEPT (splitsummaries, summarizedexercisesets, summarizeddiveinfo),
 
         -- Parse splitSummaries → ARRAY<STRUCT>
         array(
-            select struct(
-                json_value(item, '$.splitType') as split_type,
-                cast(json_value(item, '$.noOfSplits') as int64) as no_of_splits,
-                cast(json_value(item, '$.distance') as float64) as distance,
-                cast(json_value(item, '$.duration') as float64) as duration,
-                cast(json_value(item, '$.totalAscent') as float64) as total_ascent,
-                cast(json_value(item, '$.elevationLoss') as float64) as elevation_loss,
-                cast(json_value(item, '$.averageSpeed') as float64) as average_speed,
-                cast(json_value(item, '$.maxSpeed') as float64) as max_speed,
-                cast(json_value(item, '$.maxElevationGain') as float64) as max_elevation_gain,
-                cast(json_value(item, '$.averageElevationGain') as float64) as average_elevation_gain,
-                cast(json_value(item, '$.maxDistance') as float64) as max_distance,
-                cast(json_value(item, '$.numClimbSends') as int64) as num_climb_sends,
-                cast(json_value(item, '$.numFalls') as int64) as num_falls
-            )
-            from unnest(json_query_array(splitSummaries)) as item
-        ) as split_summaries
+            SELECT
+                struct(
+                    json_value(item, '$.splitType') AS split_type,
+                    cast(json_value(item, '$.noOfSplits') AS int64) AS no_of_splits,
+                    cast(json_value(item, '$.distance') AS float64) AS distance,
+                    cast(json_value(item, '$.duration') AS float64) AS duration,
+                    cast(json_value(item, '$.totalAscent') AS float64) AS total_ascent,
+                    cast(json_value(item, '$.elevationLoss') AS float64) AS elevation_loss,
+                    cast(json_value(item, '$.averageSpeed') AS float64) AS average_speed,
+                    cast(json_value(item, '$.maxSpeed') AS float64) AS max_speed,
+                    cast(json_value(item, '$.maxElevationGain') AS float64) AS max_elevation_gain,
+                    cast(json_value(item, '$.averageElevationGain') AS float64) AS average_elevation_gain,
+                    cast(json_value(item, '$.maxDistance') AS float64) AS max_distance,
+                    cast(json_value(item, '$.numClimbSends') AS int64) AS num_climb_sends,
+                    cast(json_value(item, '$.numFalls') AS int64) AS num_falls
+                )
+            FROM unnest(json_query_array(splitsummaries)) AS item
+        ) AS split_summaries
 
-    from {{ source('garmin', 'normalized_activities') }}
+    FROM {{ source('garmin', 'normalized_activities') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by activityId
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY activityid
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

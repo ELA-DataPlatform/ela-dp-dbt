@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,38 +5,38 @@
     )
 }}
 
-with source as (
-    select
-        * except(weather_data),
+WITH source AS (
+    SELECT
+        * EXCEPT (weather_data),
 
         -- Parse weather_data (JSON object) → weather fields
-        json_value(weather_data, '$.issueDate') as weather_issue_date,
-        cast(json_value(weather_data, '$.temp') as float64) as weather_temp,
-        cast(json_value(weather_data, '$.apparentTemp') as float64) as weather_apparent_temp,
-        cast(json_value(weather_data, '$.dewPoint') as float64) as weather_dew_point,
-        cast(json_value(weather_data, '$.relativeHumidity') as float64) as weather_relative_humidity,
-        cast(json_value(weather_data, '$.windDirection') as float64) as weather_wind_direction,
-        json_value(weather_data, '$.windDirectionCompassPoint') as weather_wind_direction_compass,
-        cast(json_value(weather_data, '$.windSpeed') as float64) as weather_wind_speed,
-        cast(json_value(weather_data, '$.latitude') as float64) as weather_latitude,
-        cast(json_value(weather_data, '$.longitude') as float64) as weather_longitude,
-        json_value(weather_data, '$.weatherStationDTO.id') as weather_station_id,
-        json_value(weather_data, '$.weatherStationDTO.name') as weather_station_name,
-        json_value(weather_data, '$.weatherTypeDTO.desc') as weather_type
+        cast(json_value(weather_data, '$.temp') AS float64) AS weather_temp,
+        cast(json_value(weather_data, '$.apparentTemp') AS float64) AS weather_apparent_temp,
+        cast(json_value(weather_data, '$.dewPoint') AS float64) AS weather_dew_point,
+        cast(json_value(weather_data, '$.relativeHumidity') AS float64) AS weather_relative_humidity,
+        cast(json_value(weather_data, '$.windDirection') AS float64) AS weather_wind_direction,
+        cast(json_value(weather_data, '$.windSpeed') AS float64) AS weather_wind_speed,
+        cast(json_value(weather_data, '$.latitude') AS float64) AS weather_latitude,
+        cast(json_value(weather_data, '$.longitude') AS float64) AS weather_longitude,
+        json_value(weather_data, '$.issueDate') AS weather_issue_date,
+        json_value(weather_data, '$.windDirectionCompassPoint') AS weather_wind_direction_compass,
+        json_value(weather_data, '$.weatherStationDTO.id') AS weather_station_id,
+        json_value(weather_data, '$.weatherStationDTO.name') AS weather_station_name,
+        json_value(weather_data, '$.weatherTypeDTO.desc') AS weather_type
 
-    from {{ source('garmin', 'normalized_activity_weather') }}
+    FROM {{ source('garmin', 'normalized_activity_weather') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by activityId
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY activityid
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

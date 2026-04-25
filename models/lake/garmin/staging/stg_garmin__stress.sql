@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,44 +5,48 @@
     )
 }}
 
-with source as (
-    select
-        * except(stressValuesArray, stressValueDescriptorsDTOList,
-                 bodyBatteryValuesArray, bodyBatteryValueDescriptorsDTOList),
+WITH source AS (
+    SELECT
+        * EXCEPT (
+            stressvaluesarray, stressvaluedescriptorsdtolist,
+            bodybatteryvaluesarray, bodybatteryvaluedescriptorsdtolist
+        ),
 
         -- Parse stressValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.timestamp') as int64) as timestamp,
-                cast(json_value(item, '$.type') as int64) as stress_level
-            )
-            from unnest(json_query_array(stressValuesArray)) as item
-        ) as stress_values,
+            SELECT
+                struct(
+                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$.type') AS int64) AS stress_level
+                )
+            FROM unnest(json_query_array(stressvaluesarray)) AS item
+        ) AS stress_values,
 
         -- Parse bodyBatteryValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.timestamp') as int64) as timestamp,
-                json_value(item, '$.type') as type,
-                cast(json_value(item, '$.value') as int64) as value,
-                cast(json_value(item, '$.score') as float64) as score
-            )
-            from unnest(json_query_array(bodyBatteryValuesArray)) as item
-        ) as body_battery_values
+            SELECT
+                struct(
+                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
+                    json_value(item, '$.type') AS `type`,
+                    cast(json_value(item, '$.value') AS int64) AS `value`,
+                    cast(json_value(item, '$.score') AS float64) AS score
+                )
+            FROM unnest(json_query_array(bodybatteryvaluesarray)) AS item
+        ) AS body_battery_values
 
-    from {{ source('garmin', 'normalized_stress') }}
+    FROM {{ source('garmin', 'normalized_stress') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by userProfilePK, date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY userprofilepk, date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,33 +5,34 @@
     )
 }}
 
-with source as (
-    select
-        * except(hr_zones_data),
+WITH source AS (
+    SELECT
+        * EXCEPT (hr_zones_data),
 
         -- Parse hr_zones_data → ARRAY<STRUCT>
         array(
-            select struct(
-                cast(json_value(item, '$.zoneNumber') as int64) as zone_number,
-                cast(json_value(item, '$.secsInZone') as float64) as secs_in_zone,
-                cast(json_value(item, '$.zoneLowBoundary') as int64) as zone_low_boundary
-            )
-            from unnest(json_query_array(hr_zones_data)) as item
-        ) as hr_zones
+            SELECT
+                struct(
+                    cast(json_value(item, '$.zoneNumber') AS int64) AS zone_number,
+                    cast(json_value(item, '$.secsInZone') AS float64) AS secs_in_zone,
+                    cast(json_value(item, '$.zoneLowBoundary') AS int64) AS zone_low_boundary
+                )
+            FROM unnest(json_query_array(hr_zones_data)) AS item
+        ) AS hr_zones
 
-    from {{ source('garmin', 'normalized_activity_hr_zones') }}
+    FROM {{ source('garmin', 'normalized_activity_hr_zones') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by activityId
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY activityid
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

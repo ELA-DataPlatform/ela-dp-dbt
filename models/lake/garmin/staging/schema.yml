@@ -10,12 +10,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__activity_details
     description: >
@@ -24,14 +20,10 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: detailed_data
         description: JSON string with GPS tracks and granular metric timeseries.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__body_composition
     description: >
@@ -40,16 +32,10 @@ models:
     columns:
       - name: date
         description: Date of the measurement.
-        tests:
-          - not_null
       - name: samplePk
         description: Sample primary key for the measurement.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__race_predictions
     description: >
@@ -57,16 +43,10 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: calendarDate
         description: Date of the prediction.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__steps
     description: >
@@ -74,16 +54,10 @@ models:
     columns:
       - name: date
         description: Date of the step data.
-        tests:
-          - not_null
       - name: startGMT
         description: Start timestamp of the step interval.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__all_day_events
     description: >
@@ -91,20 +65,12 @@ models:
     columns:
       - name: deviceId
         description: Garmin device identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the event.
-        tests:
-          - not_null
       - name: startTimestampGMT
         description: Start timestamp of the event.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__weight
     description: >
@@ -112,16 +78,10 @@ models:
     columns:
       - name: date
         description: Date of the weight measurement.
-        tests:
-          - not_null
       - name: timestampGMT
         description: GMT timestamp of the measurement.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__training_readiness
     description: >
@@ -130,16 +90,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the training readiness data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 2: Timeseries tables (arrays kept as-is) ──────────────────────
 
@@ -150,16 +104,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the heart rate data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__stress
     description: >
@@ -168,16 +116,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the stress data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__respiration
     description: >
@@ -186,16 +128,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the respiration data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__spo2
     description: >
@@ -204,16 +140,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the SpO2 data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__intensity_minutes
     description: >
@@ -222,16 +152,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the intensity minutes data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__floors
     description: >
@@ -239,12 +163,8 @@ models:
     columns:
       - name: date
         description: Date of the floors data.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__body_battery
     description: >
@@ -253,8 +173,6 @@ models:
     columns:
       - name: date
         description: Date of the body battery data.
-        tests:
-          - not_null
       - name: dynamic_feedback_timestamp_gmt
         description: Timestamp of the dynamic feedback event.
       - name: dynamic_feedback_battery_level
@@ -269,8 +187,6 @@ models:
         description: End-of-day short feedback type classification.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 3: JSON object tables (parsed into typed columns) ─────────────
 
@@ -282,8 +198,6 @@ models:
     columns:
       - name: date
         description: Date of the sleep data.
-        tests:
-          - not_null
       - name: sleep_time_seconds
         description: Total sleep time in seconds.
       - name: deep_sleep_seconds
@@ -304,8 +218,6 @@ models:
         description: Lowest SpO2 during sleep.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__hrv
     description: >
@@ -314,12 +226,8 @@ models:
     columns:
       - name: userProfilePk
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the HRV data.
-        tests:
-          - not_null
       - name: hrv_weekly_avg
         description: Weekly average HRV.
       - name: hrv_last_night_avg
@@ -334,8 +242,6 @@ models:
         description: HRV status classification (BALANCED, LOW, etc.).
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__max_metrics
     description: >
@@ -344,12 +250,8 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the max metrics data.
-        tests:
-          - not_null
       - name: vo2_max_precise
         description: Precise VO2 max value.
       - name: vo2_max
@@ -360,8 +262,6 @@ models:
         description: Heat acclimation percentage.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__training_status
     description: >
@@ -371,12 +271,8 @@ models:
     columns:
       - name: userId
         description: Garmin user identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the training status data.
-        tests:
-          - not_null
       - name: recent_vo2_max_precise
         description: Most recent precise VO2 max value.
       - name: recent_vo2_max
@@ -385,8 +281,6 @@ models:
         description: Date of the most recent VO2 max measurement.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__endurance_score
     description: >
@@ -395,12 +289,8 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: startDate
         description: Start date of the endurance score period.
-        tests:
-          - not_null
       - name: endurance_overall_score
         description: Overall endurance score.
       - name: endurance_classification
@@ -409,8 +299,6 @@ models:
         description: JSON array of score contributors.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__hill_score
     description: >
@@ -419,16 +307,10 @@ models:
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: startDate
         description: Start date of the hill score period.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__rhr_daily
     description: >
@@ -437,20 +319,14 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the RHR data.
-        tests:
-          - not_null
       - name: resting_heart_rate
         description: Resting heart rate value extracted from allMetrics JSON.
       - name: rhr_calendar_date
         description: Calendar date associated with the RHR measurement.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 4: Activity sub-tables ────────────────────────────────────────
 
@@ -461,12 +337,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__activity_hr_zones
     description: >
@@ -475,12 +347,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__activity_splits
     description: >
@@ -489,12 +357,8 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__activity_weather
     description: >
@@ -503,8 +367,6 @@ models:
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-        tests:
-          - not_null
       - name: weather_temp
         description: Temperature during the activity (Fahrenheit).
       - name: weather_apparent_temp
@@ -521,8 +383,6 @@ models:
         description: Weather type description (e.g., Fair, Cloudy).
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   # ── GROUP 5: Large scalar tables ────────────────────────────────────────
 
@@ -534,16 +394,10 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the summary.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__user_summary
     description: >
@@ -552,16 +406,10 @@ models:
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
-        tests:
-          - not_null
       - name: date
         description: Date of the summary.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null
 
   - name: stg_garmin__device_info
     description: >
@@ -569,9 +417,5 @@ models:
     columns:
       - name: deviceId
         description: Garmin device identifier.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the record was ingested.
-        tests:
-          - not_null

@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,40 +5,42 @@
     )
 }}
 
-with source as (
-    select
-        * except(generic, heatAltitudeAcclimation),
+WITH source AS (
+    SELECT
+        * EXCEPT (generic, heataltitudeacclimation),
 
         -- Parse generic (JSON object) → VO2 max fields
-        json_value(generic, '$.calendarDate') as vo2_max_calendar_date,
-        cast(json_value(generic, '$.vo2MaxPreciseValue') as float64) as vo2_max_precise,
-        cast(json_value(generic, '$.vo2MaxValue') as float64) as vo2_max,
-        cast(json_value(generic, '$.maxMetCategory') as int64) as max_met_category,
+        cast(json_value(generic, '$.vo2MaxPreciseValue') AS float64) AS vo2_max_precise,
+        cast(json_value(generic, '$.vo2MaxValue') AS float64) AS vo2_max,
+        cast(json_value(generic, '$.maxMetCategory') AS int64) AS max_met_category,
+        cast(json_value(heataltitudeacclimation, '$.altitudeAcclimation') AS float64) AS altitude_acclimation,
 
         -- Parse heatAltitudeAcclimation (JSON object) → acclimation fields
-        json_value(heatAltitudeAcclimation, '$.calendarDate') as acclimation_calendar_date,
-        json_value(heatAltitudeAcclimation, '$.altitudeAcclimationDate') as altitude_acclimation_date,
-        json_value(heatAltitudeAcclimation, '$.heatAcclimationDate') as heat_acclimation_date,
-        cast(json_value(heatAltitudeAcclimation, '$.altitudeAcclimation') as float64) as altitude_acclimation,
-        cast(json_value(heatAltitudeAcclimation, '$.previousAltitudeAcclimation') as float64) as previous_altitude_acclimation,
-        cast(json_value(heatAltitudeAcclimation, '$.heatAcclimationPercentage') as float64) as heat_acclimation_pct,
-        cast(json_value(heatAltitudeAcclimation, '$.previousHeatAcclimationPercentage') as float64) as previous_heat_acclimation_pct,
-        cast(json_value(heatAltitudeAcclimation, '$.currentAltitude') as float64) as current_altitude,
-        cast(json_value(heatAltitudeAcclimation, '$.acclimationPercentage') as float64) as acclimation_pct
+        cast(json_value(heataltitudeacclimation, '$.previousAltitudeAcclimation') AS float64)
+            AS previous_altitude_acclimation,
+        cast(json_value(heataltitudeacclimation, '$.heatAcclimationPercentage') AS float64) AS heat_acclimation_pct,
+        cast(json_value(heataltitudeacclimation, '$.previousHeatAcclimationPercentage') AS float64)
+            AS previous_heat_acclimation_pct,
+        cast(json_value(heataltitudeacclimation, '$.currentAltitude') AS float64) AS current_altitude,
+        cast(json_value(heataltitudeacclimation, '$.acclimationPercentage') AS float64) AS acclimation_pct,
+        json_value(generic, '$.calendarDate') AS vo2_max_calendar_date,
+        json_value(heataltitudeacclimation, '$.calendarDate') AS acclimation_calendar_date,
+        json_value(heataltitudeacclimation, '$.altitudeAcclimationDate') AS altitude_acclimation_date,
+        json_value(heataltitudeacclimation, '$.heatAcclimationDate') AS heat_acclimation_date
 
-    from {{ source('garmin', 'normalized_max_metrics') }}
+    FROM {{ source('garmin', 'normalized_max_metrics') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by userId, date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY userid, date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1

@@ -1,4 +1,3 @@
-
 {{
     config(
         materialized='view',
@@ -6,34 +5,35 @@
     )
 }}
 
-with source as (
-    select
-        * except(floorValuesArray, floorsValueDescriptorDTOList),
+WITH source AS (
+    SELECT
+        * EXCEPT (floorvaluesarray, floorsvaluedescriptordtolist),
 
         -- Parse floorValuesArray → ARRAY<STRUCT>
         array(
-            select struct(
-                json_value(item, '$.start_time') as start_time,
-                json_value(item, '$.end_time') as end_time,
-                cast(json_value(item, '$.ascended') as int64) as ascended,
-                cast(json_value(item, '$.descended') as int64) as descended
-            )
-            from unnest(json_query_array(floorValuesArray)) as item
-        ) as floor_values
+            SELECT
+                struct(
+                    json_value(item, '$.start_time') AS start_time,
+                    json_value(item, '$.end_time') AS end_time,
+                    cast(json_value(item, '$.ascended') AS int64) AS ascended,
+                    cast(json_value(item, '$.descended') AS int64) AS descended
+                )
+            FROM unnest(json_query_array(floorvaluesarray)) AS item
+        ) AS floor_values
 
-    from {{ source('garmin', 'normalized_floors') }}
+    FROM {{ source('garmin', 'normalized_floors') }}
 ),
 
-deduplicated as (
-    select
+deduplicated AS (
+    SELECT
         *,
-        row_number() over (
-            partition by date
-            order by _ingested_at desc
-        ) as _row_number
-    from source
+        row_number() OVER (
+            PARTITION BY date
+            ORDER BY _ingested_at DESC
+        ) AS _row_number
+    FROM source
 )
 
-select * except(_row_number)
-from deduplicated
-where _row_number = 1
+SELECT * EXCEPT (_row_number)
+FROM deduplicated
+WHERE _row_number = 1
