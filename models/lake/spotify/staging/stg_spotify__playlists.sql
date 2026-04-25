@@ -1,7 +1,8 @@
 {{
     config(
         materialized='view',
-        tags=['spotify']
+        tags=['spotify'],
+        enabled=false
     )
 }}
 

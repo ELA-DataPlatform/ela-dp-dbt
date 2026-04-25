@@ -1,9 +1,9 @@
 {{
     config(
         materialized='incremental',
-        unique_key='track_id',
+        unique_key='album_id',
         merge_update_columns=[
-            'track',
+            'album',
             'added_at',
             '_ingested_at'
         ],
@@ -12,12 +12,12 @@
 }}
 
 SELECT
-    JSON_VALUE(track, '$.id') AS track_id,
-    track,
+    album.id AS album_id,
+    album,
     added_at,
     _ingested_at
-FROM {{ ref('stg_spotify__saved_tracks') }}
+FROM {{ ref('stg_spotify_legacy__saved_albums') }}
 
 {% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
+    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
 {% endif %}

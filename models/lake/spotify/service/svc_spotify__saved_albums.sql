@@ -12,7 +12,7 @@
 }}
 
 SELECT
-    album.id AS album_id,
+    JSON_VALUE(album, '$.id') AS album_id,
     album,
     added_at,
     _ingested_at

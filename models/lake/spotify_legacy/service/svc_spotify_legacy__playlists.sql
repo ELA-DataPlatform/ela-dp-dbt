@@ -1,23 +1,22 @@
 {{
     config(
         materialized='incremental',
-        enabled=false,
-        unique_key='playlist_id',
+        unique_key='id',
         merge_update_columns=[
-            'name',
-            'description',
             'collaborative',
-            'public',
             'snapshot_id',
+            'public',
             'images',
             'owner',
             'type',
             'primary_color',
             'external_urls',
             'tracks',
-            'items',
             'href',
             'uri',
+            'items',
+            'name',
+            'description',
             '_ingested_at'
         ],
         tags=['spotify']
@@ -25,24 +24,24 @@
 }}
 
 SELECT
-    id AS playlist_id,
-    name,
-    description,
+    id,
     collaborative,
-    public,
     snapshot_id,
+    public,
     images,
     owner,
     type,
     primary_color,
     external_urls,
     tracks,
-    items,
     href,
     uri,
+    items,
+    name,
+    description,
     _ingested_at
-FROM {{ ref('stg_spotify__playlists') }}
+FROM {{ ref('stg_spotify_legacy__playlists') }}
 
 {% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
+    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
 {% endif %}

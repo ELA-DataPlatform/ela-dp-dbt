@@ -24,14 +24,14 @@ WITH from_album_detail AS (
 
 from_recently_played AS (
     SELECT
-        track.album.id AS album_id,
-        track.album.name AS album_name,
-        track.album.album_type,
-        track.album.total_tracks,
-        CAST(track.album.release_date AS STRING) AS release_date,
-        track.album.release_date_precision,
-        track.album.uri AS album_uri,
-        CAST(NULL AS ARRAY<STRING>) AS genres,
+        JSON_VALUE(track, '$.album.id') AS album_id,
+        JSON_VALUE(track, '$.album.name') AS album_name,
+        JSON_VALUE(track, '$.album.album_type') AS album_type,
+        CAST(JSON_VALUE(track, '$.album.total_tracks') AS INT64) AS total_tracks,
+        JSON_VALUE(track, '$.album.release_date') AS release_date,
+        JSON_VALUE(track, '$.album.release_date_precision') AS release_date_precision,
+        JSON_VALUE(track, '$.album.uri') AS album_uri,
+        CAST(NULL AS STRING) AS genres,
         CAST(NULL AS STRING) AS label,
         CAST(NULL AS INT64) AS popularity,
         _ingested_at,
@@ -39,10 +39,48 @@ from_recently_played AS (
     FROM {{ ref('svc_spotify__recently_played') }}
 ),
 
+from_legacy_album_detail AS (
+    SELECT
+        id AS album_id,
+        name AS album_name,
+        album_type,
+        total_tracks,
+        release_date,
+        release_date_precision,
+        uri AS album_uri,
+        TO_JSON_STRING(genres) AS genres,
+        label,
+        popularity,
+        _ingested_at,
+        0 AS _source_priority
+    FROM {{ ref('svc_spotify_legacy__album_detail') }}
+),
+
+from_legacy_recently_played AS (
+    SELECT
+        track.album.id AS album_id,
+        track.album.name AS album_name,
+        track.album.album_type AS album_type,
+        track.album.total_tracks AS total_tracks,
+        CAST(track.album.release_date AS STRING) AS release_date,
+        track.album.release_date_precision AS release_date_precision,
+        track.album.uri AS album_uri,
+        CAST(NULL AS STRING) AS genres,
+        CAST(NULL AS STRING) AS label,
+        CAST(NULL AS INT64) AS popularity,
+        _ingested_at,
+        1 AS _source_priority
+    FROM {{ ref('svc_spotify_legacy__recently_played') }}
+),
+
 combined AS (
     SELECT * FROM from_album_detail
     UNION ALL
     SELECT * FROM from_recently_played
+    UNION ALL
+    SELECT * FROM from_legacy_album_detail
+    UNION ALL
+    SELECT * FROM from_legacy_recently_played
 ),
 
 deduplicated AS (
