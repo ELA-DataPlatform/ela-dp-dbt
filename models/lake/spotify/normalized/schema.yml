@@ -39,3 +39,33 @@ sources:
             description: Nested record containing full album metadata (id, name, artists, tracks, label, etc.).
           - name: _ingested_at
             description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_playlists
+        description: Raw user playlists from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_top_artists
+        description: Raw top artists from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_top_tracks
+        description: Raw top tracks from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_album_detail
+        description: Raw album detail from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_album_tracks
+        description: Raw album tracks from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
+      - name: normalized_artist_detail
+        description: Raw artist detail from the Spotify API, loaded by the ingestion pipeline.
+        columns:
+          - name: _ingested_at
+            description: Timestamp when the record was ingested into the normalized table.
