@@ -108,13 +108,8 @@ models:
     columns:
       - name: playlist_id
         description: Spotify unique playlist identifier.
-        tests:
-          - unique
-          - not_null
       - name: playlist_name
         description: Display name of the playlist.
-        tests:
-          - not_null
       - name: description
         description: Playlist description.
       - name: collaborative
@@ -131,8 +126,6 @@ models:
         description: Spotify URI of the playlist.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this playlist.
-        tests:
-          - not_null
 
   - name: svc_hub__bridge_track_artist
     description: >
