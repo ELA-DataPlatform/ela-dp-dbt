@@ -1,0 +1,127 @@
+version: 2
+
+models:
+  - name: prd__ranking_tracks
+    description: >
+      Top 20 most played tracks for each time period, based on play counts from the hub fact table.
+      One row per (period, rank) combination. Periods: today, yesterday, last_7_days, last_30_days,
+      last_6_months, all_time.
+    columns:
+      - name: period
+        description: Time window for the ranking (today, yesterday, last_7_days, last_30_days, last_6_months, all_time).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['today', 'yesterday', 'last_7_days', 'last_30_days', 'last_6_months', 'all_time']
+      - name: rank
+        description: Position in the ranking within the period, from 1 (most played) to 20.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify track identifier.
+        tests:
+          - not_null
+      - name: track_name
+        description: Track display name.
+      - name: album_id
+        description: Spotify album identifier the track belongs to.
+      - name: album_name
+        description: Album display name.
+      - name: artists
+        description: Comma-separated list of artist names ordered by their position on the track.
+      - name: play_count
+        description: Number of times the track was played in the given period.
+        tests:
+          - not_null
+      - name: total_duration_ms
+        description: Total listening time for this track in the given period, in milliseconds.
+        tests:
+          - not_null
+      - name: total_duration_formatted
+        description: Total listening time formatted as human-readable string (e.g. "3h 21m").
+      - name: popularity
+        description: Spotify popularity score of the track (0–100).
+
+  - name: prd__ranking_albums
+    description: >
+      Top 20 most played albums for each time period, based on individual track play counts.
+      One row per (period, rank) combination. Periods: today, yesterday, last_7_days, last_30_days,
+      last_6_months, all_time.
+    columns:
+      - name: period
+        description: Time window for the ranking (today, yesterday, last_7_days, last_30_days, last_6_months, all_time).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['today', 'yesterday', 'last_7_days', 'last_30_days', 'last_6_months', 'all_time']
+      - name: rank
+        description: Position in the ranking within the period, from 1 (most played) to 20.
+        tests:
+          - not_null
+      - name: album_id
+        description: Spotify album identifier.
+        tests:
+          - not_null
+      - name: album_name
+        description: Album display name.
+      - name: album_type
+        description: Type of album release (album, single, compilation).
+      - name: release_date
+        description: Original release date of the album.
+      - name: artists
+        description: Comma-separated list of album artist names ordered by their position.
+      - name: play_count
+        description: Total number of track plays from this album in the given period.
+        tests:
+          - not_null
+      - name: total_duration_ms
+        description: Total listening time for this album in the given period, in milliseconds.
+        tests:
+          - not_null
+      - name: total_duration_formatted
+        description: Total listening time formatted as human-readable string (e.g. "3h 21m").
+      - name: popularity
+        description: Spotify popularity score of the album (0–100).
+
+  - name: prd__ranking_artists
+    description: >
+      Top 20 most listened-to artists for each time period. Play count is computed by joining
+      each played track to all its credited artists via the bridge table.
+      One row per (period, rank) combination. Periods: today, yesterday, last_7_days, last_30_days,
+      last_6_months, all_time.
+    columns:
+      - name: period
+        description: Time window for the ranking (today, yesterday, last_7_days, last_30_days, last_6_months, all_time).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['today', 'yesterday', 'last_7_days', 'last_30_days', 'last_6_months', 'all_time']
+      - name: rank
+        description: Position in the ranking within the period, from 1 (most played) to 20.
+        tests:
+          - not_null
+      - name: artist_id
+        description: Spotify artist identifier.
+        tests:
+          - not_null
+      - name: artist_name
+        description: Artist display name.
+      - name: genres
+        description: JSON string of genres associated with the artist.
+      - name: followers_total
+        description: Total number of Spotify followers for the artist.
+      - name: popularity
+        description: Spotify popularity score of the artist (0–100).
+      - name: play_count
+        description: Number of track plays credited to this artist in the given period.
+        tests:
+          - not_null
+      - name: total_duration_ms
+        description: Total listening time credited to this artist in the given period, in milliseconds.
+        tests:
+          - not_null
+      - name: total_duration_formatted
+        description: Total listening time formatted as human-readable string (e.g. "3h 21m").
