@@ -128,11 +128,11 @@ SELECT
     aa.artists,
     r.play_count,
     r.total_duration_ms,
+    t.popularity,
     CONCAT(
         CAST(DIV(r.total_duration_ms, 3600000) AS STRING), 'h ',
         CAST(DIV(MOD(r.total_duration_ms, 3600000), 60000) AS STRING), 'm'
-    ) AS total_duration_formatted,
-    t.popularity
+    ) AS total_duration_formatted
 FROM ranked AS r
 LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON r.track_id = t.track_id
 LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON r.album_id = al.album_id
