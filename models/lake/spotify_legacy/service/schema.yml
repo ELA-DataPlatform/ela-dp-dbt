@@ -22,9 +22,10 @@ models:
           - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - played_at
-            - track_id
+          arguments:
+            combination_of_columns:
+              - played_at
+              - track_id
 
   - name: svc_spotify_legacy__saved_tracks
     description: Service table for legacy Spotify saved tracks. Incrementally merges from staging, unique on track_id.
@@ -183,9 +184,10 @@ models:
           - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - album_id
-            - id
+          arguments:
+            combination_of_columns:
+              - album_id
+              - id
 
   - name: svc_spotify_legacy__artist_detail
     description: Service table for legacy Spotify artist details. Incrementally merges from staging, unique on id.
