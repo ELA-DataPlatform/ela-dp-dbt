@@ -5,7 +5,7 @@
         merge_update_columns=[
             'album_name', 'album_type', 'total_tracks',
             'release_date', 'release_date_precision', 'album_uri',
-            'genres', 'label', 'popularity', '_ingested_at'
+            'genres', 'label', 'popularity', 'image_url', '_ingested_at'
         ],
         tags=['spotify']
     )

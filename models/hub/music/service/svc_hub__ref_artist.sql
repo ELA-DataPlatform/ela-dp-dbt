@@ -2,7 +2,7 @@
     config(
         materialized='incremental',
         unique_key='artist_id',
-        merge_update_columns=['artist_name', 'artist_uri', 'genres', 'followers_total', 'popularity', '_ingested_at'],
+        merge_update_columns=['artist_name', 'artist_uri', 'genres', 'followers_total', 'popularity', 'image_url', '_ingested_at'],
         tags=['spotify']
     )
 }}
