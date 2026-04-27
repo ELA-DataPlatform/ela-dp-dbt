@@ -32,5 +32,10 @@ models:
           +materialized: view
         service:
           +materialized: incremental
+      activities:
+        staging:
+          +materialized: view
+        service:
+          +materialized: incremental
     product:
       +schema: "dp_product_{{ target.name }}"
