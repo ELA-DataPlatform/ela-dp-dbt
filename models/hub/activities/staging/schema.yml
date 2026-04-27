@@ -67,6 +67,132 @@ models:
           composition (weight, body fat, BMI, muscle mass), and the raw Garmin training
           status JSON (keyed by device ID, contains training load balance and status phrase).
 
+  - name: stg_hub__master_running_activities
+    description: >
+      Master view for running activities. One row per activity (running, trail_running,
+      treadmill_running). Fully denormalized: every field from every lake service table
+      is consolidated here — no external joins needed for downstream consumption.
+      Nested structures: performance (STRUCT), fastest_splits (STRUCT), gps (STRUCT),
+      weather (STRUCT), sleep (STRUCT), athletic_context (STRUCT), hr_zones (ARRAY),
+      power_zones (ARRAY), laps (ARRAY), typed_splits (ARRAY), split_summaries (ARRAY),
+      timeseries (ARRAY — one entry per Garmin ~2s sensor sample).
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activity_uuid
+        description: Garmin UUID for the activity.
+      - name: activity_name
+        description: User-defined or auto-generated activity name.
+      - name: activity_description
+        description: Free-text description entered by the user.
+      - name: location_name
+        description: Location name resolved by Garmin at the time of the activity.
+      - name: start_time_local
+        description: Activity start time in local timezone.
+        tests:
+          - not_null
+      - name: start_time_gmt
+        description: Activity start time in UTC.
+      - name: end_time_gmt
+        description: Activity end time in UTC.
+      - name: activity_date
+        description: Calendar date of the activity (derived from start_time_local).
+        tests:
+          - not_null
+      - name: activity_type
+        description: Garmin activity type key. One of running, trail_running, treadmill_running.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['running', 'trail_running', 'treadmill_running']
+      - name: device_id
+        description: Garmin device ID that recorded the activity.
+      - name: manufacturer
+        description: Device manufacturer name.
+      - name: is_pr
+        description: True if this activity set a personal record on any distance.
+      - name: is_favorite
+        description: True if the user marked this activity as a favorite.
+      - name: is_manual
+        description: True if the activity was entered manually (not recorded by a device).
+      - name: is_elevation_corrected
+        description: True if the elevation data was corrected by Garmin post-recording.
+      - name: event_type
+        description: Garmin event type for the activity (e.g. race, training).
+      - name: _ingested_at
+        description: Timestamp when the source activity record was last loaded into the lake.
+      - name: performance
+        description: >
+          STRUCT grouping all activity performance metrics: distance, duration (total /
+          moving / elapsed), pace, speed (avg, max, grade-adjusted), elevation stats,
+          vertical speed, calories, heart rate, cadence, power (avg / max / normalized),
+          running dynamics (stride length, ground contact, vertical oscillation/ratio),
+          respiration (avg / min / max), temperature range during effort, training effect
+          (aerobic + anaerobic + label), training load, VO2max during activity, body
+          battery delta, step count, lap count, and intensity minutes.
+      - name: fastest_splits
+        description: >
+          STRUCT with the fastest recorded split time (in seconds) for each standard
+          distance: 1 km, 1 mile (1.609 km), 5 km, 10 km, half-marathon (21.098 km),
+          and marathon (42.195 km).
+      - name: gps
+        description: >
+          STRUCT with GPS coordinates for the start and end points of the activity.
+      - name: hr_zones
+        description: >
+          ARRAY<STRUCT> of heart rate zones for the activity. One entry per zone (1-5).
+          Each entry: zone_number, secs_in_zone, zone_low_boundary (bpm threshold).
+      - name: power_zones
+        description: >
+          ARRAY<STRUCT> of power zones for the activity. One entry per zone (1-5).
+          Each entry: zone_number, secs_in_zone (seconds spent in that power zone).
+      - name: laps
+        description: >
+          ARRAY<STRUCT> of individual laps (typically 1 per km or per manual lap press).
+          Each entry contains: lap_index, intensity_type, start/end GPS, distance, duration,
+          elevation gain/loss, speed, calories, HR, cadence, power (avg/max/normalized),
+          running dynamics (ground contact, stride length, vertical oscillation/ratio),
+          grade-adjusted speed, and temperature range.
+      - name: typed_splits
+        description: >
+          ARRAY<STRUCT> of splits grouped by movement type (RWD_RUN, RWD_WALK, RWD_STAND).
+          Each entry: intensity_type, start/end GPS and time, distance, duration, speed,
+          HR, cadence, power, normalized power, elevation gain/loss, and grade-adjusted speed.
+      - name: split_summaries
+        description: >
+          ARRAY<STRUCT> of split category summaries (e.g. INTERVAL_ACTIVE, REST, RWD_RUN).
+          Each entry: split_type, no_of_splits, aggregated distance/duration/speed/elevation/
+          power/HR/cadence/temperature.
+      - name: timeseries
+        description: >
+          ARRAY<STRUCT> of ~2-second Garmin sensor samples for the activity, ordered by
+          timestamp. Each entry: timestamp_gmt, elapsed_s, duration_s, moving_duration_s,
+          cum_distance_m, speed_m_per_s, heart_rate_bpm, cadence_spm, fractional_cadence,
+          body_battery, latitude, longitude, altitude_m, vertical_speed_m_per_s,
+          ground_contact_ms, vertical_oscillation_mm, vertical_ratio, stride_length_m,
+          power_w, air_temp_celsius, grade_pct.
+      - name: weather
+        description: >
+          STRUCT with weather conditions at the start of the activity: temperature,
+          apparent temperature, dew point, humidity, wind speed/direction, weather type,
+          GPS coords of the weather station, and station name.
+      - name: sleep
+        description: >
+          STRUCT with sleep metrics from the night preceding the activity. The Garmin sleep
+          record for date D covers the night D-1 → D, so sleep.date = activity_date.
+          Includes overall score, quality qualifier, phase durations (deep/light/REM/awake),
+          HRV, resting HR, body battery change, SpO2, respiration, and score feedback.
+      - name: athletic_context
+        description: >
+          STRUCT grouping all contextual fitness indicators available on the day of the
+          activity: training readiness (score, level, feedback, and all contributing factor
+          percentages), acute training load, recovery time, HRV weekly average, most recent
+          VO2max, most recent body composition (weight kg, body fat %, BMI, muscle mass,
+          bone mass), and raw Garmin training status JSON.
+
   - name: stg_hub__running_activity_seconds
     description: >
       Per-measurement timeseries for running activities, sourced from the Garmin

@@ -48,6 +48,34 @@ models:
       - name: athletic_context
         description: STRUCT with training readiness, VO2max, body composition, and training status on the activity day.
 
+  - name: svc_hub__master_running_activities
+    description: >
+      Master incremental service table for running activities. One row per activity,
+      partitioned by activity_date (monthly) and clustered by activity_type.
+      This is the hub reference table for all running activity consumption (dashboards, APIs).
+      Contains every field from every lake source, fully denormalized and structured.
+      See stg_hub__master_running_activities for the full column documentation.
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier. Primary key.
+        tests:
+          - unique
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity. Partition field (monthly).
+        tests:
+          - not_null
+      - name: activity_type
+        description: Garmin activity type key. Cluster field.
+        tests:
+          - not_null
+      - name: start_time_local
+        description: Activity start time in local timezone.
+        tests:
+          - not_null
+      - name: _ingested_at
+        description: Timestamp when the source activity record was last loaded into the lake.
+
   - name: svc_hub__running_activity_seconds
     description: >
       Incremental service table for per-measurement running timeseries. One row per

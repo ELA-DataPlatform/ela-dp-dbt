@@ -5,10 +5,11 @@ sources:
     database: "{{ target.project }}"
     schema: "dp_lake_spotify_{{ target.name }}"
     description: Legacy Spotify data with native RECORD columns, loaded by the ingestion pipeline.
-    freshness:
-      warn_after: {count: 24, period: hour}
-      error_after: {count: 48, period: hour}
-    loaded_at_field: _ingested_at
+    config:
+      freshness:
+        warn_after: {count: 24, period: hour}
+        error_after: {count: 48, period: hour}
+      loaded_at_field: _ingested_at
     tables:
       - name: normalized_recently_played_legacy
         description: Legacy recently played tracks (native RECORD columns) from the Spotify API.
