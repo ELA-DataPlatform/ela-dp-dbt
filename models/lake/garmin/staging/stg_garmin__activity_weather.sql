@@ -9,20 +9,55 @@ WITH source AS (
     SELECT
         * EXCEPT (weather_data),
 
-        -- Parse weather_data (JSON object) → weather fields
-        cast(json_value(weather_data, '$.temp') AS float64) AS weather_temp,
-        cast(json_value(weather_data, '$.apparentTemp') AS float64) AS weather_apparent_temp,
-        cast(json_value(weather_data, '$.dewPoint') AS float64) AS weather_dew_point,
-        cast(json_value(weather_data, '$.relativeHumidity') AS float64) AS weather_relative_humidity,
-        cast(json_value(weather_data, '$.windDirection') AS float64) AS weather_wind_direction,
-        cast(json_value(weather_data, '$.windSpeed') AS float64) AS weather_wind_speed,
-        cast(json_value(weather_data, '$.latitude') AS float64) AS weather_latitude,
-        cast(json_value(weather_data, '$.longitude') AS float64) AS weather_longitude,
-        json_value(weather_data, '$.issueDate') AS weather_issue_date,
-        json_value(weather_data, '$.windDirectionCompassPoint') AS weather_wind_direction_compass,
+        -- Parse weather_data JSON (primary) with flat column fallback.
+        -- weather_data is null for some activities; flat columns always populated.
+        -- All temperature values are in Fahrenheit as received from the Garmin API.
+        coalesce(
+            cast(json_value(weather_data, '$.temp') AS float64),
+            cast(temp AS float64)
+        ) AS weather_temp,
+        coalesce(
+            cast(json_value(weather_data, '$.apparentTemp') AS float64),
+            cast(apparenttemp AS float64)
+        ) AS weather_apparent_temp,
+        coalesce(
+            cast(json_value(weather_data, '$.dewPoint') AS float64),
+            cast(dewpoint AS float64)
+        ) AS weather_dew_point,
+        coalesce(
+            cast(json_value(weather_data, '$.relativeHumidity') AS float64),
+            cast(relativehumidity AS float64)
+        ) AS weather_relative_humidity,
+        coalesce(
+            cast(json_value(weather_data, '$.windDirection') AS float64),
+            cast(winddirection AS float64)
+        ) AS weather_wind_direction,
+        coalesce(
+            cast(json_value(weather_data, '$.windSpeed') AS float64),
+            cast(windspeed AS float64)
+        ) AS weather_wind_speed,
+        coalesce(
+            cast(json_value(weather_data, '$.latitude') AS float64),
+            latitude
+        ) AS weather_latitude,
+        coalesce(
+            cast(json_value(weather_data, '$.longitude') AS float64),
+            longitude
+        ) AS weather_longitude,
+        coalesce(
+            json_value(weather_data, '$.issueDate'),
+            cast(issuedate AS string)
+        ) AS weather_issue_date,
+        coalesce(
+            json_value(weather_data, '$.windDirectionCompassPoint'),
+            winddirectioncompasspoint
+        ) AS weather_wind_direction_compass,
         json_value(weather_data, '$.weatherStationDTO.id') AS weather_station_id,
         json_value(weather_data, '$.weatherStationDTO.name') AS weather_station_name,
-        json_value(weather_data, '$.weatherTypeDTO.desc') AS weather_type
+        coalesce(
+            json_value(weather_data, '$.weatherTypeDTO.desc'),
+            json_value(weathertypedto, '$.desc')
+        ) AS weather_type
 
     FROM {{ source('garmin', 'normalized_activity_weather') }}
 ),

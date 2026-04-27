@@ -125,7 +125,14 @@ WITH source AS (
                     cast(json_value(item, '$.maxVerticalSpeed') AS float64) AS max_vertical_speed,
                     cast(json_value(item, '$.directWorkoutComplianceScore') AS int64) AS direct_workout_compliance_score
                 )
-            FROM unnest(json_query_array(splits, '$.lapDTOs')) AS item
+            -- lapDTOs is a top-level column (direct JSON array), not nested under splits.
+            -- Fallback to splits.lapDTOs for legacy records where lapDTOs column is null.
+            FROM unnest(
+                coalesce(
+                    json_query_array(lapdtos),
+                    json_query_array(splits, '$.lapDTOs')
+                )
+            ) AS item
         ) AS laps
 
     FROM {{ source('garmin', 'normalized_activity_splits') }}
