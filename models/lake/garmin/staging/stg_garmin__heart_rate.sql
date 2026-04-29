@@ -9,22 +9,22 @@ WITH source AS (
     SELECT
         * EXCEPT (heartratevalues, heartratevaluedescriptors, abnormalhrvaluesarray),
 
-        -- Parse heartRateValues JSON array → ARRAY<STRUCT>
+        -- Parse heartRateValues JSON array → ARRAY<STRUCT> (indexed: [timestamp, heartrate])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS int64) AS `value`
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS INT64) AS `value`
                 )
             FROM unnest(json_query_array(heartratevalues)) AS item
         ) AS heart_rate_values,
 
-        -- Parse abnormalHRValuesArray JSON array → ARRAY<STRUCT>
+        -- Parse abnormalHRValuesArray JSON array → ARRAY<STRUCT> (indexed: [timestamp, heartrate])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS int64) AS `value`
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS INT64) AS `value`
                 )
             FROM unnest(json_query_array(abnormalhrvaluesarray)) AS item
         ) AS abnormal_hr_values
