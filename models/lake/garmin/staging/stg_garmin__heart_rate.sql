@@ -13,8 +13,8 @@ WITH source AS (
         array(
             SELECT
                 STRUCT(
-                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$[1]') AS int64) AS `value`
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS INT64) AS `value`
                 )
             FROM unnest(json_query_array(heartratevalues)) AS item
         ) AS heart_rate_values,
@@ -23,8 +23,8 @@ WITH source AS (
         array(
             SELECT
                 STRUCT(
-                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$[1]') AS int64) AS `value`
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS INT64) AS `value`
                 )
             FROM unnest(json_query_array(abnormalhrvaluesarray)) AS item
         ) AS abnormal_hr_values

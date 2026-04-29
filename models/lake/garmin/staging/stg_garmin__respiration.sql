@@ -16,8 +16,8 @@ WITH source AS (
         array(
             SELECT
                 STRUCT(
-                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$[1]') AS float64) AS `value`
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS FLOAT64) AS `value`
                 )
             FROM unnest(json_query_array(respirationvaluesarray)) AS item
         ) AS respiration_values,
@@ -26,10 +26,10 @@ WITH source AS (
         array(
             SELECT
                 STRUCT(
-                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$[1]') AS float64) AS average,
-                    cast(json_value(item, '$[2]') AS float64) AS high,
-                    cast(json_value(item, '$[3]') AS float64) AS low
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS FLOAT64) AS average,
+                    cast(json_value(item, '$[2]') AS FLOAT64) AS high,
+                    cast(json_value(item, '$[3]') AS FLOAT64) AS low
                 )
             FROM unnest(json_query_array(respirationaveragesvaluesarray)) AS item
         ) AS respiration_averages
