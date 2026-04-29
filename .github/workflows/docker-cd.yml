@@ -78,12 +78,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Update Cloud Run Jobs (dev)
-        if: github.ref == 'refs/heads/develop'
+      - name: Update Cloud Run Jobs
         run: |
           IMAGE="${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}-${{ github.sha }}"
+          PROJECT="${{ steps.env.outputs.project }}"
           JOBS=$(gcloud run jobs list \
-            --project ela-dp-dev \
+            --project "$PROJECT" \
             --region ${{ env.CR_REGION }} \
             --format="value(JOB)" | grep "^ela-dp-dbt-" || true)
           if [[ -z "$JOBS" ]]; then
@@ -94,6 +94,6 @@ jobs:
             echo "Updating $JOB -> $IMAGE"
             gcloud run jobs update "$JOB" \
               --image "$IMAGE" \
-              --project ela-dp-dev \
+              --project "$PROJECT" \
               --region ${{ env.CR_REGION }}
           done
