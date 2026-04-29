@@ -13,8 +13,8 @@ WITH source AS (
         array(
             SELECT
                 struct(
-                    json_value(item, '$.start_time') AS start_time,
-                    json_value(item, '$.end_time') AS end_time,
+                    json_value(item, '$.startGMT') AS start_time,
+                    json_value(item, '$.endGMT') AS end_time,
                     cast(json_value(item, '$.ascended') AS int64) AS ascended,
                     cast(json_value(item, '$.descended') AS int64) AS descended
                 )

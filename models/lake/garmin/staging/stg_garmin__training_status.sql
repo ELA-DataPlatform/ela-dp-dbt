@@ -27,19 +27,19 @@ WITH source AS (
         -- (keys are dynamic deviceIds, use JSON subscript operator for dynamic access)
         array(
             SELECT
-                struct(
-                    string(ts_data[device_key].calendardate) AS calendar_date,
-                    string(ts_data[device_key].sincedate) AS since_date,
-                    int64(ts_data[device_key].trainingstatus) AS training_status,
-                    int64(ts_data[device_key].deviceid) AS device_id,
+                STRUCT(
+                    string(ts_data[device_key].calendarDate) AS calendar_date,
+                    string(ts_data[device_key].sinceDate) AS since_date,
+                    int64(ts_data[device_key].trainingStatus) AS training_status,
+                    int64(ts_data[device_key].deviceId) AS device_id,
                     string(ts_data[device_key].sport) AS sport,
-                    string(ts_data[device_key].subsport) AS sub_sport,
-                    string(ts_data[device_key].fitnesstrendsport) AS fitness_trend_sport,
-                    int64(ts_data[device_key].fitnesstrend) AS fitness_trend,
-                    string(ts_data[device_key].trainingstatusfeedbackphrase) AS training_status_feedback_phrase,
-                    bool(ts_data[device_key].trainingpaused) AS training_paused,
-                    string(ts_data[device_key].acutetrainingloaddto.acwrstatus) AS acwr_status,
-                    int64(ts_data[device_key].acutetrainingloaddto.acwrpercent) AS acwr_percent
+                    string(ts_data[device_key].subSport) AS sub_sport,
+                    string(ts_data[device_key].fitnessTrendSport) AS fitness_trend_sport,
+                    int64(ts_data[device_key].fitnessTrend) AS fitness_trend,
+                    string(ts_data[device_key].trainingStatusFeedbackPhrase) AS training_status_feedback_phrase,
+                    bool(ts_data[device_key].trainingPaused) AS training_paused,
+                    string(ts_data[device_key].acuteTrainingLoadDTO.acwrStatus) AS acwr_status,
+                    int64(ts_data[device_key].acuteTrainingLoadDTO.acwrPercent) AS acwr_percent
                 )
             FROM
                 unnest([json_query(safe.parse_json(mostrecenttrainingstatus), '$.latestTrainingStatusData')])
@@ -51,22 +51,22 @@ WITH source AS (
         -- Parse mostRecentTrainingLoadBalance → extract metricsTrainingLoadBalanceDTOMap values as ARRAY<STRUCT>
         array(
             SELECT
-                struct(
-                    string(tlb_data[device_key].calendardate) AS calendar_date,
-                    int64(tlb_data[device_key].deviceid) AS device_id,
-                    float64(tlb_data[device_key].monthlyloadaerobiclow) AS monthly_load_aerobic_low,
-                    float64(tlb_data[device_key].monthlyloadaerobichigh) AS monthly_load_aerobic_high,
-                    float64(tlb_data[device_key].monthlyloadanaerobic) AS monthly_load_anaerobic,
-                    float64(tlb_data[device_key].monthlyloadaerobiclowtargetmin) AS monthly_load_aerobic_low_target_min,
-                    float64(tlb_data[device_key].monthlyloadaerobiclowtargetmax) AS monthly_load_aerobic_low_target_max,
-                    float64(tlb_data[device_key].monthlyloadaerobichightargetmin)
+                STRUCT(
+                    string(tlb_data[device_key].calendarDate) AS calendar_date,
+                    int64(tlb_data[device_key].deviceId) AS device_id,
+                    float64(tlb_data[device_key].monthlyLoadAerobicLow) AS monthly_load_aerobic_low,
+                    float64(tlb_data[device_key].monthlyLoadAerobicHigh) AS monthly_load_aerobic_high,
+                    float64(tlb_data[device_key].monthlyLoadAnaerobic) AS monthly_load_anaerobic,
+                    float64(tlb_data[device_key].monthlyLoadAerobicLowTargetMin) AS monthly_load_aerobic_low_target_min,
+                    float64(tlb_data[device_key].monthlyLoadAerobicLowTargetMax) AS monthly_load_aerobic_low_target_max,
+                    float64(tlb_data[device_key].monthlyLoadAerobicHighTargetMin)
                         AS monthly_load_aerobic_high_target_min,
-                    float64(tlb_data[device_key].monthlyloadaerobichightargetmax)
+                    float64(tlb_data[device_key].monthlyLoadAerobicHighTargetMax)
                         AS monthly_load_aerobic_high_target_max,
-                    float64(tlb_data[device_key].monthlyloadanaerobictargetmin) AS monthly_load_anaerobic_target_min,
-                    float64(tlb_data[device_key].monthlyloadanaerobictargetmax) AS monthly_load_anaerobic_target_max,
-                    string(tlb_data[device_key].trainingbalancefeedbackphrase) AS training_balance_feedback_phrase,
-                    bool(tlb_data[device_key].primarytrainingdevice) AS primary_training_device
+                    float64(tlb_data[device_key].monthlyLoadAnaerobicTargetMin) AS monthly_load_anaerobic_target_min,
+                    float64(tlb_data[device_key].monthlyLoadAnaerobicTargetMax) AS monthly_load_anaerobic_target_max,
+                    string(tlb_data[device_key].trainingBalanceFeedbackPhrase) AS training_balance_feedback_phrase,
+                    bool(tlb_data[device_key].primaryTrainingDevice) AS primary_training_device
                 )
             FROM
                 unnest([json_query(

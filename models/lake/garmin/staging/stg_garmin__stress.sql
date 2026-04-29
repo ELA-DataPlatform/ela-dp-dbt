@@ -17,7 +17,7 @@ WITH source AS (
             SELECT
                 struct(
                     cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.type') AS int64) AS stress_level
+                    cast(json_value(item, '$.value') AS int64) AS stress_level
                 )
             FROM unnest(json_query_array(stressvaluesarray)) AS item
         ) AS stress_values,
