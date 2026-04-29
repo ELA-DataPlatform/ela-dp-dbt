@@ -9,12 +9,12 @@ WITH source AS (
     SELECT
         * EXCEPT (spo2hourlyaverages, spo2valuedescriptorsdtolist),
 
-        -- Parse spO2HourlyAverages → ARRAY<STRUCT>
+        -- Parse spO2HourlyAverages → ARRAY<STRUCT> (indexed: [timestamp, spo2Reading, readingConfidence])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS int64) AS `value`
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS int64) AS `value`
                 )
             FROM unnest(json_query_array(spo2hourlyaverages)) AS item
         ) AS spo2_hourly_averages

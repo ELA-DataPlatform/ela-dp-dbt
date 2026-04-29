@@ -12,24 +12,24 @@ WITH source AS (
             bodybatteryvaluesarray, bodybatteryvaluedescriptorsdtolist
         ),
 
-        -- Parse stressValuesArray → ARRAY<STRUCT>
+        -- Parse stressValuesArray → ARRAY<STRUCT> (indexed: [timestamp, stressLevel])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS int64) AS stress_level
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS int64) AS stress_level
                 )
             FROM unnest(json_query_array(stressvaluesarray)) AS item
         ) AS stress_values,
 
-        -- Parse bodyBatteryValuesArray → ARRAY<STRUCT>
+        -- Parse bodyBatteryValuesArray → ARRAY<STRUCT> (indexed: [timestamp, status, level, version])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    json_value(item, '$.type') AS `type`,
-                    cast(json_value(item, '$.value') AS int64) AS `value`,
-                    cast(json_value(item, '$.score') AS float64) AS score
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
+                    json_value(item, '$[1]') AS body_battery_status,
+                    cast(json_value(item, '$[2]') AS int64) AS body_battery_level,
+                    cast(json_value(item, '$[3]') AS float64) AS body_battery_version
                 )
             FROM unnest(json_query_array(bodybatteryvaluesarray)) AS item
         ) AS body_battery_values

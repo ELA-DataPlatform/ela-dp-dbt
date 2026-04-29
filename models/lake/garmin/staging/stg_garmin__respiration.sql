@@ -12,24 +12,24 @@ WITH source AS (
             respirationvaluedescriptorsdtolist, respirationaveragesvaluedescriptordtolist
         ),
 
-        -- Parse respirationValuesArray → ARRAY<STRUCT>
+        -- Parse respirationValuesArray → ARRAY<STRUCT> (indexed: [timestamp, respiration])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS float64) AS `value`
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS float64) AS `value`
                 )
             FROM unnest(json_query_array(respirationvaluesarray)) AS item
         ) AS respiration_values,
 
-        -- Parse respirationAveragesValuesArray → ARRAY<STRUCT>
+        -- Parse respirationAveragesValuesArray → ARRAY<STRUCT> (indexed: [timestamp, avg, high, low])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.average') AS float64) AS average,
-                    cast(json_value(item, '$.high') AS float64) AS high,
-                    cast(json_value(item, '$.low') AS float64) AS low
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS int64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS float64) AS average,
+                    cast(json_value(item, '$[2]') AS float64) AS high,
+                    cast(json_value(item, '$[3]') AS float64) AS low
                 )
             FROM unnest(json_query_array(respirationaveragesvaluesarray)) AS item
         ) AS respiration_averages
