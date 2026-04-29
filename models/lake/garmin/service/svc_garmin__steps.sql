@@ -1,7 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key=['date', 'startGMT'],
+        unique_key='step_key',
         tags=['garmin'],
         partition_by={
             'field': '_ingested_at',

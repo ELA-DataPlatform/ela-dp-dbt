@@ -5,23 +5,99 @@ models:
 
   - name: stg_garmin__activities
     description: >
-      Deduplicated view of raw Garmin activity data. Contains ~127 scalar fields
-      covering distance, duration, calories, heart rate, elevation, power, and cadence.
+      Deduplicated view of raw Garmin activity data. Contains scalar fields covering
+      distance, duration, calories, heart rate, elevation, power, and cadence.
+      JSON fields (activityType, eventType, privacy, userRoles, splitSummaries) are
+      parsed into typed STRUCTs and ARRAYs.
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
+      - name: activity_type
+        description: >
+          Parsed STRUCT from activityType JSON. Contains type_id, type_key,
+          parent_type_id, is_hidden, restricted, trimmable.
+      - name: event_type
+        description: >
+          Parsed STRUCT from eventType JSON. Contains type_id, type_key, sort_order.
+      - name: privacy
+        description: >
+          Parsed STRUCT from privacy JSON. Contains type_id, type_key.
+      - name: user_roles
+        description: Parsed ARRAY<STRING> of Garmin OAuth scope roles assigned to the user.
+      - name: split_summaries
+        description: >
+          Parsed ARRAY<STRUCT> from splitSummaries JSON. Each element contains
+          split_type, no_of_splits, distance, duration, total_ascent, elevation_loss,
+          average_speed, max_speed, max_elevation_gain, average_elevation_gain,
+          max_distance, num_climb_sends, num_falls.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
   - name: stg_garmin__activity_details
     description: >
-      Deduplicated view of detailed activity data including GPS metrics.
-      The detailed_data field contains granular GPS/metric timeseries as a JSON string.
+      Deduplicated view of detailed activity data. JSON fields (activityTypeDTO,
+      eventTypeDTO, timeZoneUnitDTO, accessControlRuleDTO, splitSummaries,
+      summarizedExerciseSets) are parsed into typed STRUCTs and ARRAYs.
+      Extra fields from summaryDTO and metadataDTO not present as flat columns
+      are extracted individually. detailed_data (GPS timeseries) is kept as raw JSON.
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
+      - name: activity_type
+        description: >
+          Parsed STRUCT from activityTypeDTO JSON. Contains type_id, type_key,
+          parent_type_id, is_hidden, restricted, trimmable.
+      - name: event_type
+        description: >
+          Parsed STRUCT from eventTypeDTO JSON. Contains type_id, type_key, sort_order.
+      - name: time_zone_unit
+        description: >
+          Parsed STRUCT from timeZoneUnitDTO JSON. Contains unit_id, unit_key, time_zone.
+      - name: access_control_rule
+        description: >
+          Parsed STRUCT from accessControlRuleDTO JSON. Contains type_id, type_key.
+      - name: split_summaries
+        description: >
+          Parsed ARRAY<STRUCT> from splitSummaries JSON. Each element contains
+          split_type, no_of_splits, distance, duration, total_ascent, elevation_loss,
+          average_speed, max_speed, max_elevation_gain, average_elevation_gain,
+          max_distance, num_climb_sends, num_falls.
+      - name: summarized_exercise_sets
+        description: >
+          Parsed ARRAY<STRUCT> from summarizedExerciseSets JSON. Each element contains
+          category, sets, reps, duration_ms, volume, max_weight_g.
+      - name: min_hr
+        description: Minimum heart rate during the activity (from summaryDTO).
+      - name: average_moving_speed
+        description: Average speed while actually moving, excluding stops (from summaryDTO).
+      - name: average_temperature
+        description: Average ambient temperature during the activity in Celsius (from summaryDTO).
+      - name: workout_feel
+        description: Garmin perceived effort score (0-100) recorded at end of activity (from summaryDTO).
+      - name: workout_rpe
+        description: Rate of perceived exertion score recorded at end of activity (from summaryDTO).
+      - name: total_work_kj
+        description: Total mechanical work done during the activity in kilojoules (from summaryDTO).
+      - name: begin_potential_stamina
+        description: Garmin stamina percentage at the start of the activity (from summaryDTO).
+      - name: end_potential_stamina
+        description: Garmin stamina percentage at the end of the activity (from summaryDTO).
+      - name: min_available_stamina
+        description: Minimum available stamina percentage reached during the activity (from summaryDTO).
+      - name: min_power
+        description: Minimum power output in watts during the activity (from summaryDTO).
+      - name: last_update_date
+        description: Timestamp of the last update to this activity record (from metadataDTO).
+      - name: uploaded_date
+        description: Timestamp when this activity was uploaded to Garmin Connect (from metadataDTO).
+      - name: file_format_key
+        description: File format of the original activity file, e.g. fit (from metadataDTO).
+      - name: has_intensity_intervals
+        description: Whether the activity contains intensity interval segments (from metadataDTO).
+      - name: has_run_power_wind_data
+        description: Whether the activity contains run power with wind data (from metadataDTO).
       - name: detailed_data
-        description: JSON string with GPS tracks and granular metric timeseries.
+        description: JSON string with GPS tracks and granular metric timeseries (~2s resolution).
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -50,12 +126,40 @@ models:
 
   - name: stg_garmin__steps
     description: >
-      Deduplicated view of step count data with activity level classification.
+      Deduplicated view of step count data. Handles two formats from the Garmin API:
+      intraday rows (startGMT populated, steps per time window) and daily summary rows
+      (startGMT NULL, totalSteps for the full day). A step_key surrogate is added to
+      allow correct MERGE deduplication regardless of NULL startGMT.
     columns:
+      - name: step_key
+        description: >
+          Surrogate key built from date and startGMT (or 'DAILY' when NULL).
+          Used as the unique key for MERGE in the service layer to avoid duplicates
+          when startGMT is NULL (NULL = NULL is false in SQL joins).
+        tests:
+          - unique
+          - not_null
       - name: date
         description: Date of the step data.
+        tests:
+          - not_null
+      - name: totalSteps
+        description: Total step count for the day.
+      - name: stepGoal
+        description: Daily step goal set on the device.
+      - name: totalDistance
+        description: Total distance covered (in meters).
       - name: startGMT
-        description: Start timestamp of the step interval.
+        description: >
+          Start timestamp of the intraday time window. NULL for daily summary rows.
+      - name: endGMT
+        description: >
+          End timestamp of the intraday time window. NULL for daily summary rows.
+      - name: steps
+        description: >
+          Step count for the intraday time window. NULL for daily summary rows.
+      - name: primaryActivityLevel
+        description: Primary activity level classification for the time window.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -136,12 +240,24 @@ models:
   - name: stg_garmin__spo2
     description: >
       Deduplicated view of daily SpO2 data. Scalar fields (avg/latest/lowest SpO2)
-      directly accessible. Hourly averages array kept as JSON string.
+      directly accessible. Two mutually exclusive timeseries columns depending on data source:
+      spo2_values (minute-level readings from spo2ValuesArray) and
+      spo2_hourly_averages (hourly averages from spO2HourlyAverages).
     columns:
       - name: userProfilePK
         description: Garmin user profile identifier.
       - name: date
         description: Date of the SpO2 data.
+      - name: spo2_values
+        description: >
+          ARRAY<STRUCT> parsed from spo2ValuesArray (minute-level readings).
+          Each element: timestamp (INT64 ms), spo2_reading (INT64 %), reading_confidence (INT64).
+          Mutually exclusive with spo2_hourly_averages.
+      - name: spo2_hourly_averages
+        description: >
+          ARRAY<STRUCT> parsed from spO2HourlyAverages (hourly averages).
+          Each element: timestamp (INT64 ms), value (INT64 %).
+          Mutually exclusive with spo2_values.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -194,7 +310,9 @@ models:
     description: >
       Deduplicated view of comprehensive sleep data. dailySleepDTO and
       wellnessSpO2SleepSummaryDTO parsed into typed columns. Timeseries arrays
-      (sleepLevels, sleepHeartRate, sleepStress, etc.) kept as JSON strings.
+      (sleepLevels, sleepHeartRate, sleepStress, sleepRespiration, sleepSPO2, etc.)
+      parsed into ARRAY<STRUCT>. wellnessEpochRespirationAveragesList parsed into
+      sleep_respiration_averages (hourly averages with high/low bounds).
     columns:
       - name: date
         description: Date of the sleep data.
@@ -216,6 +334,12 @@ models:
         description: Average SpO2 during sleep.
       - name: spo2_sleep_lowest
         description: Lowest SpO2 during sleep.
+      - name: sleep_respiration_averages
+        description: >
+          ARRAY<STRUCT> parsed from wellnessEpochRespirationAveragesList.
+          Each element covers one hour with epoch_end_timestamp_gmt (ms),
+          respiration_average_value, respiration_high_value, respiration_low_value.
+          A value of -2.0 on respiration_average_value indicates an unmeasured epoch.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -418,9 +542,11 @@ models:
 
   - name: stg_garmin__stats_and_body
     description: >
-      Deduplicated view of the comprehensive daily wellness summary (~154 scalar fields).
-      Covers steps, distance, calories, heart rate, stress, body battery, respiration,
-      SpO2, body composition, and intensity minutes.
+      Deduplicated view of the comprehensive daily wellness summary. Scalar fields
+      cover steps, distance, calories, heart rate, stress, body battery, respiration,
+      SpO2, body composition, and intensity minutes. JSON fields (bodyBatteryActivityEventList,
+      bodyBatteryDynamicFeedbackEvent, endOfDayBodyBatteryDynamicFeedbackEvent) are
+      parsed into typed ARRAYs and scalar fields.
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
@@ -428,16 +554,64 @@ models:
         description: Date of the summary.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
+      - name: body_battery_activity_events
+        description: >
+          Parsed ARRAY<STRUCT> from bodyBatteryActivityEventList. Each element contains
+          event_type, event_start_time_gmt, event_update_time_gmt, timezone_offset,
+          duration_in_milliseconds, body_battery_impact, feedback_type, short_feedback, device_id.
+      - name: dynamic_feedback_timestamp_gmt
+        description: Timestamp of the intraday body battery dynamic feedback event.
+      - name: dynamic_feedback_battery_level
+        description: Body battery level label at the dynamic feedback event (e.g. HIGH, MODERATE).
+      - name: dynamic_feedback_short_type
+        description: Short feedback type key for the dynamic feedback event.
+      - name: dynamic_feedback_long_type
+        description: Long feedback type key for the dynamic feedback event.
+      - name: eod_feedback_timestamp_gmt
+        description: Timestamp of the end-of-day body battery dynamic feedback event.
+      - name: eod_feedback_battery_level
+        description: Body battery level label at end-of-day feedback event.
+      - name: eod_feedback_short_type
+        description: Short feedback type key for the end-of-day feedback event.
+      - name: eod_feedback_long_type
+        description: Long feedback type key for the end-of-day feedback event.
 
   - name: stg_garmin__user_summary
     description: >
       Deduplicated view of the daily user wellness summary (~152 scalar fields).
-      Similar to stats_and_body with minor field differences.
+      JSON fields (bodyBatteryActivityEventList, bodyBatteryDynamicFeedbackEvent,
+      endOfDayBodyBatteryDynamicFeedbackEvent, rule) are parsed into typed ARRAYs,
+      scalar fields, and STRUCTs.
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
       - name: date
         description: Date of the summary.
+      - name: body_battery_activity_events
+        description: >
+          Parsed ARRAY<STRUCT> from bodyBatteryActivityEventList. Each element contains
+          event_type, event_start_time_gmt, event_update_time_gmt, timezone_offset,
+          duration_in_milliseconds, body_battery_impact, feedback_type, short_feedback, device_id.
+      - name: dynamic_feedback_timestamp_gmt
+        description: Timestamp of the intraday body battery dynamic feedback event.
+      - name: dynamic_feedback_battery_level
+        description: Body battery level label at the dynamic feedback event (e.g. HIGH, MODERATE).
+      - name: dynamic_feedback_short_type
+        description: Short feedback type key for the dynamic feedback event.
+      - name: dynamic_feedback_long_type
+        description: Long feedback type key for the dynamic feedback event.
+      - name: eod_feedback_timestamp_gmt
+        description: Timestamp of the end-of-day body battery dynamic feedback event.
+      - name: eod_feedback_battery_level
+        description: Body battery level label at end-of-day feedback event.
+      - name: eod_feedback_short_type
+        description: Short feedback type key for the end-of-day feedback event.
+      - name: eod_feedback_long_type
+        description: Long feedback type key for the end-of-day feedback event.
+      - name: rule
+        description: >
+          Parsed STRUCT from rule JSON. Contains type_id (INT64) and type_key (STRING),
+          e.g. typeId=3, typeKey="subscribers".
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 

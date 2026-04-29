@@ -12,7 +12,8 @@ WITH source AS (
             sleeplevels, sleeprestlessmoments,
             sleepheartrate, sleepbodybattery, sleepmovement, sleepstress,
             hrvdata, breathingdisruptiondata,
-            wellnessepochrespirationdatadtolist, wellnessepochspo2datadtolist
+            wellnessepochrespirationdatadtolist, wellnessepochspo2datadtolist,
+            wellnessepochrespirationaverageslist
         ),
 
         -- Parse sleepLevels → ARRAY<STRUCT>
@@ -145,6 +146,16 @@ WITH source AS (
                 )
             FROM unnest(json_query_array(wellnessepochspo2datadtolist)) AS item
         ) AS sleep_spo2,
+        array(
+            SELECT
+                struct(
+                    cast(json_value(item, '$.epochEndTimestampGmt') AS int64) AS epoch_end_timestamp_gmt,
+                    cast(json_value(item, '$.respirationAverageValue') AS float64) AS respiration_average_value,
+                    cast(json_value(item, '$.respirationHighValue') AS float64) AS respiration_high_value,
+                    cast(json_value(item, '$.respirationLowValue') AS float64) AS respiration_low_value
+                )
+            FROM unnest(json_query_array(wellnessepochrespirationaverageslist)) AS item
+        ) AS sleep_respiration_averages,
         json_value(dailysleepdto, '$.calendarDate') AS sleep_calendar_date,
         json_value(dailysleepdto, '$.sleepWindowConfirmationType') AS sleep_window_confirmation_type,
         json_value(dailysleepdto, '$.sleepStartTimestampGMT') AS sleep_start_timestamp_gmt,
