@@ -265,20 +265,50 @@ models:
 
   - name: stg_garmin__training_status
     description: >
-      Deduplicated view of training status data. mostRecentVO2Max parsed for
-      generic VO2 max and acclimation fields. mostRecentTrainingStatus and
-      mostRecentTrainingLoadBalance kept as JSON strings (dynamic device ID keys).
+      Deduplicated view of training status data. latestTrainingStatusData parsed
+      by extracting the single device key dynamically, then flattening all fields
+      including acuteTrainingLoadDTO into typed columns.
     columns:
       - name: userId
         description: Garmin user identifier.
       - name: date
         description: Date of the training status data.
-      - name: recent_vo2_max_precise
-        description: Most recent precise VO2 max value.
-      - name: recent_vo2_max
-        description: Most recent rounded VO2 max value.
-      - name: recent_vo2_max_date
-        description: Date of the most recent VO2 max measurement.
+      - name: device_id
+        description: Garmin device identifier extracted from latestTrainingStatusData.
+      - name: calendar_date
+        description: Calendar date reported by the device.
+      - name: since_date
+        description: Start date of the current training status window.
+      - name: training_status
+        description: Numeric training status code (e.g. 7 = Productive).
+      - name: sport
+        description: Primary sport for this training status (e.g. RUNNING).
+      - name: sub_sport
+        description: Sub-sport classification.
+      - name: fitness_trend_sport
+        description: Sport used for fitness trend calculation.
+      - name: fitness_trend
+        description: Numeric fitness trend code.
+      - name: training_status_feedback_phrase
+        description: Feedback phrase key (e.g. PRODUCTIVE_5).
+      - name: training_paused
+        description: Whether training tracking is paused.
+      - name: acwr_percent
+        description: Acute:chronic workload ratio as a percentage.
+      - name: acwr_status
+        description: ACWR status category (e.g. LOW, OPTIMAL).
+      - name: acwr_status_feedback
+        description: ACWR feedback phrase key.
+      - name: daily_training_load_acute
+        description: Acute training load for the day.
+      - name: daily_training_load_chronic
+        description: Chronic training load for the day.
+      - name: max_training_load_chronic
+        description: Upper bound of the chronic training load tunnel.
+      - name: min_training_load_chronic
+        description: Lower bound of the chronic training load tunnel.
+      - name: daily_acute_chronic_workload_ratio
+        description: Raw acute/chronic workload ratio value.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
