@@ -37,7 +37,7 @@ WITH source AS (
         -- Parse userRoles → ARRAY<STRING>
         ARRAY(
             SELECT JSON_VALUE(role)
-            FROM UNNEST(JSON_QUERY_ARRAY(userroles)) AS role
+            FROM UNNEST(JSON_QUERY_ARRAY(userroles)) AS `role`
         ) AS user_roles,
 
         -- Parse splitSummaries → ARRAY<STRUCT>

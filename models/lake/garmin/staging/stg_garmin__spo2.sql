@@ -13,7 +13,7 @@ WITH source AS (
         ARRAY(
             SELECT
                 STRUCT(
-                    CAST(JSON_VALUE(item, '$[0]') AS INT64) AS timestamp,
+                    CAST(JSON_VALUE(item, '$[0]') AS INT64) AS `timestamp`,
                     CAST(JSON_VALUE(item, '$[1]') AS INT64) AS spo2_reading,
                     CAST(JSON_VALUE(item, '$[2]') AS INT64) AS reading_confidence
                 )
@@ -24,8 +24,8 @@ WITH source AS (
         ARRAY(
             SELECT
                 STRUCT(
-                    CAST(JSON_VALUE(item, '$.timestamp') AS INT64) AS timestamp,
-                    CAST(JSON_VALUE(item, '$.value') AS INT64) AS value
+                    CAST(JSON_VALUE(item, '$.timestamp') AS INT64) AS `timestamp`,
+                    CAST(JSON_VALUE(item, '$.value') AS INT64) AS `value`
                 )
             FROM UNNEST(JSON_QUERY_ARRAY(spo2hourlyaverages)) AS item
         ) AS spo2_hourly_averages

@@ -75,7 +75,7 @@ WITH source AS (
             SELECT
                 STRUCT(
                     JSON_VALUE(item, '$.category') AS category,
-                    CAST(JSON_VALUE(item, '$.sets') AS INT64) AS sets,
+                    CAST(JSON_VALUE(item, '$.sets') AS INT64) AS `sets`,
                     CAST(JSON_VALUE(item, '$.reps') AS INT64) AS reps,
                     CAST(JSON_VALUE(item, '$.duration') AS FLOAT64) AS duration_ms,
                     CAST(JSON_VALUE(item, '$.volume') AS FLOAT64) AS volume,

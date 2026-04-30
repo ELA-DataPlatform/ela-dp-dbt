@@ -58,7 +58,7 @@ WITH source AS (
                     JSON_VALUE(item, '$[0]') AS timestamp_gmt,
                     CAST(JSON_VALUE(item, '$[1]') AS INT64) AS `value`,
                     CAST(JSON_VALUE(item, '$[2]') AS INT64) AS status,
-                    CAST(JSON_VALUE(item, '$[3]') AS FLOAT64) AS version
+                    CAST(JSON_VALUE(item, '$[3]') AS FLOAT64) AS `version`
                 )
             FROM UNNEST(JSON_QUERY_ARRAY(bodybattery, '$.data')) AS item
         ) AS body_battery_timeseries,
