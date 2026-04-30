@@ -9,12 +9,12 @@ WITH source AS (
     SELECT
         * EXCEPT (imvaluesarray, imvaluedescriptorsdtolist),
 
-        -- Parse imValuesArray → ARRAY<STRUCT>
+        -- Parse imValuesArray → ARRAY<STRUCT> (indexed: [timestamp, value])
         array(
             SELECT
-                struct(
-                    cast(json_value(item, '$.timestamp') AS int64) AS `timestamp`,
-                    cast(json_value(item, '$.value') AS int64) AS `value`
+                STRUCT(
+                    cast(json_value(item, '$[0]') AS INT64) AS `timestamp`,
+                    cast(json_value(item, '$[1]') AS INT64) AS `value`
                 )
             FROM unnest(json_query_array(imvaluesarray)) AS item
         ) AS intensity_minutes_values

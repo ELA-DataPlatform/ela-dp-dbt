@@ -25,7 +25,7 @@ WITH
 activities AS (
     SELECT *
     FROM {{ ref('svc_garmin__activities') }}
-    WHERE json_value(activitytype, '$.typeKey') IN (
+    WHERE activity_type.type_key IN (
         'running',
         'trail_running',
         'treadmill_running'
@@ -146,29 +146,17 @@ weight AS (
     WHERE weight IS NOT NULL
 ),
 
--- ── 10. Training status (primary device, parsed from latestTrainingStatusData) ─
--- latestTrainingStatusData is a JSON object keyed by deviceId.
--- Extract the entry where primaryTrainingDevice = true.
+-- ── 10. Training status (primary device, already extracted by svc_garmin__training_status) ─
 training_status AS (
     SELECT
         date,
-        (
-            SELECT
-                struct(
-                    int64(ts_obj[k]['trainingStatus']) AS code,
-                    string(ts_obj[k]['trainingStatusFeedbackPhrase']) AS feedback_phrase,
-                    int64(ts_obj[k]['fitnessTrend']) AS fitness_trend,
-                    string(ts_obj[k]['acuteTrainingLoadDTO']['acwrStatus']) AS acwr_status,
-                    int64(ts_obj[k]['acuteTrainingLoadDTO']['acwrPercent']) AS acwr_percent,
-                    int64(ts_obj[k]['acuteTrainingLoadDTO']['dailyTrainingLoadAcute']) AS daily_load_acute,
-                    float64(ts_obj[k]['acuteTrainingLoadDTO']['dailyAcuteChronicWorkloadRatio']) AS daily_acwr_ratio
-                )
-            FROM unnest([safe.parse_json(latesttrainingstatusdata)]) AS ts_obj,
-                unnest(json_keys(safe.parse_json(latesttrainingstatusdata))) AS k
-            WHERE bool(ts_obj[k]['primaryTrainingDevice'])
-            ORDER BY k
-            LIMIT 1
-        ) AS primary_status
+        training_status AS code,
+        training_status_feedback_phrase AS feedback_phrase,
+        fitness_trend,
+        acwr_status,
+        acwr_percent,
+        daily_training_load_acute AS daily_load_acute,
+        daily_acute_chronic_workload_ratio AS daily_acwr_ratio
     FROM {{ ref('svc_garmin__training_status') }}
 )
 
@@ -189,10 +177,10 @@ SELECT
     a.favorite AS is_favorite,
     a.manualactivity AS is_manual,
     a.elevationcorrected AS is_elevation_corrected,
-    a.eventtype AS event_type,
+    a.event_type,
     a._ingested_at,
+    a.activity_type.type_key AS activity_type,
     date(a.starttimelocal) AS activity_date,
-    json_value(a.activitytype, '$.typeKey') AS activity_type,
 
     -- ── Performance (flat STRUCT) ─────────────────────────────────────────────
     struct(
@@ -384,14 +372,14 @@ SELECT
         tr.acuteload AS acute_training_load,
         tr.recoverytime AS recovery_time_hours,
         tr.hrvweeklyaverage AS hrv_weekly_average,
-        -- Training status — primary device, parsed from latestTrainingStatusData
-        ts.primary_status.code AS training_status_code,
-        ts.primary_status.feedback_phrase AS training_status_feedback,
-        ts.primary_status.fitness_trend AS fitness_trend,
-        ts.primary_status.acwr_status AS acwr_status,
-        ts.primary_status.acwr_percent AS acwr_percent,
-        ts.primary_status.daily_load_acute AS ts_acute_load,
-        ts.primary_status.daily_acwr_ratio AS ts_acwr_ratio,
+        -- Training status — primary device, pre-extracted in svc_garmin__training_status
+        ts.code AS training_status_code,
+        ts.feedback_phrase AS training_status_feedback,
+        ts.fitness_trend,
+        ts.acwr_status,
+        ts.acwr_percent,
+        ts.daily_load_acute AS ts_acute_load,
+        ts.daily_acwr_ratio AS ts_acwr_ratio,
         -- VO2max (most recent valid measurement)
         mm.vo2_max,
         mm.vo2_max_precise,

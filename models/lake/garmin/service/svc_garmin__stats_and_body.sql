@@ -2,7 +2,7 @@
     config(
         materialized='incremental',
         unique_key=['userProfileId', 'date'],
-        tags=['garmin'],
+tags=['garmin'],
         partition_by={
             'field': '_ingested_at',
             'data_type': 'timestamp',
