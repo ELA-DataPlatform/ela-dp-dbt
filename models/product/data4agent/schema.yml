@@ -1,0 +1,413 @@
+version: 2
+
+models:
+  - name: prd_agent__hrv_daily
+    description: >
+      Daily HRV (heart rate variability) summary, one row per calendar date.
+      Flat columns only — derived directly from svc_garmin__hrv. The lake-side
+      timeseries arrays (hrv_readings) are intentionally excluded so an agent
+      can query without unnesting.
+    columns:
+      - name: hrv_date
+        description: Calendar date of the HRV measurement (Garmin local date).
+        tests:
+          - not_null
+          - unique
+      - name: hrv_calendar_date
+        description: Calendar date as reported inside the hrvSummary JSON object.
+      - name: hrv_status
+        description: HRV status classification (e.g. BALANCED, LOW, UNBALANCED, POOR).
+      - name: hrv_feedback_phrase
+        description: Garmin feedback phrase key associated with the status.
+      - name: hrv_last_night_avg
+        description: Last-night average overnight HRV in milliseconds.
+      - name: hrv_last_night_5min_high
+        description: Highest 5-minute HRV value during last night, in milliseconds.
+      - name: hrv_weekly_avg
+        description: Weekly average overnight HRV in milliseconds.
+      - name: hrv_baseline_low_upper
+        description: Upper bound of the LOW HRV baseline tunnel.
+      - name: hrv_baseline_balanced_low
+        description: Lower bound of the BALANCED HRV baseline tunnel.
+      - name: hrv_baseline_balanced_upper
+        description: Upper bound of the BALANCED HRV baseline tunnel.
+      - name: hrv_baseline_marker_value
+        description: Garmin baseline marker value used to draw the gauge.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__rhr_daily
+    description: >
+      Daily resting heart rate, one row per calendar date.
+      Derived from svc_garmin__rhr_daily (timeseries arrays excluded).
+    columns:
+      - name: rhr_date
+        description: Calendar date of the resting heart rate measurement.
+        tests:
+          - not_null
+          - unique
+      - name: resting_hr_bpm
+        description: Resting heart rate value in beats per minute.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__sleep_daily
+    description: >
+      Daily sleep summary, one row per calendar date. Flat columns only —
+      lake-side timeseries arrays (sleep_levels, sleep_hrv, sleep_heart_rate,
+      sleep_respiration, sleep_spo2, etc.) are excluded so an agent can query
+      directly. Sleep stages are exposed as durations in seconds.
+    columns:
+      - name: sleep_date
+        description: Calendar date of the sleep window (Garmin local date).
+        tests:
+          - not_null
+          - unique
+      - name: sleep_calendar_date
+        description: Calendar date as reported inside the dailySleepDTO JSON.
+      - name: sleep_overall_score
+        description: Garmin overall sleep score (0–100).
+      - name: sleep_overall_score_qualifier
+        description: Qualifier key for the score (e.g. EXCELLENT, GOOD, FAIR, POOR).
+      - name: sleep_quality_key
+        description: Sleep quality classification key.
+      - name: sleep_score_feedback
+        description: Free-form Garmin feedback phrase for the night.
+      - name: total_sleep_s
+        description: Total time asleep in seconds.
+      - name: deep_sleep_s
+        description: Deep sleep duration in seconds.
+      - name: light_sleep_s
+        description: Light sleep duration in seconds.
+      - name: rem_sleep_s
+        description: REM sleep duration in seconds.
+      - name: awake_sleep_s
+        description: Time awake during the sleep window in seconds.
+      - name: unmeasurable_sleep_s
+        description: Duration with no reliable measurement, in seconds.
+      - name: nap_s
+        description: Nap duration in seconds.
+      - name: avg_overnight_hrv
+        description: Average overnight HRV in milliseconds.
+      - name: hrv_status
+        description: Overnight HRV status (BALANCED, LOW, etc.).
+      - name: resting_hr_bpm
+        description: Resting heart rate captured during the sleep window.
+      - name: body_battery_change
+        description: Body battery delta (recharge) over the sleep window.
+      - name: avg_spo2
+        description: Average SpO2 (blood oxygen) during sleep.
+      - name: lowest_spo2
+        description: Lowest SpO2 during sleep.
+      - name: avg_respiration_rpm
+        description: Average respiration rate (breaths per minute) during sleep.
+      - name: lowest_respiration_rpm
+        description: Lowest respiration rate during sleep.
+      - name: highest_respiration_rpm
+        description: Highest respiration rate during sleep.
+      - name: restless_moments
+        description: Number of restless moments detected during the night.
+      - name: sleep_start_gmt
+        description: Sleep window start timestamp in GMT.
+      - name: sleep_end_gmt
+        description: Sleep window end timestamp in GMT.
+      - name: sleep_start_local
+        description: Sleep window start timestamp in local time.
+      - name: sleep_end_local
+        description: Sleep window end timestamp in local time.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__training_status_daily
+    description: >
+      Daily Garmin training status, one row per calendar date. Includes a
+      decoded status_label for the numeric status_code, plus the acute /
+      chronic training load context. Sourced from svc_garmin__training_status
+      (which already extracts the primary device payload).
+    columns:
+      - name: status_date
+        description: Calendar date of the training status record.
+        tests:
+          - not_null
+          - unique
+      - name: calendar_date
+        description: Calendar date reported by the device inside the JSON payload.
+      - name: status_code
+        description: >
+          Garmin numeric training status code (0–8). See status_label for the
+          decoded value.
+      - name: status_label
+        description: >
+          Human-readable status (NO_STATUS, DETRAINING, RECOVERY, MAINTAINING,
+          PRODUCTIVE, PEAKING, OVERREACHING, UNPRODUCTIVE, STRAINED).
+      - name: feedback_phrase
+        description: Garmin feedback phrase key associated with the status.
+      - name: training_paused
+        description: Whether training tracking was paused on this date.
+      - name: sport
+        description: Primary sport for the training status (e.g. RUNNING).
+      - name: sub_sport
+        description: Sub-sport classification.
+      - name: fitness_trend_sport
+        description: Sport used to compute the fitness trend.
+      - name: fitness_trend
+        description: Numeric fitness trend code.
+      - name: acwr_status
+        description: Acute:chronic workload ratio status (e.g. LOW, OPTIMAL, HIGH).
+      - name: acwr_status_feedback
+        description: Feedback phrase key for the ACWR status.
+      - name: acwr_percent
+        description: Acute:chronic workload ratio expressed as a percentage.
+      - name: acwr_ratio
+        description: Raw acute:chronic workload ratio value.
+      - name: acute_load
+        description: Daily acute training load.
+      - name: chronic_load
+        description: Daily chronic training load.
+      - name: chronic_load_lower_bound
+        description: Lower bound of the chronic training load tunnel.
+      - name: chronic_load_upper_bound
+        description: Upper bound of the chronic training load tunnel.
+      - name: since_date
+        description: Start date of the current training status window.
+      - name: device_id
+        description: Garmin device identifier that reported the status.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__training_readiness_daily
+    description: >
+      Daily Garmin training readiness, one row per calendar date. Score 0–100
+      with the contributing factors (sleep, HRV, stress history, recovery time,
+      ACWR). Sourced from svc_garmin__training_readiness.
+    columns:
+      - name: readiness_date
+        description: Calendar date of the readiness score.
+        tests:
+          - not_null
+          - unique
+      - name: readiness_score
+        description: Training readiness score (0–100).
+      - name: readiness_level
+        description: Categorical readiness level (e.g. LOW, MODERATE, HIGH).
+      - name: feedback_short
+        description: Short feedback phrase key for the readiness score.
+      - name: sleep_factor_pct
+        description: Sleep factor contribution to the readiness score (percent).
+      - name: hrv_factor_pct
+        description: HRV factor contribution to the readiness score (percent).
+      - name: hrv_weekly_average
+        description: Weekly average overnight HRV used as input to the score.
+      - name: stress_history_factor_pct
+        description: Stress history contribution (percent).
+      - name: recovery_time_factor_pct
+        description: Recovery time contribution (percent).
+      - name: recovery_time_hours
+        description: Remaining recovery time in hours.
+      - name: acwr_factor_pct
+        description: ACWR contribution to the readiness score (percent).
+      - name: acute_load
+        description: Acute training load on the day.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__activities
+    description: >
+      Flat list of every Garmin activity, one row per activity_id. Surfaces
+      the most useful scalar performance metrics (distance, pace, HR, power,
+      cadence, running dynamics, training effect) so an agent can filter and
+      explore without traversing nested STRUCTs.
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+          - unique
+      - name: activity_name
+        description: User-defined activity name.
+      - name: activity_type
+        description: Garmin activity type key (e.g. running, cycling, treadmill_running).
+      - name: activity_date
+        description: Calendar date of the activity (derived from start_time_local).
+      - name: start_time_local
+        description: Activity start time in local timezone.
+      - name: start_time_gmt
+        description: Activity start time in GMT.
+      - name: end_time_gmt
+        description: Activity end time in GMT.
+      - name: location_name
+        description: Free-form location label.
+      - name: distance_m
+        description: Total distance in meters.
+      - name: distance_km
+        description: Total distance in kilometers.
+      - name: duration_s
+        description: Total duration in seconds.
+      - name: moving_duration_s
+        description: Moving duration in seconds (excludes pauses).
+      - name: elapsed_duration_s
+        description: Elapsed duration in seconds (wall-clock).
+      - name: avg_pace_min_per_km
+        description: Average pace in minutes per kilometer.
+      - name: avg_speed_m_per_s
+        description: Average speed in meters per second.
+      - name: max_speed_m_per_s
+        description: Maximum speed in meters per second.
+      - name: elevation_gain_m
+        description: Total elevation gain in meters.
+      - name: elevation_loss_m
+        description: Total elevation loss in meters.
+      - name: min_elevation_m
+        description: Minimum elevation in meters.
+      - name: max_elevation_m
+        description: Maximum elevation in meters.
+      - name: avg_hr_bpm
+        description: Average heart rate in beats per minute.
+      - name: max_hr_bpm
+        description: Maximum heart rate in beats per minute.
+      - name: avg_cadence_spm
+        description: Average running cadence in steps per minute.
+      - name: max_cadence_spm
+        description: Maximum running cadence in steps per minute.
+      - name: avg_power_w
+        description: Average running power in watts.
+      - name: max_power_w
+        description: Maximum running power in watts.
+      - name: norm_power_w
+        description: Normalized power in watts.
+      - name: avg_stride_length_m
+        description: Average stride length in meters.
+      - name: avg_ground_contact_ms
+        description: Average ground contact time in milliseconds.
+      - name: avg_vertical_oscillation_mm
+        description: Average vertical oscillation in millimeters.
+      - name: avg_vertical_ratio
+        description: Average vertical ratio (vertical oscillation / stride length).
+      - name: calories
+        description: Total calories burned.
+      - name: bmr_calories
+        description: Basal metabolic rate calories component.
+      - name: aerobic_te
+        description: Aerobic training effect (0–5).
+      - name: anaerobic_te
+        description: Anaerobic training effect (0–5).
+      - name: training_effect_label
+        description: Garmin training effect label (e.g. RECOVERY, TEMPO).
+      - name: training_load
+        description: Activity training load.
+      - name: vo2max_during_activity
+        description: VO2 max value reported by Garmin for this activity.
+      - name: steps
+        description: Total step count during the activity.
+      - name: lap_count
+        description: Number of laps recorded.
+      - name: is_pr
+        description: Whether the activity is flagged as a personal record.
+      - name: is_favorite
+        description: Whether the user marked the activity as favorite.
+      - name: is_manual
+        description: Whether the activity was logged manually.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: prd_agent__activity_intervals
+    description: >
+      Activity intervals (laps), one row per lap of every activity. Built by
+      UNNESTing the laps ARRAY from svc_garmin__activity_splits and joining
+      activity metadata so the agent can filter by activity_date or
+      activity_type without an extra join.
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier.
+        tests:
+          - not_null
+      - name: activity_name
+        description: User-defined activity name.
+      - name: activity_type
+        description: Garmin activity type key.
+      - name: activity_date
+        description: Calendar date of the parent activity.
+      - name: lap_index
+        description: Index of the lap within the activity (1-based).
+      - name: message_index
+        description: FIT message index of the lap.
+      - name: intensity_type
+        description: Lap intensity category (e.g. ACTIVE, REST, WARMUP, COOLDOWN).
+      - name: start_time_gmt
+        description: Lap start timestamp in GMT.
+      - name: duration_s
+        description: Lap duration in seconds.
+      - name: moving_duration_s
+        description: Lap moving duration in seconds.
+      - name: elapsed_duration_s
+        description: Lap elapsed duration in seconds.
+      - name: distance_m
+        description: Lap distance in meters.
+      - name: distance_km
+        description: Lap distance in kilometers.
+      - name: avg_speed_m_per_s
+        description: Average speed during the lap, in meters per second.
+      - name: avg_moving_speed_m_per_s
+        description: Average moving speed during the lap, in meters per second.
+      - name: max_speed_m_per_s
+        description: Maximum speed during the lap, in meters per second.
+      - name: avg_pace_min_per_km
+        description: Average pace during the lap, in minutes per kilometer.
+      - name: avg_grade_adjusted_speed_m_per_s
+        description: Grade-adjusted average speed during the lap.
+      - name: elevation_gain_m
+        description: Lap elevation gain in meters.
+      - name: elevation_loss_m
+        description: Lap elevation loss in meters.
+      - name: min_elevation_m
+        description: Minimum elevation during the lap, in meters.
+      - name: max_elevation_m
+        description: Maximum elevation during the lap, in meters.
+      - name: max_vertical_speed_m_per_s
+        description: Maximum vertical speed during the lap.
+      - name: avg_hr_bpm
+        description: Average heart rate during the lap, in bpm.
+      - name: max_hr_bpm
+        description: Maximum heart rate during the lap, in bpm.
+      - name: avg_cadence_spm
+        description: Average running cadence during the lap, in spm.
+      - name: max_cadence_spm
+        description: Maximum running cadence during the lap, in spm.
+      - name: avg_power_w
+        description: Average running power during the lap, in watts.
+      - name: max_power_w
+        description: Maximum running power during the lap, in watts.
+      - name: min_power_w
+        description: Minimum running power during the lap, in watts.
+      - name: norm_power_w
+        description: Normalized power during the lap, in watts.
+      - name: total_work_kj
+        description: Total mechanical work during the lap, in kilojoules.
+      - name: avg_stride_length_m
+        description: Average stride length during the lap, in meters.
+      - name: avg_ground_contact_ms
+        description: Average ground contact time during the lap, in milliseconds.
+      - name: avg_vertical_oscillation_mm
+        description: Average vertical oscillation during the lap, in millimeters.
+      - name: avg_vertical_ratio
+        description: Average vertical ratio during the lap.
+      - name: calories
+        description: Calories burned during the lap.
+      - name: bmr_calories
+        description: BMR calories component for the lap.
+      - name: avg_temp_celsius
+        description: Average ambient temperature during the lap, in Celsius.
+      - name: min_temp_celsius
+        description: Minimum ambient temperature during the lap, in Celsius.
+      - name: max_temp_celsius
+        description: Maximum ambient temperature during the lap, in Celsius.
+      - name: start_latitude
+        description: Lap start latitude.
+      - name: start_longitude
+        description: Lap start longitude.
+      - name: end_latitude
+        description: Lap end latitude.
+      - name: end_longitude
+        description: Lap end longitude.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
