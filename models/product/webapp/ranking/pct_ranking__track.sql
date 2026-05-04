@@ -67,7 +67,8 @@ prev_agg AS (
         '7d' AS period
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
+    WHERE
+        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
         AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
     GROUP BY fp.track_id
 
@@ -79,7 +80,8 @@ prev_agg AS (
         '30d' AS period
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
+    WHERE
+        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
         AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
     GROUP BY fp.track_id
 
@@ -91,7 +93,8 @@ prev_agg AS (
         '6m' AS period
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
+    WHERE
+        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
         AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY fp.track_id
 ),

@@ -73,7 +73,8 @@ prev_agg AS (
         CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
         '7d' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
+    WHERE
+        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
         AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
     GROUP BY artist_id
 
@@ -84,7 +85,8 @@ prev_agg AS (
         CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
         '30d' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
+    WHERE
+        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
         AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
     GROUP BY artist_id
 
@@ -95,7 +97,8 @@ prev_agg AS (
         CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
         '6m' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
+    WHERE
+        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
         AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY artist_id
 ),
