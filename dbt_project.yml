@@ -38,4 +38,6 @@ models:
         service:
           +materialized: incremental
     product:
-      +schema: "dp_product_{{ target.name }}"
+      webapp:
+        +schema: "dp_product_webapp_{{ target.name }}"
+        +tags: ["webapp"]
