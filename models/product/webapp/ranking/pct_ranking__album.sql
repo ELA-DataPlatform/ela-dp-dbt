@@ -49,9 +49,9 @@ current_agg AS (
         CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
         COUNT(DISTINCT track_id) AS unique_tracks,
         MAX(played_at) AS last_played_at,
-        '90d' AS period
+        '6m' AS period
     FROM fact_with_album
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY album_id
 
     UNION ALL
@@ -93,10 +93,10 @@ prev_agg AS (
     SELECT
         album_id,
         CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '90d' AS period
+        '6m' AS period
     FROM fact_with_album
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
-        AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
+        AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY album_id
 ),
 

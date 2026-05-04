@@ -40,10 +40,10 @@ WITH current_agg AS (
         COUNT(*) AS play_count,
         CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
         MAX(fp.played_at) AS last_played_at,
-        '90d' AS period
+        '6m' AS period
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY fp.track_id, fp.album_id
 
     UNION ALL
@@ -88,11 +88,11 @@ prev_agg AS (
     SELECT
         fp.track_id,
         CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '90d' AS period
+        '6m' AS period
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
-        AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
+        AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
     GROUP BY fp.track_id
 ),
 
