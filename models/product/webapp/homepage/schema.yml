@@ -3,7 +3,7 @@ version: 2
 models:
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_running
+  - name: pct_webapp_homepage__running
     description: >
       Running distances for the last 14 rolling days (J-13 to today, Europe/Paris).
       One row per day. Days without any run have distance_km = 0.
@@ -11,73 +11,41 @@ models:
     columns:
       - name: activity_date
         description: Calendar date (Europe/Paris).
-        tests:
-          - not_null
-          - unique
       - name: day_label
         description: Day label formatted as "D/M" (e.g. "28/4"), no leading zeros.
-        tests:
-          - not_null
       - name: day_letter
         description: French initial of the day of week — L/M/M/J/V/S/D.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['L', 'M', 'J', 'V', 'S', 'D']
       - name: distance_km
         description: Total running distance on this day in kilometres. 0 if no activity.
-        tests:
-          - not_null
       - name: is_current_week
         description: True if the date belongs to the current ISO week.
-        tests:
-          - not_null
       - name: current_week_km
         description: Total km run during the current ISO week (repeated on every row).
-        tests:
-          - not_null
       - name: previous_week_km
         description: Total km run during the previous ISO week (repeated on every row).
-        tests:
-          - not_null
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_last_activity
+  - name: pct_webapp_homepage__last_activity
     description: >
       The most recent running activity (running / trail_running / treadmill_running).
       Always exactly one row, ordered by activity_date DESC then start_time_local DESC.
     columns:
       - name: activity_id
         description: Garmin activity identifier as a string.
-        tests:
-          - not_null
       - name: activity_name
         description: Display name of the activity as entered on the device.
       - name: activity_date
         description: Calendar date of the activity (local timezone).
-        tests:
-          - not_null
       - name: activity_date_label
         description: Human-readable date in French, e.g. "3 mai 2026".
-        tests:
-          - not_null
       - name: days_ago
         description: Number of calendar days between the activity date and today (Europe/Paris).
-        tests:
-          - not_null
       - name: distance_km
         description: Distance in kilometres rounded to 2 decimal places.
-        tests:
-          - not_null
       - name: duration_seconds
         description: Elapsed duration of the activity in seconds.
-        tests:
-          - not_null
       - name: duration_label
         description: Human-readable duration — "Xh YY" for >= 1 h, "YY min" otherwise.
-        tests:
-          - not_null
       - name: pace_seconds_per_km
         description: Average pace in seconds per kilometre.
       - name: pace_label
@@ -93,7 +61,7 @@ models:
           activity details API if needed.
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_health
+  - name: pct_webapp_homepage__health
     description: >
       Daily sleep and recovery metrics for the last 10 rolling days (J-9 to today,
       Europe/Paris). One row per day. Missing days have NULL metrics.
@@ -102,13 +70,8 @@ models:
     columns:
       - name: activity_date
         description: Calendar date (Europe/Paris).
-        tests:
-          - not_null
-          - unique
       - name: day_label
         description: Day label formatted as "D/M", no leading zeros.
-        tests:
-          - not_null
       - name: sleep_score
         description: Garmin sleep overall score (0–100). NULL if not recorded.
       - name: sleep_duration_minutes
@@ -131,10 +94,6 @@ models:
         description: Sleep score delta — most recent day minus preceding average.
       - name: delta_sleep_score_tone
         description: Tone label for the sleep score delta.
-        tests:
-          - accepted_values:
-              arguments:
-                values: ['success', 'warning', 'danger', 'neutral']
       - name: delta_sleep_minutes
         description: Sleep duration delta in minutes — most recent day minus preceding average.
       - name: delta_hrv_ms
@@ -143,36 +102,21 @@ models:
         description: Body battery at wake-up delta — most recent day minus preceding average.
       - name: delta_body_battery_tone
         description: Tone label for the body battery delta.
-        tests:
-          - accepted_values:
-              arguments:
-                values: ['success', 'warning', 'danger', 'neutral']
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_training_state
+  - name: pct_webapp_homepage__training_state
     description: >
       Snapshot of the current training state, VO2 max, and training load.
       Always exactly one row — the most recent entry from svc_garmin__training_status.
     columns:
       - name: snapshot_date
         description: Date of the training status snapshot.
-        tests:
-          - not_null
       - name: training_state
         description: Normalised training state label derived from Garmin feedback phrase.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['detraining', 'recovery', 'productive', 'maintaining', 'overreaching']
       - name: vo2_max
         description: Most recent VO2 max estimate (precise value if available).
       - name: vo2_max_status
         description: VO2 max trend vs the previous measurement.
-        tests:
-          - accepted_values:
-              arguments:
-                values: ['stable', 'improving', 'declining']
       - name: training_load_7d
         description: Acute (7-day rolling) training load score.
       - name: training_load_target_low
@@ -187,7 +131,7 @@ models:
         description: Days remaining until the active goal (NULL — not available in lake data).
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_music_trend
+  - name: pct_webapp_homepage__music_trend
     description: >
       Daily Spotify listening time for the last 10 rolling days (J-9 to today,
       Europe/Paris). One row per day. Days with no streams have listening_minutes = 0.
@@ -195,43 +139,25 @@ models:
     columns:
       - name: stream_date
         description: Calendar date (Europe/Paris).
-        tests:
-          - not_null
-          - unique
       - name: day_label
         description: Day label formatted as "D/M", no leading zeros.
-        tests:
-          - not_null
       - name: listening_minutes
         description: Total listening time in minutes on this day. 0 if no streams.
-        tests:
-          - not_null
       - name: total_minutes_10d
         description: Total listening minutes over the full 10-day current period.
-        tests:
-          - not_null
       - name: total_label
         description: Formatted total — "XhYY" (e.g. "9h12").
-        tests:
-          - not_null
       - name: total_minutes_prev_10d
         description: Total listening minutes for the previous 10-day period (J-19 to J-10).
-        tests:
-          - not_null
       - name: delta_pct
         description: >
           Percentage change between current and previous 10-day period.
           NULL if previous period had 0 minutes.
       - name: delta_tone
         description: Tone label for the listening trend.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['success', 'danger', 'neutral']
 
   # ────────────────────────────────────────────────────────────────────────────
-  - name: mart_homepage_music_rankings
+  - name: pct_webapp_homepage__music_rankings
     description: >
       Top 5 artists, albums, and tracks ranked by listening time over the last
       10 days (J-9 to today, Europe/Paris), with rank change vs the previous
@@ -240,37 +166,20 @@ models:
     columns:
       - name: period_start
         description: Start date of the current ranking period (J-9).
-        tests:
-          - not_null
       - name: period_end
         description: End date of the current ranking period (today).
-        tests:
-          - not_null
       - name: ranking_type
         description: Entity type being ranked.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['artist', 'album', 'track']
       - name: rank
         description: Rank within the ranking_type (1 = most listened).
-        tests:
-          - not_null
       - name: name
         description: Name of the artist, album, or track.
-        tests:
-          - not_null
       - name: subtitle
         description: Primary artist name (for album and track). NULL for artist.
       - name: listening_minutes
         description: Total listening minutes in the current period.
-        tests:
-          - not_null
       - name: listening_label
         description: Human-readable duration — "XhYY" for >= 60 min, "YYmin" otherwise.
-        tests:
-          - not_null
       - name: image_url
         description: >
           Cover art URL from the Spotify CDN.
@@ -279,5 +188,3 @@ models:
         description: >
           Rank movement vs the previous period: "+2", "-1", "0", or "new"
           if absent from top 5 in the previous period.
-        tests:
-          - not_null

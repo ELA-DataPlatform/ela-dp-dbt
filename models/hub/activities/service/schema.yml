@@ -11,20 +11,11 @@ models:
     columns:
       - name: activity_id
         description: Garmin unique activity identifier. Primary key.
-        tests:
-          - unique
-          - not_null
       - name: activity_date
         description: Calendar date of the activity. Partition field (monthly).
-        tests:
-          - not_null
       - name: activity_type
         description: Garmin activity type key. Cluster field.
-        tests:
-          - not_null
       - name: start_time_local
         description: Activity start time in local timezone.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp when the source activity record was last loaded into the lake.

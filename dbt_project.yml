@@ -41,8 +41,3 @@ models:
       webapp:
         +schema: "dp_product_webapp_{{ target.name }}"
         +tags: ["webapp"]
-    marts:
-      homepage:
-        +schema: "dp_product_webapp_{{ target.name }}"
-        +materialized: table
-        +tags: ["webapp"]

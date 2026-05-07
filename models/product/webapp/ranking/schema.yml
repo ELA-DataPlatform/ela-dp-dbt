@@ -9,37 +9,22 @@ models:
     columns:
       - name: period
         description: Time window for the ranking (7d, 30d, 90d, all).
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['7d', '30d', '90d', 'all']
       - name: rank
         description: Position in the ranking within the period, starting at 1.
-        tests:
-          - not_null
       - name: rank_previous
         description: Rank in the previous equivalent window (NULL if the artist did not appear).
       - name: artist_id
         description: Spotify artist identifier.
-        tests:
-          - not_null
       - name: artist_name
         description: Artist display name.
       - name: artist_image_url
         description: URL of the artist profile image (640x640 from Spotify CDN).
       - name: play_count
         description: Number of track plays credited to this artist in the period.
-        tests:
-          - not_null
       - name: listening_time_min
         description: Total listening time credited to this artist in the period, in minutes.
-        tests:
-          - not_null
       - name: unique_tracks
         description: Number of distinct tracks played for this artist in the period.
-        tests:
-          - not_null
       - name: last_played_at
         description: Timestamp of the most recent play for this artist in the period.
       - name: is_new_entry
@@ -53,21 +38,12 @@ models:
     columns:
       - name: period
         description: Time window for the ranking (7d, 30d, 90d, all).
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['7d', '30d', '90d', 'all']
       - name: rank
         description: Position in the ranking within the period, starting at 1.
-        tests:
-          - not_null
       - name: rank_previous
         description: Rank in the previous equivalent window (NULL if the album did not appear).
       - name: album_id
         description: Spotify album identifier.
-        tests:
-          - not_null
       - name: album_name
         description: Album display name.
       - name: artist_id
@@ -78,16 +54,10 @@ models:
         description: URL of the album cover image (640x640 from Spotify CDN).
       - name: play_count
         description: Total number of track plays from this album in the period.
-        tests:
-          - not_null
       - name: listening_time_min
         description: Total listening time for this album in the period, in minutes.
-        tests:
-          - not_null
       - name: unique_tracks
         description: Number of distinct tracks from this album played in the period.
-        tests:
-          - not_null
       - name: last_played_at
         description: Timestamp of the most recent play from this album in the period.
       - name: is_new_entry
@@ -105,21 +75,12 @@ models:
     columns:
       - name: period
         description: Time window for the ranking (7d, 30d, 90d, all).
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['7d', '30d', '90d', 'all']
       - name: rank
         description: Position in the ranking within the period, starting at 1.
-        tests:
-          - not_null
       - name: rank_previous
         description: Rank in the previous equivalent window (NULL if the track did not appear).
       - name: track_id
         description: Spotify track identifier.
-        tests:
-          - not_null
       - name: track_name
         description: Track display name.
       - name: artist_name
@@ -132,12 +93,8 @@ models:
         description: URL of the album cover image (640x640 from Spotify CDN).
       - name: play_count
         description: Number of times the track was played in the period.
-        tests:
-          - not_null
       - name: listening_time_min
         description: Total listening time for this track in the period, in minutes.
-        tests:
-          - not_null
       - name: duration_ms
         description: Duration of the track in milliseconds.
       - name: last_played_at

@@ -5,10 +5,11 @@ sources:
     database: "{{ target.project }}"
     schema: "dp_lake_garmin_{{ target.name }}"
     description: Raw Garmin data loaded by the ingestion pipeline.
-    freshness:
-      warn_after: {count: 24, period: hour}
-      error_after: {count: 48, period: hour}
-    loaded_at_field: _ingested_at
+    config:
+      freshness:
+        warn_after: {count: 24, period: hour}
+        error_after: {count: 48, period: hour}
+      loaded_at_field: _ingested_at
     tables:
       # ── activities ──────────────────────────────────────────────────────
       - name: normalized_activities
