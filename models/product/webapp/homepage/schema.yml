@@ -56,9 +56,8 @@ models:
         description: Total positive elevation gain in metres.
       - name: polyline
         description: >
-          GPS polyline (Google encoded format or JSON array [[lat,lng],...]).
-          Currently NULL — not available from the lake tables; fetch from the Garmin
-          activity details API if needed.
+          GPS track as a JSON string: array of [lat, lng] pairs sampled at ~2s
+          intervals from the Garmin timeseries. NULL if no GPS data was recorded.
 
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__health
