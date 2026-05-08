@@ -54,7 +54,7 @@ WITH source AS (
         cast(json_value(dailysleepdto, '$.lowestRespirationValue') AS float64) AS sleep_lowest_respiration,
         cast(json_value(dailysleepdto, '$.highestRespirationValue') AS float64) AS sleep_highest_respiration,
         cast(json_value(dailysleepdto, '$.sleepScoreQualityCheck') AS int64) AS sleep_score_quality_check,
-        cast(json_value(dailysleepdto, '$.overallScore.value') AS int64) AS sleep_overall_score,
+        cast(json_value(dailysleepdto, '$.sleepScores.overall.value') AS int64) AS sleep_overall_score,
         cast(json_value(dailysleepdto, '$.sleepQuality.qualityOrdinal') AS int64) AS sleep_quality_ordinal,
         cast(json_value(dailysleepdto, '$.restlessMomentsCount') AS int64) AS sleep_restless_moments_count,
         cast(json_value(wellnessspo2sleepsummarydto, '$.averageSPO2') AS float64) AS spo2_sleep_avg,
@@ -167,7 +167,7 @@ WITH source AS (
 
         -- Parse wellnessSpO2SleepSummaryDTO (JSON object) → SpO2 summary
         json_value(dailysleepdto, '$.sleepScoreFeedback') AS sleep_score_feedback,
-        json_value(dailysleepdto, '$.overallScore.qualifierKey') AS sleep_overall_score_qualifier,
+        json_value(dailysleepdto, '$.sleepScores.overall.qualifierKey') AS sleep_overall_score_qualifier,
         json_value(dailysleepdto, '$.sleepQuality.key') AS sleep_quality_key,
         json_value(wellnessspo2sleepsummarydto, '$.sleepMeasurementStartGMT') AS spo2_sleep_measurement_start_gmt,
         json_value(wellnessspo2sleepsummarydto, '$.sleepMeasurementEndGMT') AS spo2_sleep_measurement_end_gmt

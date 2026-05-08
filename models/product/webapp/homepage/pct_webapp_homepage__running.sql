@@ -36,31 +36,46 @@ joined AS (
 
 week_totals AS (
     SELECT
-        round(sum(CASE WHEN is_current_week THEN distance_km ELSE 0 END), 2) AS current_week_km,
-        round(sum(CASE WHEN NOT is_current_week THEN distance_km ELSE 0 END), 2) AS previous_week_km
-    FROM joined
+        round(sum(CASE
+            WHEN activity_date >= date_trunc(current_date('Europe/Paris'), ISOWEEK)
+                THEN performance.distance_m / 1000.0
+            ELSE 0
+        END), 2) AS current_week_km,
+        round(sum(CASE
+            WHEN
+                activity_date >= date_sub(date_trunc(current_date('Europe/Paris'), ISOWEEK), INTERVAL 7 DAY)
+                AND activity_date < date_trunc(current_date('Europe/Paris'), ISOWEEK)
+                THEN performance.distance_m / 1000.0
+            ELSE 0
+        END), 2) AS previous_week_km
+    FROM {{ ref('svc_hub__master_running_activities') }}
+    WHERE activity_date >= date_sub(date_trunc(current_date('Europe/Paris'), ISOWEEK), INTERVAL 7 DAY)
 )
 
 SELECT
-    j.activity_date,
-    j.distance_km,
-    j.is_current_week,
     w.current_week_km,
     w.previous_week_km,
-    concat(
-        cast(extract(DAY FROM j.activity_date) AS string),
-        '/',
-        cast(extract(MONTH FROM j.activity_date) AS string)
-    ) AS day_label,
-    CASE extract(DAYOFWEEK FROM j.activity_date)
-        WHEN 1 THEN 'D'
-        WHEN 2 THEN 'L'
-        WHEN 3 THEN 'M'
-        WHEN 4 THEN 'M'
-        WHEN 5 THEN 'J'
-        WHEN 6 THEN 'V'
-        WHEN 7 THEN 'S'
-    END AS day_letter
-FROM joined AS j
-CROSS JOIN week_totals AS w
-ORDER BY j.activity_date
+    round(safe_divide(w.current_week_km - w.previous_week_km, w.previous_week_km) * 100, 1) AS week_km_delta_pct,
+    array(
+        SELECT AS STRUCT
+            j.activity_date,
+            j.distance_km,
+            j.is_current_week,
+            concat(
+                cast(extract(DAY FROM j.activity_date) AS string),
+                '/',
+                cast(extract(MONTH FROM j.activity_date) AS string)
+            ) AS day_label,
+            CASE extract(DAYOFWEEK FROM j.activity_date)
+                WHEN 1 THEN 'D'
+                WHEN 2 THEN 'L'
+                WHEN 3 THEN 'M'
+                WHEN 4 THEN 'M'
+                WHEN 5 THEN 'J'
+                WHEN 6 THEN 'V'
+                WHEN 7 THEN 'S'
+            END AS day_letter
+        FROM joined AS j
+        ORDER BY j.activity_date
+    ) AS days
+FROM week_totals AS w

@@ -14,14 +14,21 @@ WITH date_spine AS (
     FROM unnest(generate_array(0, 9)) AS n
 ),
 
-streams_current AS (
+streams_raw AS (
     SELECT
         date(fp.played_at, 'Europe/Paris') AS stream_date,
-        cast(sum(t.duration_ms) / 60000 AS int64) AS listening_minutes
+        coalesce(t.duration_ms, 0) AS duration_ms
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE date(fp.played_at, 'Europe/Paris') >= date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)
-    GROUP BY 1
+),
+
+streams_current AS (
+    SELECT
+        stream_date,
+        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+    FROM streams_raw
+    GROUP BY stream_date
 ),
 
 streams_prev AS (
@@ -47,15 +54,9 @@ totals AS (
 )
 
 SELECT
-    j.stream_date,
-    j.listening_minutes,
+    -- ── KPIs haut niveau (plats) ─────────────────────────────────────────────────
     t.total_minutes_10d,
     p.total_minutes_prev_10d,
-    concat(
-        cast(extract(DAY FROM j.stream_date) AS string),
-        '/',
-        cast(extract(MONTH FROM j.stream_date) AS string)
-    ) AS day_label,
     concat(
         cast(cast(t.total_minutes_10d / 60 AS int64) AS string),
         'h',
@@ -74,8 +75,29 @@ SELECT
         WHEN cast(t.total_minutes_10d AS float64) / cast(p.total_minutes_prev_10d AS float64) >= 1.05 THEN 'success'
         WHEN cast(t.total_minutes_10d AS float64) / cast(p.total_minutes_prev_10d AS float64) <= 0.95 THEN 'danger'
         ELSE 'neutral'
-    END AS delta_tone
-FROM joined AS j
-CROSS JOIN totals AS t
+    END AS delta_tone,
+
+    -- ── Détail quotidien (ARRAY<STRUCT>) ─────────────────────────────────────────
+    array(
+        SELECT AS STRUCT
+            j.stream_date,
+            j.listening_minutes,
+            concat(
+                cast(extract(DAY FROM j.stream_date) AS string),
+                '/',
+                cast(extract(MONTH FROM j.stream_date) AS string)
+            ) AS day_label,
+            CASE extract(DAYOFWEEK FROM j.stream_date)
+                WHEN 1 THEN 'D'
+                WHEN 2 THEN 'L'
+                WHEN 3 THEN 'M'
+                WHEN 4 THEN 'M'
+                WHEN 5 THEN 'J'
+                WHEN 6 THEN 'V'
+                WHEN 7 THEN 'S'
+            END AS day_letter
+        FROM joined AS j
+        ORDER BY j.stream_date
+    ) AS days
+FROM totals AS t
 CROSS JOIN streams_prev AS p
-ORDER BY j.stream_date

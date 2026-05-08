@@ -13,11 +13,11 @@ WITH latest_ts AS (
 
 latest_mm AS (
     SELECT
-        date,
+        calendar_date,
         vo2_max,
         vo2_max_precise
     FROM {{ ref('svc_garmin__max_metrics') }}
-    QUALIFY row_number() OVER (ORDER BY date DESC) = 1
+    QUALIFY row_number() OVER (ORDER BY calendar_date DESC) = 1
 ),
 
 prev_mm AS (
@@ -25,7 +25,7 @@ prev_mm AS (
         vo2_max,
         vo2_max_precise
     FROM {{ ref('svc_garmin__max_metrics') }}
-    QUALIFY row_number() OVER (ORDER BY date DESC) = 2
+    QUALIFY row_number() OVER (ORDER BY calendar_date DESC) = 2
 )
 
 SELECT

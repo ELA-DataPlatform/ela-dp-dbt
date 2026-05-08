@@ -5,24 +5,19 @@ models:
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__running
     description: >
-      Running distances for the last 14 rolling days (J-13 to today, Europe/Paris).
-      One row per day. Days without any run have distance_km = 0.
-      Includes ISO-week totals (current week vs previous week) repeated on every row.
+      Running summary for the last 14 rolling days (J-13 to today, Europe/Paris).
+      Always exactly one row. ISO-week KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
     columns:
-      - name: activity_date
-        description: Calendar date (Europe/Paris).
-      - name: day_label
-        description: Day label formatted as "D/M" (e.g. "28/4"), no leading zeros.
-      - name: day_letter
-        description: French initial of the day of week — L/M/M/J/V/S/D.
-      - name: distance_km
-        description: Total running distance on this day in kilometres. 0 if no activity.
-      - name: is_current_week
-        description: True if the date belongs to the current ISO week.
       - name: current_week_km
-        description: Total km run during the current ISO week (repeated on every row).
+        description: Total km run during the current ISO week (Monday to today).
       - name: previous_week_km
-        description: Total km run during the previous ISO week (repeated on every row).
+        description: Total km run during the full previous ISO week (Monday to Sunday).
+      - name: days
+        description: >
+          Array of 14 entries (J-13 to today), one per calendar day, ordered by date.
+          Each entry contains: activity_date, day_label ("D/M"), day_letter (L/M/M/J/V/S/D),
+          distance_km (0 if no run), is_current_week.
 
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__last_activity
@@ -62,45 +57,45 @@ models:
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__health
     description: >
-      Daily sleep and recovery metrics for the last 10 rolling days (J-9 to today,
-      Europe/Paris). One row per day. Missing days have NULL metrics.
-      Aggregate columns (avg_*, delta_*) are repeated on every row and reflect
-      the most recent day with data vs. the preceding days in the window.
+      Sleep and recovery summary for the last 10 rolling days (J-9 to today, Europe/Paris).
+      Always exactly one row. Aggregate KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
+      Deltas compare the most recent day with data (J0) vs. the average of preceding days (J1..J9).
     columns:
-      - name: activity_date
-        description: Calendar date (Europe/Paris).
-      - name: day_label
-        description: Day label formatted as "D/M", no leading zeros.
-      - name: sleep_score
-        description: Garmin sleep overall score (0–100). NULL if not recorded.
-      - name: sleep_duration_minutes
-        description: Total sleep duration in minutes.
-      - name: hrv_morning_ms
-        description: Average overnight HRV in milliseconds.
-      - name: body_battery_at_sleep
-        description: Body battery level at sleep start (0–100).
-      - name: body_battery_at_wake
-        description: Body battery level at wake-up (0–100).
       - name: avg_sleep_score
-        description: Average sleep score over the preceding days in the 10-day window.
+        description: Average sleep score over J1..J9 (0–100).
       - name: avg_sleep_duration_minutes
-        description: Average sleep duration in minutes over the preceding days.
+        description: Average total sleep duration in minutes over J1..J9.
       - name: avg_hrv_ms
-        description: Average overnight HRV over the preceding days.
+        description: Average overnight HRV in milliseconds over J1..J9.
       - name: avg_body_battery_wake
-        description: Average body battery at wake-up over the preceding days.
+        description: Average body battery at wake-up over J1..J9.
       - name: delta_sleep_score
-        description: Sleep score delta — most recent day minus preceding average.
+        description: Sleep score J0 minus average J1..J9.
       - name: delta_sleep_score_tone
-        description: Tone label for the sleep score delta.
+        description: Tone label for delta_sleep_score — success / neutral / warning / danger.
       - name: delta_sleep_minutes
-        description: Sleep duration delta in minutes — most recent day minus preceding average.
+        description: Sleep duration delta in minutes — J0 minus average J1..J9.
       - name: delta_hrv_ms
-        description: HRV delta — most recent day minus preceding average.
+        description: HRV delta in ms — J0 minus average J1..J9.
       - name: delta_body_battery
-        description: Body battery at wake-up delta — most recent day minus preceding average.
+        description: Body battery at wake-up delta — J0 minus average J1..J9.
       - name: delta_body_battery_tone
-        description: Tone label for the body battery delta.
+        description: Tone label for delta_body_battery — success / neutral / warning / danger.
+      - name: delta_sleep_score_pct
+        description: Sleep score delta as a percentage of the J1..J9 average.
+      - name: delta_sleep_minutes_pct
+        description: Sleep duration delta as a percentage of the J1..J9 average.
+      - name: delta_hrv_pct
+        description: HRV delta as a percentage of the J1..J9 average.
+      - name: delta_body_battery_pct
+        description: Body battery delta as a percentage of the J1..J9 average.
+      - name: days
+        description: >
+          Array of 10 entries (J-9 to today), one per calendar day, ordered by date.
+          Each entry contains: activity_date, day_label ("D/M"), sleep_score,
+          sleep_duration_minutes, hrv_morning_ms, body_battery_at_sleep, body_battery_at_wake.
+          NULL metrics indicate no Garmin data recorded for that day.
 
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__training_state
@@ -132,16 +127,10 @@ models:
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__music_trend
     description: >
-      Daily Spotify listening time for the last 10 rolling days (J-9 to today,
-      Europe/Paris). One row per day. Days with no streams have listening_minutes = 0.
-      Aggregate columns (total_*, delta_*) are repeated on every row.
+      Spotify listening trend over the last 10 rolling days (J-9 to today, Europe/Paris).
+      Always exactly one row. Aggregate KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
     columns:
-      - name: stream_date
-        description: Calendar date (Europe/Paris).
-      - name: day_label
-        description: Day label formatted as "D/M", no leading zeros.
-      - name: listening_minutes
-        description: Total listening time in minutes on this day. 0 if no streams.
       - name: total_minutes_10d
         description: Total listening minutes over the full 10-day current period.
       - name: total_label
@@ -149,41 +138,35 @@ models:
       - name: total_minutes_prev_10d
         description: Total listening minutes for the previous 10-day period (J-19 to J-10).
       - name: delta_pct
-        description: >
-          Percentage change between current and previous 10-day period.
-          NULL if previous period had 0 minutes.
+        description: Percentage change between current and previous 10-day period. NULL if previous period had 0 minutes.
       - name: delta_tone
-        description: Tone label for the listening trend.
+        description: Tone label for the listening trend — success / danger / neutral.
+      - name: days
+        description: >
+          Array of 10 entries (J-9 to today), one per calendar day, ordered by date.
+          Each entry contains: stream_date, day_label ("D/M"), listening_minutes (0 if no streams).
 
   # ────────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_homepage__music_rankings
     description: >
       Top 5 artists, albums, and tracks ranked by listening time over the last
-      10 days (J-9 to today, Europe/Paris), with rank change vs the previous
-      10-day period (J-19 to J-10).
-      15 rows total (5 per ranking_type).
+      7 days (J-6 to today, Europe/Paris), with rank change vs the previous
+      7-day period (J-13 to J-7). Always exactly one row.
+      Each ranking is an ARRAY<STRUCT> ready to be serialised as JSON by the API.
     columns:
       - name: period_start
-        description: Start date of the current ranking period (J-9).
+        description: Start date of the current ranking period (J-6).
       - name: period_end
         description: End date of the current ranking period (today).
-      - name: ranking_type
-        description: Entity type being ranked.
-      - name: rank
-        description: Rank within the ranking_type (1 = most listened).
-      - name: name
-        description: Name of the artist, album, or track.
-      - name: subtitle
-        description: Primary artist name (for album and track). NULL for artist.
-      - name: listening_minutes
-        description: Total listening minutes in the current period.
-      - name: listening_label
-        description: Human-readable duration — "XhYY" for >= 60 min, "YYmin" otherwise.
-      - name: image_url
+      - name: artists
         description: >
-          Cover art URL from the Spotify CDN.
-          Artist → artist image; album → album cover; track → album cover.
-      - name: rank_change
+          Top 5 artists ordered by rank. Each entry: rank, name, subtitle (NULL),
+          listening_minutes, listening_label, image_url, rank_change.
+      - name: albums
         description: >
-          Rank movement vs the previous period: "+2", "-1", "0", or "new"
-          if absent from top 5 in the previous period.
+          Top 5 albums ordered by rank. Each entry: rank, name, subtitle (primary artist),
+          listening_minutes, listening_label, image_url, rank_change.
+      - name: tracks
+        description: >
+          Top 5 tracks ordered by rank. Each entry: rank, name, subtitle (primary artist),
+          listening_minutes, listening_label, image_url, rank_change.

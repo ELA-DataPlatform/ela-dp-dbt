@@ -76,12 +76,7 @@ deltas AS (
 )
 
 SELECT
-    j.activity_date,
-    j.sleep_score,
-    j.sleep_duration_minutes,
-    j.hrv_morning_ms,
-    j.body_battery_at_sleep,
-    j.body_battery_at_wake,
+    -- ── KPIs agrégés (plats) ────────────────────────────────────────────────────
     a.avg_sleep_score,
     a.avg_sleep_duration_minutes,
     a.avg_hrv_ms,
@@ -90,11 +85,6 @@ SELECT
     d.delta_sleep_minutes,
     d.delta_hrv_ms,
     d.delta_body_battery,
-    concat(
-        cast(extract(DAY FROM j.activity_date) AS string),
-        '/',
-        cast(extract(MONTH FROM j.activity_date) AS string)
-    ) AS day_label,
     CASE
         WHEN d.delta_sleep_score >= 5 THEN 'success'
         WHEN d.delta_sleep_score >= 0 THEN 'neutral'
@@ -106,8 +96,37 @@ SELECT
         WHEN d.delta_body_battery >= 0 THEN 'neutral'
         WHEN d.delta_body_battery >= -10 THEN 'warning'
         ELSE 'danger'
-    END AS delta_body_battery_tone
-FROM joined AS j
-CROSS JOIN averages AS a
+    END AS delta_body_battery_tone,
+    round(safe_divide(d.delta_sleep_score, a.avg_sleep_score) * 100, 1) AS delta_sleep_score_pct,
+    round(safe_divide(d.delta_sleep_minutes, a.avg_sleep_duration_minutes) * 100, 1) AS delta_sleep_minutes_pct,
+    round(safe_divide(d.delta_hrv_ms, a.avg_hrv_ms) * 100, 1) AS delta_hrv_pct,
+    round(safe_divide(d.delta_body_battery, a.avg_body_battery_wake) * 100, 1) AS delta_body_battery_pct,
+
+    -- ── Détail quotidien (ARRAY<STRUCT>) ─────────────────────────────────────────
+    array(
+        SELECT AS STRUCT
+            j.activity_date,
+            j.sleep_score,
+            j.sleep_duration_minutes,
+            j.hrv_morning_ms,
+            j.body_battery_at_sleep,
+            j.body_battery_at_wake,
+            concat(
+                cast(extract(DAY FROM j.activity_date) AS string),
+                '/',
+                cast(extract(MONTH FROM j.activity_date) AS string)
+            ) AS day_label,
+            CASE extract(DAYOFWEEK FROM j.activity_date)
+                WHEN 1 THEN 'D'
+                WHEN 2 THEN 'L'
+                WHEN 3 THEN 'M'
+                WHEN 4 THEN 'M'
+                WHEN 5 THEN 'J'
+                WHEN 6 THEN 'V'
+                WHEN 7 THEN 'S'
+            END AS day_letter
+        FROM joined AS j
+        ORDER BY j.activity_date
+    ) AS days
+FROM averages AS a
 CROSS JOIN deltas AS d
-ORDER BY j.activity_date

@@ -9,10 +9,10 @@ WITH
 
 period_bounds AS (
     SELECT
-        date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY) AS period_start,
+        date_sub(current_date('Europe/Paris'), INTERVAL 6 DAY) AS period_start,
         current_date('Europe/Paris') AS period_end,
-        date_sub(current_date('Europe/Paris'), INTERVAL 19 DAY) AS prev_period_start,
-        date_sub(current_date('Europe/Paris'), INTERVAL 10 DAY) AS prev_period_end
+        date_sub(current_date('Europe/Paris'), INTERVAL 13 DAY) AS prev_period_start,
+        date_sub(current_date('Europe/Paris'), INTERVAL 7 DAY) AS prev_period_end
 ),
 
 fact_with_duration AS (
@@ -99,7 +99,7 @@ artists_top5 AS (
     SELECT
         'artist' AS ranking_type,
         c.rank,
-        a.artist_name AS name,
+        a.artist_name AS entity_name,
         cast(NULL AS string) AS subtitle,
         c.listening_minutes,
         ai.image_url,
@@ -166,7 +166,7 @@ albums_top5 AS (
     SELECT
         'album' AS ranking_type,
         c.rank,
-        alb.album_name AS name,
+        alb.album_name AS entity_name,
         pa.artist_name AS subtitle,
         c.listening_minutes,
         ai.image_url,
@@ -236,7 +236,7 @@ tracks_top5 AS (
     SELECT
         'track' AS ranking_type,
         c.rank,
-        t.track_name AS name,
+        t.track_name AS entity_name,
         pa.artist_name AS subtitle,
         c.listening_minutes,
         ai.image_url,
@@ -254,32 +254,74 @@ tracks_top5 AS (
     WHERE c.rank <= 5
 )
 
--- ── UNION ────────────────────────────────────────────────────────────────────
+-- ── FINAL ────────────────────────────────────────────────────────────────────
 
 SELECT
-    ranking_type,
-    rank,
-    name,
-    subtitle,
-    listening_minutes,
-    image_url,
-    rank_change,
-    date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY) AS period_start,
+    date_sub(current_date('Europe/Paris'), INTERVAL 6 DAY) AS period_start,
     current_date('Europe/Paris') AS period_end,
-    CASE
-        WHEN listening_minutes >= 60
-            THEN concat(
-                cast(cast(listening_minutes / 60 AS int64) AS string),
-                'h',
-                format('%02d', mod(listening_minutes, 60))
-            )
-        ELSE concat(cast(listening_minutes AS string), 'min')
-    END AS listening_label
-FROM (
-    SELECT * FROM artists_top5
-    UNION ALL
-    SELECT * FROM albums_top5
-    UNION ALL
-    SELECT * FROM tracks_top5
-)
-ORDER BY ranking_type, rank
+
+    array(
+        SELECT AS STRUCT
+            rank,
+            entity_name,
+            subtitle,
+            listening_minutes,
+            image_url,
+            rank_change,
+            CASE
+                WHEN listening_minutes >= 60
+                    THEN
+                        concat(
+                            cast(cast(listening_minutes / 60 AS int64) AS string),
+                            'h',
+                            format('%02d', mod(listening_minutes, 60))
+                        )
+                ELSE concat(cast(listening_minutes AS string), 'min')
+            END AS listening_label
+        FROM artists_top5
+        ORDER BY rank
+    ) AS artists,
+
+    array(
+        SELECT AS STRUCT
+            rank,
+            entity_name,
+            subtitle,
+            listening_minutes,
+            image_url,
+            rank_change,
+            CASE
+                WHEN listening_minutes >= 60
+                    THEN
+                        concat(
+                            cast(cast(listening_minutes / 60 AS int64) AS string),
+                            'h',
+                            format('%02d', mod(listening_minutes, 60))
+                        )
+                ELSE concat(cast(listening_minutes AS string), 'min')
+            END AS listening_label
+        FROM albums_top5
+        ORDER BY rank
+    ) AS albums,
+
+    array(
+        SELECT AS STRUCT
+            rank,
+            entity_name,
+            subtitle,
+            listening_minutes,
+            image_url,
+            rank_change,
+            CASE
+                WHEN listening_minutes >= 60
+                    THEN
+                        concat(
+                            cast(cast(listening_minutes / 60 AS int64) AS string),
+                            'h',
+                            format('%02d', mod(listening_minutes, 60))
+                        )
+                ELSE concat(cast(listening_minutes AS string), 'min')
+            END AS listening_label
+        FROM tracks_top5
+        ORDER BY rank
+    ) AS tracks
