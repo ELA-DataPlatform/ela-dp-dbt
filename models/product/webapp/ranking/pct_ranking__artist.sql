@@ -13,7 +13,8 @@ WITH fact_with_artist AS (
         bta.artist_id
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta ON fp.track_id = bta.track_id AND bta.artist_position = 0
+    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+        ON fp.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
 current_agg AS (
