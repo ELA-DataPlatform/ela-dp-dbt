@@ -13,7 +13,7 @@ deduplicated AS (
     SELECT
         *,
         row_number() OVER (
-            PARTITION BY userprofilepk, date
+            PARTITION BY userprofilepk, calendardate
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source
