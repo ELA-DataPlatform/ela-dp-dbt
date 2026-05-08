@@ -15,11 +15,38 @@ models:
 
   - name: svc_garmin__activity_details
     description: >
-      Service table for detailed activity data including GPS metrics.
-      Incrementally merges from staging, ensuring uniqueness on activityId.
+      Service table for Garmin activity details. Incrementally merges from staging,
+      ensuring uniqueness on activityId. JSON fields are stored as parsed STRUCTs
+      and ARRAYs.
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
+      - name: data_type
+        description: Type identifier for the activity details record.
+      - name: detailsAvailable
+        description: Whether detailed GPS/metric data is available for this activity.
+      - name: totalMetricsCount
+        description: Total number of metric data points recorded.
+      - name: metricsCount
+        description: Number of metric data points available.
+      - name: measurementCount
+        description: Number of individual measurements in the activity.
+      - name: heartRateDTOs
+        description: Raw JSON string for heart rate DTOs (currently always NULL).
+      - name: pendingData
+        description: Raw JSON string for pending/unprocessed data (currently always NULL).
+      - name: metric_descriptors
+        description: >
+          Parsed ARRAY<STRUCT> describing available metrics. Each element has
+          metrics_index, key, unit_id, unit_key, unit_factor.
+      - name: activity_detail_metrics
+        description: >
+          Parsed ARRAY<STRUCT<metrics ARRAY<FLOAT64>>> containing timeseries
+          measurements. Values correspond to metric_descriptors by metricsIndex.
+      - name: geo_polyline
+        description: >
+          Parsed STRUCT from geoPolylineDTO. Contains start_point, end_point,
+          bounding box (min/max lat/lon), and full GPS polyline as ARRAY<STRUCT>.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -253,13 +280,23 @@ models:
 
   - name: svc_garmin__rhr_daily
     description: >
-      Service table for daily resting heart rate with parsed RHR value.
-      Incrementally merges from staging on userProfileId + date.
+      Service table for daily resting heart rate. Incrementally merges from
+      staging on userProfileId + date.
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
       - name: date
-        description: Date of the RHR data.
+        description: Date of the RHR measurement.
+      - name: statisticsStartDate
+        description: Start date of the statistics period.
+      - name: statisticsEndDate
+        description: End date of the statistics period.
+      - name: data_type
+        description: Type identifier for the RHR record.
+      - name: resting_heart_rate
+        description: Resting heart rate in bpm, extracted from allMetrics JSON.
+      - name: rhr_calendar_date
+        description: Calendar date associated with the RHR value.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 

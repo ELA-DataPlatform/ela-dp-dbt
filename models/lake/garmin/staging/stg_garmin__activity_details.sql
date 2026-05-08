@@ -7,101 +7,99 @@
 
 WITH source AS (
     SELECT
-        * EXCEPT (
-            splitsummaries,
-            summarizedexercisesets,
-            summarizeddiveinfo,
-            activitytypedto,
-            eventtypedto,
-            timezoneunitdto,
-            accesscontrolruledto,
-            summarydto,
-            metadatadto
-        ),
+        activityId,
+        data_type,
+        detailsAvailable,
+        totalMetricsCount,
+        metricsCount,
+        measurementCount,
+        heartRateDTOs,
+        pendingData,
+        _ingested_at,
 
-        -- Parse activityTypeDTO → STRUCT
-        STRUCT(
-            CAST(JSON_VALUE(activitytypedto, '$.typeId') AS INT64) AS type_id,
-            JSON_VALUE(activitytypedto, '$.typeKey') AS type_key,
-            CAST(JSON_VALUE(activitytypedto, '$.parentTypeId') AS INT64) AS parent_type_id,
-            CAST(JSON_VALUE(activitytypedto, '$.isHidden') AS BOOL) AS is_hidden,
-            CAST(JSON_VALUE(activitytypedto, '$.restricted') AS BOOL) AS restricted,
-            CAST(JSON_VALUE(activitytypedto, '$.trimmable') AS BOOL) AS trimmable
-        ) AS activity_type,
-
-        -- Parse eventTypeDTO → STRUCT
-        STRUCT(
-            CAST(JSON_VALUE(eventtypedto, '$.typeId') AS INT64) AS type_id,
-            JSON_VALUE(eventtypedto, '$.typeKey') AS type_key,
-            CAST(JSON_VALUE(eventtypedto, '$.sortOrder') AS INT64) AS sort_order
-        ) AS event_type,
-
-        -- Parse timeZoneUnitDTO → STRUCT
-        STRUCT(
-            CAST(JSON_VALUE(timezoneunitdto, '$.unitId') AS INT64) AS unit_id,
-            JSON_VALUE(timezoneunitdto, '$.unitKey') AS unit_key,
-            JSON_VALUE(timezoneunitdto, '$.timeZone') AS time_zone
-        ) AS time_zone_unit,
-
-        -- Parse accessControlRuleDTO → STRUCT
-        STRUCT(
-            CAST(JSON_VALUE(accesscontrolruledto, '$.typeId') AS INT64) AS type_id,
-            JSON_VALUE(accesscontrolruledto, '$.typeKey') AS type_key
-        ) AS access_control_rule,
-
-        -- Parse splitSummaries → ARRAY<STRUCT>
+        -- Parse metricDescriptors → ARRAY<STRUCT>
         ARRAY(
-            SELECT
-                STRUCT(
-                    JSON_VALUE(item, '$.splitType') AS split_type,
-                    CAST(JSON_VALUE(item, '$.noOfSplits') AS INT64) AS no_of_splits,
-                    CAST(JSON_VALUE(item, '$.distance') AS FLOAT64) AS distance,
-                    CAST(JSON_VALUE(item, '$.duration') AS FLOAT64) AS duration,
-                    CAST(JSON_VALUE(item, '$.totalAscent') AS FLOAT64) AS total_ascent,
-                    CAST(JSON_VALUE(item, '$.elevationLoss') AS FLOAT64) AS elevation_loss,
-                    CAST(JSON_VALUE(item, '$.averageSpeed') AS FLOAT64) AS average_speed,
-                    CAST(JSON_VALUE(item, '$.maxSpeed') AS FLOAT64) AS max_speed,
-                    CAST(JSON_VALUE(item, '$.maxElevationGain') AS FLOAT64) AS max_elevation_gain,
-                    CAST(JSON_VALUE(item, '$.averageElevationGain') AS FLOAT64) AS average_elevation_gain,
-                    CAST(JSON_VALUE(item, '$.maxDistance') AS FLOAT64) AS max_distance,
-                    CAST(JSON_VALUE(item, '$.numClimbSends') AS INT64) AS num_climb_sends,
-                    CAST(JSON_VALUE(item, '$.numFalls') AS INT64) AS num_falls
-                )
-            FROM UNNEST(JSON_QUERY_ARRAY(splitsummaries)) AS item
-        ) AS split_summaries,
+            SELECT STRUCT(
+                CAST(JSON_VALUE(item, '$.metricsIndex') AS INT64) AS metrics_index,
+                JSON_VALUE(item, '$.key')                         AS key,
+                CAST(JSON_VALUE(item, '$.unit.id') AS INT64)      AS unit_id,
+                JSON_VALUE(item, '$.unit.key')                    AS unit_key,
+                CAST(JSON_VALUE(item, '$.unit.factor') AS FLOAT64) AS unit_factor
+            )
+            FROM UNNEST(JSON_QUERY_ARRAY(metricDescriptors)) AS item
+        ) AS metric_descriptors,
 
-        -- Parse summarizedExerciseSets → ARRAY<STRUCT>
+        -- Parse activityDetailMetrics → ARRAY<STRUCT<metrics ARRAY<FLOAT64>>>
         ARRAY(
-            SELECT
+            SELECT STRUCT(
+                ARRAY(
+                    SELECT CAST(v AS FLOAT64)
+                    FROM UNNEST(JSON_VALUE_ARRAY(item, '$.metrics')) AS v
+                    WHERE v IS NOT NULL
+                ) AS metrics
+            )
+            FROM UNNEST(JSON_QUERY_ARRAY(activityDetailMetrics)) AS item
+        ) AS activity_detail_metrics,
+
+        -- Parse geoPolylineDTO → STRUCT
+        IF(
+            geoPolylineDTO IS NULL,
+            NULL,
+            STRUCT(
                 STRUCT(
-                    JSON_VALUE(item, '$.category') AS category,
-                    CAST(JSON_VALUE(item, '$.sets') AS INT64) AS `sets`,
-                    CAST(JSON_VALUE(item, '$.reps') AS INT64) AS reps,
-                    CAST(JSON_VALUE(item, '$.duration') AS FLOAT64) AS duration_ms,
-                    CAST(JSON_VALUE(item, '$.volume') AS FLOAT64) AS volume,
-                    CAST(JSON_VALUE(item, '$.maxWeight') AS FLOAT64) AS max_weight_g
-                )
-            FROM UNNEST(JSON_QUERY_ARRAY(summarizedexercisesets)) AS item
-        ) AS summarized_exercise_sets,
-
-        -- Extra fields from summaryDTO not present as flat columns
-        CAST(JSON_VALUE(summarydto, '$.minHR') AS FLOAT64) AS min_hr,
-        CAST(JSON_VALUE(summarydto, '$.averageMovingSpeed') AS FLOAT64) AS average_moving_speed,
-        CAST(JSON_VALUE(summarydto, '$.averageTemperature') AS FLOAT64) AS average_temperature,
-        CAST(JSON_VALUE(summarydto, '$.directWorkoutFeel') AS INT64) AS workout_feel,
-        CAST(JSON_VALUE(summarydto, '$.directWorkoutRpe') AS INT64) AS workout_rpe,
-        CAST(JSON_VALUE(summarydto, '$.totalWork') AS FLOAT64) AS total_work_kj,
-        CAST(JSON_VALUE(summarydto, '$.beginPotentialStamina') AS FLOAT64) AS begin_potential_stamina,
-        CAST(JSON_VALUE(summarydto, '$.endPotentialStamina') AS FLOAT64) AS end_potential_stamina,
-        CAST(JSON_VALUE(summarydto, '$.minAvailableStamina') AS FLOAT64) AS min_available_stamina,
-        CAST(JSON_VALUE(summarydto, '$.minPower') AS FLOAT64) AS min_power,
-
-        -- Extra fields from metadataDTO not present as flat columns
-        CAST(JSON_VALUE(metadatadto, '$.lastUpdateDate') AS TIMESTAMP) AS last_update_date,
-        CAST(JSON_VALUE(metadatadto, '$.uploadedDate') AS TIMESTAMP) AS uploaded_date,
-        JSON_VALUE(metadatadto, '$.fileFormat.formatKey') AS file_format_key,
-        CAST(JSON_VALUE(metadatadto, '$.hasIntensityIntervals') AS BOOL) AS has_intensity_intervals,
-        CAST(JSON_VALUE(metadatadto, '$.hasRunPowerWindData') AS BOOL) AS has_run_power_wind_data
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.lat') AS FLOAT64)                      AS lat,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.lon') AS FLOAT64)                      AS lon,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.altitude') AS FLOAT64)                 AS altitude,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.time') AS INT64)                       AS time,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.timerStart') AS BOOL)                  AS timer_start,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.timerStop') AS BOOL)                   AS timer_stop,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.distanceFromPreviousPoint') AS FLOAT64) AS distance_from_previous_point,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.distanceInMeters') AS FLOAT64)         AS distance_in_meters,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.speed') AS FLOAT64)                    AS speed,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.cumulativeAscent') AS FLOAT64)         AS cumulative_ascent,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.cumulativeDescent') AS FLOAT64)        AS cumulative_descent,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.extendedCoordinate') AS BOOL)          AS extended_coordinate,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.startPoint.valid') AS BOOL)                       AS valid
+                ) AS start_point,
+                STRUCT(
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.lat') AS FLOAT64)                      AS lat,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.lon') AS FLOAT64)                      AS lon,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.altitude') AS FLOAT64)                 AS altitude,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.time') AS INT64)                       AS time,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.timerStart') AS BOOL)                  AS timer_start,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.timerStop') AS BOOL)                   AS timer_stop,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.distanceFromPreviousPoint') AS FLOAT64) AS distance_from_previous_point,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.distanceInMeters') AS FLOAT64)         AS distance_in_meters,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.speed') AS FLOAT64)                    AS speed,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.cumulativeAscent') AS FLOAT64)         AS cumulative_ascent,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.cumulativeDescent') AS FLOAT64)        AS cumulative_descent,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.extendedCoordinate') AS BOOL)          AS extended_coordinate,
+                    CAST(JSON_VALUE(geoPolylineDTO, '$.endPoint.valid') AS BOOL)                       AS valid
+                ) AS end_point,
+                CAST(JSON_VALUE(geoPolylineDTO, '$.minLat') AS FLOAT64) AS min_lat,
+                CAST(JSON_VALUE(geoPolylineDTO, '$.maxLat') AS FLOAT64) AS max_lat,
+                CAST(JSON_VALUE(geoPolylineDTO, '$.minLon') AS FLOAT64) AS min_lon,
+                CAST(JSON_VALUE(geoPolylineDTO, '$.maxLon') AS FLOAT64) AS max_lon,
+                ARRAY(
+                    SELECT STRUCT(
+                        CAST(JSON_VALUE(pt, '$.lat') AS FLOAT64)                      AS lat,
+                        CAST(JSON_VALUE(pt, '$.lon') AS FLOAT64)                      AS lon,
+                        CAST(JSON_VALUE(pt, '$.altitude') AS FLOAT64)                 AS altitude,
+                        CAST(JSON_VALUE(pt, '$.time') AS INT64)                       AS time,
+                        CAST(JSON_VALUE(pt, '$.timerStart') AS BOOL)                  AS timer_start,
+                        CAST(JSON_VALUE(pt, '$.timerStop') AS BOOL)                   AS timer_stop,
+                        CAST(JSON_VALUE(pt, '$.distanceFromPreviousPoint') AS FLOAT64) AS distance_from_previous_point,
+                        CAST(JSON_VALUE(pt, '$.distanceInMeters') AS FLOAT64)         AS distance_in_meters,
+                        CAST(JSON_VALUE(pt, '$.speed') AS FLOAT64)                    AS speed,
+                        CAST(JSON_VALUE(pt, '$.cumulativeAscent') AS FLOAT64)         AS cumulative_ascent,
+                        CAST(JSON_VALUE(pt, '$.cumulativeDescent') AS FLOAT64)        AS cumulative_descent,
+                        CAST(JSON_VALUE(pt, '$.extendedCoordinate') AS BOOL)          AS extended_coordinate,
+                        CAST(JSON_VALUE(pt, '$.valid') AS BOOL)                       AS valid
+                    )
+                    FROM UNNEST(JSON_QUERY_ARRAY(geoPolylineDTO, '$.polyline')) AS pt
+                ) AS polyline
+            )
+        ) AS geo_polyline
 
     FROM {{ source('garmin', 'normalized_activity_details') }}
 ),
@@ -110,7 +108,7 @@ deduplicated AS (
     SELECT
         *,
         ROW_NUMBER() OVER (
-            PARTITION BY activityid
+            PARTITION BY activityId
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source
