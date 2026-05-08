@@ -7,10 +7,11 @@
 
 WITH source AS (
     SELECT
-        * EXCEPT (allMetrics),
+        * EXCEPT (allmetrics),
 
-        CAST(CAST(JSON_VALUE(allMetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].value') AS FLOAT64) AS INT64) AS resting_heart_rate,
-        JSON_VALUE(allMetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].calendarDate')                  AS rhr_calendar_date
+        CAST(CAST(JSON_VALUE(allmetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].value') AS FLOAT64) AS INT64)
+            AS resting_heart_rate,
+        JSON_VALUE(allmetrics, '$.metricsMap.WELLNESS_RESTING_HEART_RATE[0].calendarDate') AS rhr_calendar_date
 
     FROM {{ source('garmin', 'normalized_rhr_daily') }}
 ),
@@ -19,7 +20,7 @@ deduplicated AS (
     SELECT
         *,
         ROW_NUMBER() OVER (
-            PARTITION BY userProfileId, date
+            PARTITION BY userprofileid, date
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source
