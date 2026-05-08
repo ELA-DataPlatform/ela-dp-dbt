@@ -7,9 +7,10 @@ models:
       treadmill_running). Fully denormalized: every field from every lake service table
       is consolidated here — no external joins needed for downstream consumption.
       Nested structures: performance (STRUCT), fastest_splits (STRUCT), gps (STRUCT),
-      weather (STRUCT), sleep (STRUCT), athletic_context (STRUCT), hr_zones (ARRAY),
-      power_zones (ARRAY), laps (ARRAY), typed_splits (ARRAY), split_summaries (ARRAY),
-      timeseries (ARRAY — one entry per Garmin ~2s sensor sample).
+      route (STRUCT — GPS bounding box + full polyline), weather (STRUCT), sleep (STRUCT),
+      athletic_context (STRUCT), hr_zones (ARRAY), power_zones (ARRAY), laps (ARRAY),
+      typed_splits (ARRAY), split_summaries (ARRAY), timeseries (ARRAY — one entry per
+      ~1s sensor sample with up to 29 dynamic metrics depending on device/activity).
     columns:
       - name: activity_id
         description: Garmin unique activity identifier.
@@ -91,12 +92,22 @@ models:
           power/HR/cadence/temperature.
       - name: timeseries
         description: >
-          ARRAY<STRUCT> of ~2-second Garmin sensor samples for the activity, ordered by
-          timestamp. Each entry: timestamp_gmt, elapsed_s, duration_s, moving_duration_s,
-          cum_distance_m, speed_m_per_s, heart_rate_bpm, cadence_spm, fractional_cadence,
-          body_battery, latitude, longitude, altitude_m, vertical_speed_m_per_s,
-          ground_contact_ms, vertical_oscillation_mm, vertical_ratio, stride_length_m,
-          power_w, air_temp_celsius, grade_pct.
+          ARRAY<STRUCT> of ~1-second Garmin sensor samples ordered by timestamp_gmt.
+          Metrics are resolved dynamically from metric_descriptors (order varies per activity);
+          absent metrics on a given device/activity are NULL. Available fields: timestamp_gmt,
+          elapsed_s, duration_s, moving_duration_s, cum_distance_m, speed_m_per_s,
+          grade_adj_speed_m_per_s, heart_rate_bpm, body_battery, respiration_rpm,
+          performance_condition, cadence_spm, fractional_cadence, run_cadence_spm,
+          ground_contact_ms, stride_length_m, vertical_oscillation_mm, vertical_ratio,
+          vertical_speed_m_per_s, latitude, longitude, elevation_m, corrected_elevation_m,
+          power_w, accumulated_power_w, air_temp_celsius, stamina_available, stamina_potential.
+      - name: route
+        description: >
+          STRUCT sourced from svc_garmin__activity_details.geo_polyline. Contains the GPS
+          bounding box (min_lat, max_lat, min_lon, max_lon), explicit start_point and
+          end_point structs (lat, lon, altitude, time, speed, cumulative_ascent/descent,
+          distance fields), and a full polyline ARRAY<STRUCT> with one entry per GPS point
+          recorded during the activity (~1s cadence, same resolution as timeseries).
       - name: weather
         description: >
           STRUCT with weather conditions at the start of the activity: temperature,
