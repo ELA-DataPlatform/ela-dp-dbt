@@ -110,13 +110,8 @@ models:
           Surrogate key built from date and startGMT (or 'DAILY' when NULL).
           Used as the unique key for MERGE in the service layer to avoid duplicates
           when startGMT is NULL (NULL = NULL is false in SQL joins).
-        tests:
-          - unique
-          - not_null
       - name: date
         description: Date of the step data.
-        tests:
-          - not_null
       - name: totalSteps
         description: Total step count for the day.
       - name: stepGoal

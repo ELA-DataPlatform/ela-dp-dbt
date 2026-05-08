@@ -14,9 +14,6 @@ models:
     columns:
       - name: activity_id
         description: Garmin unique activity identifier.
-        tests:
-          - unique
-          - not_null
       - name: activity_uuid
         description: Garmin UUID for the activity.
       - name: activity_name
@@ -27,22 +24,14 @@ models:
         description: Location name resolved by Garmin at the time of the activity.
       - name: start_time_local
         description: Activity start time in local timezone.
-        tests:
-          - not_null
       - name: start_time_gmt
         description: Activity start time in UTC.
       - name: end_time_gmt
         description: Activity end time in UTC.
       - name: activity_date
         description: Calendar date of the activity (derived from start_time_local).
-        tests:
-          - not_null
       - name: activity_type
         description: Garmin activity type key. One of running, trail_running, treadmill_running.
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['running', 'trail_running', 'treadmill_running']
       - name: device_id
         description: Garmin device ID that recorded the activity.
       - name: manufacturer

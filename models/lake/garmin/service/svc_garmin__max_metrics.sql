@@ -1,7 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key=['userId', 'date'],
+        unique_key=['userId', 'calendar_date'],
         tags=['garmin'],
         partition_by={
             'field': '_ingested_at',
