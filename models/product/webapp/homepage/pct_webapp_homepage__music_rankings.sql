@@ -57,7 +57,8 @@ artist_plays AS (
         fw.duration_ms,
         bta.artist_id
     FROM fact_with_duration AS fw
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta ON fw.track_id = bta.track_id
+    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+        ON fw.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
 artist_current AS (
