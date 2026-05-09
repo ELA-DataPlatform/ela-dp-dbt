@@ -1,8 +1,12 @@
--- Activity intervals (laps), one row per lap of every activity.
--- UNNESTs the laps ARRAY from svc_garmin__activity_splits and joins activity
--- metadata so the agent can filter by date / activity type without a manual join.
+{{
+    config(
+        alias='activity_intervals',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
-SELECT
+SELECT  -- noqa: ST06
     s.activityid AS activity_id,
     a.activityname AS activity_name,
     a.activity_type.type_key AS activity_type,
@@ -72,3 +76,4 @@ FROM {{ ref('svc_garmin__activity_splits') }} AS s
 LEFT JOIN {{ ref('svc_garmin__activities') }} AS a
     ON s.activityid = a.activityid
 CROSS JOIN UNNEST(s.laps) AS lap
+WHERE DATE(a.starttimelocal) >= '2025-01-01'

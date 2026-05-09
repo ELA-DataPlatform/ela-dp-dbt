@@ -1,7 +1,12 @@
--- Flat activity list, one row per activity.
--- Designed for an agent to filter by date / activity type and explore performance.
+{{
+    config(
+        alias='activities',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
-SELECT
+SELECT  -- noqa: ST06
     a.activityid AS activity_id,
     a.activityname AS activity_name,
     a.activity_type.type_key AS activity_type,
@@ -68,4 +73,7 @@ SELECT
 
     a._ingested_at
 FROM {{ ref('svc_garmin__activities') }} AS a
-WHERE a.starttimelocal IS NOT NULL
+WHERE
+    a.starttimelocal IS NOT NULL
+    AND DATE(a.starttimelocal) >= '2025-01-01'
+ORDER BY a.starttimelocal DESC

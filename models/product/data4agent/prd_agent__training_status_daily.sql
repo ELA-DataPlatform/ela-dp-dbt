@@ -1,6 +1,10 @@
--- Daily training status, one row per calendar date.
--- Numeric training_status code mapped to a readable label
--- (Garmin convention: https://developer.garmin.com).
+{{
+    config(
+        alias='training_status_daily',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
 SELECT
     date AS status_date,
@@ -36,4 +40,4 @@ SELECT
     device_id,
     _ingested_at
 FROM {{ ref('svc_garmin__training_status') }}
-WHERE date IS NOT NULL
+WHERE date IS NOT NULL AND date >= '2025-01-01'

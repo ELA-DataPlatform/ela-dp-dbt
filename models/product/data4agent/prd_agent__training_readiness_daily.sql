@@ -1,5 +1,10 @@
--- Daily training readiness, one row per calendar date.
--- Score 0–100 with the underlying contributing factors.
+{{
+    config(
+        alias='training_readiness_daily',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
 SELECT
     calendardate AS readiness_date,
@@ -16,4 +21,4 @@ SELECT
     acuteload AS acute_load,
     _ingested_at
 FROM {{ ref('svc_garmin__training_readiness') }}
-WHERE calendardate IS NOT NULL
+WHERE calendardate IS NOT NULL AND calendardate >= '2025-01-01'

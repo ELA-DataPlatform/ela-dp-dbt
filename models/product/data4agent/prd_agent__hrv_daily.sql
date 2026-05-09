@@ -1,5 +1,10 @@
--- Daily HRV summary, one row per calendar date.
--- Flat columns only — designed for an agent to query without unnesting.
+{{
+    config(
+        alias='hrv_daily',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
 SELECT
     date AS hrv_date,
@@ -15,4 +20,4 @@ SELECT
     hrv_baseline_marker_value,
     _ingested_at
 FROM {{ ref('svc_garmin__hrv') }}
-WHERE date IS NOT NULL
+WHERE date IS NOT NULL AND date >= '2025-01-01'

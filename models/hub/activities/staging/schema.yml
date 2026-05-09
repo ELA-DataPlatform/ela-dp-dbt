@@ -41,7 +41,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['running', 'trail_running', 'treadmill_running']
+              arguments:
+                values: ['running', 'trail_running', 'treadmill_running']
       - name: device_id
         description: Garmin device ID that recorded the activity.
       - name: manufacturer

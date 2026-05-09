@@ -1,6 +1,10 @@
--- Daily sleep summary, one row per calendar date.
--- Excludes nested timeseries arrays from the lake (sleep_levels, sleep_hrv, etc.)
--- so an agent can query flat columns directly.
+{{
+    config(
+        alias='sleep_daily',
+        materialized='table',
+        tags=['garmin', 'data4agent']
+    )
+}}
 
 SELECT
     date AS sleep_date,
@@ -32,4 +36,4 @@ SELECT
     sleep_end_timestamp_local AS sleep_end_local,
     _ingested_at
 FROM {{ ref('svc_garmin__sleep') }}
-WHERE date IS NOT NULL
+WHERE date IS NOT NULL AND date >= '2025-01-01'
