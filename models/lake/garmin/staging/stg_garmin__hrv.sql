@@ -11,7 +11,7 @@ WITH old_format AS (
         _ingested_at,
         data_type,
         userprofilepk,
-        date,
+        date AS hrv_date,
         cast(json_value(hrvsummary, '$.calendarDate') AS date) AS hrv_calendar_date,
         json_value(hrvsummary, '$.status') AS hrv_status,
         json_value(hrvsummary, '$.feedbackPhrase') AS hrv_feedback_phrase,
@@ -40,7 +40,7 @@ new_format AS (
         n._ingested_at,
         n.data_type,
         n.userprofilepk,
-        cast(json_value(item, '$.calendarDate') AS date) AS date,
+        cast(json_value(item, '$.calendarDate') AS date) AS hrv_date,
         cast(json_value(item, '$.calendarDate') AS date) AS hrv_calendar_date,
         json_value(item, '$.status') AS hrv_status,
         json_value(item, '$.feedbackPhrase') AS hrv_feedback_phrase,
@@ -51,9 +51,9 @@ new_format AS (
         cast(json_value(item, '$.baseline.balancedLow') AS float64) AS hrv_baseline_balanced_low,
         cast(json_value(item, '$.baseline.balancedUpper') AS float64) AS hrv_baseline_balanced_upper,
         cast(json_value(item, '$.baseline.markerValue') AS float64) AS hrv_baseline_marker_value,
-        CAST([] AS ARRAY<STRUCT<hrv_value FLOAT64, reading_time_gmt STRING, reading_time_local STRING>>) AS hrv_readings
+        cast([] AS array<struct<hrv_value float64, reading_time_gmt string, reading_time_local string>>) AS hrv_readings
     FROM {{ source('garmin', 'normalized_hrv') }} AS n
-    CROSS JOIN UNNEST(json_query_array(n.hrvsummaries)) AS item
+    CROSS JOIN unnest(json_query_array(n.hrvsummaries)) AS item
     WHERE n.date IS NULL AND n.hrvsummaries IS NOT NULL
 ),
 
@@ -67,7 +67,7 @@ deduplicated AS (
     SELECT
         *,
         row_number() OVER (
-            PARTITION BY userprofilepk, date
+            PARTITION BY userprofilepk, hrv_date
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM combined

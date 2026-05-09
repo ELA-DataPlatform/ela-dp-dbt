@@ -7,7 +7,7 @@
 }}
 
 SELECT
-    date AS hrv_date,
+    hrv_date,
     hrv_calendar_date,
     hrv_status,
     hrv_feedback_phrase,
@@ -20,4 +20,4 @@ SELECT
     hrv_baseline_marker_value,
     _ingested_at
 FROM {{ ref('svc_garmin__hrv') }}
-WHERE date IS NOT NULL AND date >= '2025-01-01'
+WHERE hrv_date IS NOT NULL AND hrv_date >= '2025-01-01'
