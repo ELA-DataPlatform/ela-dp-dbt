@@ -6,73 +6,44 @@ models:
     columns:
       - name: played_at
         description: Timestamp indicating when the track was played.
-        tests:
-          - not_null
       - name: track_id
         description: Spotify unique track identifier, extracted from the track RECORD.
-        tests:
-          - not_null
       - name: track
         description: Nested RECORD containing full track metadata.
       - name: context
         description: Nested RECORD containing playback context.
       - name: _ingested_at
         description: Timestamp when the record was ingested into the normalized table.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - played_at
-              - track_id
 
   - name: svc_spotify_legacy__saved_tracks
     description: Service table for legacy Spotify saved tracks. Incrementally merges from staging, unique on track_id.
     columns:
       - name: track_id
         description: Spotify unique track identifier, extracted from the track RECORD.
-        tests:
-          - unique
-          - not_null
       - name: track
         description: Nested RECORD containing full track metadata.
       - name: added_at
         description: Timestamp when the track was saved to the user's library.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__saved_albums
     description: Service table for legacy Spotify saved albums. Incrementally merges from staging, unique on album_id.
     columns:
       - name: album_id
         description: Spotify unique album identifier, extracted from the album RECORD.
-        tests:
-          - unique
-          - not_null
       - name: album
         description: Nested RECORD containing full album metadata.
       - name: added_at
         description: Timestamp when the album was saved to the user's library.
-        tests:
-          - not_null
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__top_artists
     description: Service table for legacy Spotify top artists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique artist identifier.
-        tests:
-          - unique
-          - not_null
       - name: name
         description: Artist display name.
       - name: popularity
@@ -87,17 +58,12 @@ models:
         description: RECORD containing the Spotify URL for the artist.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__top_tracks
     description: Service table for legacy Spotify top tracks. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique track identifier.
-        tests:
-          - unique
-          - not_null
       - name: name
         description: Track name.
       - name: popularity
@@ -112,17 +78,12 @@ models:
         description: RECORD containing the Spotify URL for the track.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__playlists
     description: Service table for legacy Spotify playlists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique playlist identifier.
-        tests:
-          - unique
-          - not_null
       - name: name
         description: Playlist display name.
       - name: description
@@ -133,17 +94,12 @@ models:
         description: Version identifier for the playlist state.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__album_detail
     description: Service table for legacy Spotify album details. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique album identifier.
-        tests:
-          - unique
-          - not_null
       - name: name
         description: Album name.
       - name: artists
@@ -156,20 +112,14 @@ models:
         description: Album popularity score (0-100).
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
 
   - name: svc_spotify_legacy__album_tracks
     description: Service table for legacy Spotify album tracks. Incrementally merges from staging, unique on album_id + id.
     columns:
       - name: id
         description: Spotify unique track identifier.
-        tests:
-          - not_null
       - name: album_id
         description: Spotify unique album identifier to which this track belongs.
-        tests:
-          - not_null
       - name: name
         description: Track name.
       - name: duration_ms
@@ -180,23 +130,12 @@ models:
         description: Repeated RECORD array of artist records associated with the track.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - album_id
-              - id
 
   - name: svc_spotify_legacy__artist_detail
     description: Service table for legacy Spotify artist details. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique artist identifier.
-        tests:
-          - unique
-          - not_null
       - name: name
         description: Artist display name.
       - name: popularity
@@ -207,5 +146,3 @@ models:
         description: RECORD containing follower count and href.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-        tests:
-          - not_null

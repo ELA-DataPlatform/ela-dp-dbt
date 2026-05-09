@@ -238,11 +238,11 @@ training_readiness AS (
 -- ── 8. VO2max: most recent measurement valid on the activity date ────────────
 max_metrics AS (
     SELECT
-        date,
+        calendar_date,
         vo2_max,
         vo2_max_precise,
         vo2_max_calendar_date,
-        LEAD(date) OVER (ORDER BY date) AS valid_until
+        LEAD(calendar_date) OVER (ORDER BY calendar_date) AS valid_until
     FROM {{ ref('svc_garmin__max_metrics') }}
     WHERE vo2_max IS NOT NULL
 ),
@@ -528,7 +528,7 @@ LEFT JOIN training_readiness AS tr
     ON tr.calendardate = DATE(a.starttimelocal)
 LEFT JOIN max_metrics AS mm
     ON
-        mm.date <= DATE(a.starttimelocal)
+        mm.calendar_date <= DATE(a.starttimelocal)
         AND (mm.valid_until IS NULL OR mm.valid_until > DATE(a.starttimelocal))
 LEFT JOIN weight AS wt
     ON
