@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: prd_agent__stress_daily
+  - name: pct_data4agent__stress_daily
     description: >
       Daily stress summary, one row per calendar date.
       Flat scalar fields only — timeseries arrays excluded so an agent can query directly.
@@ -25,7 +25,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the lake source record was ingested.
 
-  - name: prd_agent__hrv_daily
+  - name: pct_data4agent__hrv_daily
     description: >
       Daily HRV (heart rate variability) summary, one row per calendar date.
       Flat columns only — derived directly from svc_garmin__hrv. The lake-side
@@ -35,7 +35,7 @@ models:
       - name: hrv_date
         description: Calendar date of the HRV measurement (Garmin local date).
 
-  - name: prd_agent__rhr_daily
+  - name: pct_data4agent__rhr_daily
     description: >
       Daily resting heart rate, one row per calendar date.
       Derived from svc_garmin__rhr_daily (timeseries arrays excluded).
@@ -43,7 +43,7 @@ models:
       - name: rhr_date
         description: Calendar date of the resting heart rate measurement.
 
-  - name: prd_agent__sleep_daily
+  - name: pct_data4agent__sleep_daily
     description: >
       Daily sleep summary, one row per calendar date. Flat columns only —
       lake-side timeseries arrays (sleep_levels, sleep_hrv, sleep_heart_rate,
@@ -53,7 +53,7 @@ models:
       - name: sleep_date
         description: Calendar date of the sleep window (Garmin local date).
 
-  - name: prd_agent__training_status_daily
+  - name: pct_data4agent__training_status_daily
     description: >
       Daily Garmin training status, one row per calendar date. Includes a
       decoded status_label for the numeric status_code, plus the acute /
@@ -63,7 +63,7 @@ models:
       - name: status_date
         description: Calendar date of the training status record.
 
-  - name: prd_agent__training_readiness_daily
+  - name: pct_data4agent__training_readiness_daily
     description: >
       Daily Garmin training readiness, one row per calendar date. Score 0–100
       with the contributing factors (sleep, HRV, stress history, recovery time,
@@ -82,7 +82,7 @@ models:
       - name: activity_id
         description: Garmin unique activity identifier.
 
-  - name: prd_agent__activity_intervals
+  - name: pct_data4agent__activity_intervals
     description: >
       Activity intervals (laps), one row per lap of every activity. Built by
       UNNESTing the laps ARRAY from svc_garmin__activity_splits and joining
