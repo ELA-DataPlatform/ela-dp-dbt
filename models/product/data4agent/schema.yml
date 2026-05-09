@@ -1,6 +1,30 @@
 version: 2
 
 models:
+  - name: prd_agent__stress_daily
+    description: >
+      Daily stress summary, one row per calendar date.
+      Flat scalar fields only — timeseries arrays excluded so an agent can query directly.
+    columns:
+      - name: stress_date
+        description: Calendar date of the stress measurement (Garmin local date).
+      - name: calendar_date
+        description: Calendar date as reported in the Garmin payload.
+      - name: avg_stress_level
+        description: Average stress level for the day (0–100).
+      - name: max_stress_level
+        description: Maximum stress level recorded during the day (0–100).
+      - name: start_timestamp_local
+        description: Start of the stress measurement window in local time.
+      - name: end_timestamp_local
+        description: End of the stress measurement window in local time.
+      - name: start_timestamp_gmt
+        description: Start of the stress measurement window in GMT.
+      - name: end_timestamp_gmt
+        description: End of the stress measurement window in GMT.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
   - name: prd_agent__hrv_daily
     description: >
       Daily HRV (heart rate variability) summary, one row per calendar date.
