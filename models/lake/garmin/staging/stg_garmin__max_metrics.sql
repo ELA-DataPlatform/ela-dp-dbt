@@ -7,7 +7,8 @@
 
 WITH source AS (
     SELECT
-        * EXCEPT (generic, heataltitudeacclimation),
+        * EXCEPT (generic, heataltitudeacclimation, date),
+        cast(json_value(generic, '$.calendarDate') AS date) AS calendar_date,
 
         -- Parse generic (JSON object) → VO2 max fields
         cast(json_value(generic, '$.vo2MaxPreciseValue') AS float64) AS vo2_max_precise,
@@ -35,7 +36,7 @@ deduplicated AS (
     SELECT
         *,
         row_number() OVER (
-            PARTITION BY userid, date
+            PARTITION BY userid, calendar_date
             ORDER BY _ingested_at DESC
         ) AS _row_number
     FROM source

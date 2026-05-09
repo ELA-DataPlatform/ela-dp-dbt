@@ -39,6 +39,9 @@ models:
           +materialized: incremental
     product:
       +schema: "dp_product_{{ target.name }}"
+      webapp:
+        +schema: "dp_product_webapp_{{ target.name }}"
+        +tags: ["webapp"]
       data4agent:
         +schema: "dp_product_data4agent_{{ target.name }}"
         +materialized: table

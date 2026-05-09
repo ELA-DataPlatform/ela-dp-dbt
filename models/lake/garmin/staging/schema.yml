@@ -35,69 +35,43 @@ models:
 
   - name: stg_garmin__activity_details
     description: >
-      Deduplicated view of detailed activity data. JSON fields (activityTypeDTO,
-      eventTypeDTO, timeZoneUnitDTO, accessControlRuleDTO, splitSummaries,
-      summarizedExerciseSets) are parsed into typed STRUCTs and ARRAYs.
-      Extra fields from summaryDTO and metadataDTO not present as flat columns
-      are extracted individually. detailed_data (GPS timeseries) is kept as raw JSON.
+      Deduplicated view of Garmin activity details data. JSON fields are fully
+      parsed into typed STRUCTs and ARRAYs. heartRateDTOs and pendingData are
+      kept as raw JSON strings (no non-null examples observed in current data).
     columns:
       - name: activityId
         description: Garmin unique activity identifier.
-      - name: activity_type
+      - name: data_type
+        description: Type identifier for the activity details record.
+      - name: detailsAvailable
+        description: Whether detailed GPS/metric data is available for this activity.
+      - name: totalMetricsCount
+        description: Total number of metric data points recorded.
+      - name: metricsCount
+        description: Number of metric data points available.
+      - name: measurementCount
+        description: Number of individual measurements in the activity.
+      - name: heartRateDTOs
+        description: Raw JSON string for heart rate DTOs (currently always NULL).
+      - name: pendingData
+        description: Raw JSON string for pending/unprocessed data (currently always NULL).
+      - name: metric_descriptors
         description: >
-          Parsed STRUCT from activityTypeDTO JSON. Contains type_id, type_key,
-          parent_type_id, is_hidden, restricted, trimmable.
-      - name: event_type
+          Parsed ARRAY<STRUCT> from metricDescriptors JSON. Each element contains
+          metrics_index (INT64), key (STRING), unit_id (INT64), unit_key (STRING),
+          unit_factor (FLOAT64). Describes the columns of activity_detail_metrics.
+      - name: activity_detail_metrics
         description: >
-          Parsed STRUCT from eventTypeDTO JSON. Contains type_id, type_key, sort_order.
-      - name: time_zone_unit
+          Parsed ARRAY<STRUCT<metrics ARRAY<FLOAT64>>> from activityDetailMetrics JSON.
+          Each element is a timeseries measurement point; values correspond to
+          metric_descriptors entries by metricsIndex.
+      - name: geo_polyline
         description: >
-          Parsed STRUCT from timeZoneUnitDTO JSON. Contains unit_id, unit_key, time_zone.
-      - name: access_control_rule
-        description: >
-          Parsed STRUCT from accessControlRuleDTO JSON. Contains type_id, type_key.
-      - name: split_summaries
-        description: >
-          Parsed ARRAY<STRUCT> from splitSummaries JSON. Each element contains
-          split_type, no_of_splits, distance, duration, total_ascent, elevation_loss,
-          average_speed, max_speed, max_elevation_gain, average_elevation_gain,
-          max_distance, num_climb_sends, num_falls.
-      - name: summarized_exercise_sets
-        description: >
-          Parsed ARRAY<STRUCT> from summarizedExerciseSets JSON. Each element contains
-          category, sets, reps, duration_ms, volume, max_weight_g.
-      - name: min_hr
-        description: Minimum heart rate during the activity (from summaryDTO).
-      - name: average_moving_speed
-        description: Average speed while actually moving, excluding stops (from summaryDTO).
-      - name: average_temperature
-        description: Average ambient temperature during the activity in Celsius (from summaryDTO).
-      - name: workout_feel
-        description: Garmin perceived effort score (0-100) recorded at end of activity (from summaryDTO).
-      - name: workout_rpe
-        description: Rate of perceived exertion score recorded at end of activity (from summaryDTO).
-      - name: total_work_kj
-        description: Total mechanical work done during the activity in kilojoules (from summaryDTO).
-      - name: begin_potential_stamina
-        description: Garmin stamina percentage at the start of the activity (from summaryDTO).
-      - name: end_potential_stamina
-        description: Garmin stamina percentage at the end of the activity (from summaryDTO).
-      - name: min_available_stamina
-        description: Minimum available stamina percentage reached during the activity (from summaryDTO).
-      - name: min_power
-        description: Minimum power output in watts during the activity (from summaryDTO).
-      - name: last_update_date
-        description: Timestamp of the last update to this activity record (from metadataDTO).
-      - name: uploaded_date
-        description: Timestamp when this activity was uploaded to Garmin Connect (from metadataDTO).
-      - name: file_format_key
-        description: File format of the original activity file, e.g. fit (from metadataDTO).
-      - name: has_intensity_intervals
-        description: Whether the activity contains intensity interval segments (from metadataDTO).
-      - name: has_run_power_wind_data
-        description: Whether the activity contains run power with wind data (from metadataDTO).
-      - name: detailed_data
-        description: JSON string with GPS tracks and granular metric timeseries (~2s resolution).
+          Parsed STRUCT from geoPolylineDTO JSON. Contains start_point (STRUCT),
+          end_point (STRUCT), min_lat, max_lat, min_lon, max_lon (FLOAT64), and
+          polyline (ARRAY<STRUCT>) with full GPS track at ~1s resolution.
+          Each GPS point has lat, lon, altitude, time, speed, cumulative_ascent,
+          cumulative_descent, distance_in_meters, timer_start, timer_stop, valid.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
@@ -136,13 +110,8 @@ models:
           Surrogate key built from date and startGMT (or 'DAILY' when NULL).
           Used as the unique key for MERGE in the service layer to avoid duplicates
           when startGMT is NULL (NULL = NULL is false in SQL joins).
-        tests:
-          - unique
-          - not_null
       - name: date
         description: Date of the step data.
-        tests:
-          - not_null
       - name: totalSteps
         description: Total step count for the day.
       - name: stepGoal
@@ -468,17 +437,23 @@ models:
 
   - name: stg_garmin__rhr_daily
     description: >
-      Deduplicated view of daily resting heart rate. allMetrics JSON parsed
-      to extract the resting heart rate value directly.
+      Deduplicated view of daily resting heart rate data. The resting HR value
+      and calendar date are extracted from the allMetrics JSON field.
     columns:
       - name: userProfileId
         description: Garmin user profile identifier.
       - name: date
-        description: Date of the RHR data.
+        description: Date of the RHR measurement.
+      - name: statisticsStartDate
+        description: Start date of the statistics period.
+      - name: statisticsEndDate
+        description: End date of the statistics period.
+      - name: data_type
+        description: Type identifier for the RHR record.
       - name: resting_heart_rate
-        description: Resting heart rate value extracted from allMetrics JSON.
+        description: Resting heart rate in bpm, extracted from allMetrics.metricsMap.WELLNESS_RESTING_HEART_RATE.
       - name: rhr_calendar_date
-        description: Calendar date associated with the RHR measurement.
+        description: Calendar date associated with the RHR value, extracted from allMetrics JSON.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 

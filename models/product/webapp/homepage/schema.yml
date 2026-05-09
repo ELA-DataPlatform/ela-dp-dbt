@@ -1,0 +1,172 @@
+version: 2
+
+models:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__running
+    description: >
+      Running summary for the last 14 rolling days (J-13 to today, Europe/Paris).
+      Always exactly one row. ISO-week KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
+    columns:
+      - name: current_week_km
+        description: Total km run during the current ISO week (Monday to today).
+      - name: previous_week_km
+        description: Total km run during the full previous ISO week (Monday to Sunday).
+      - name: days
+        description: >
+          Array of 14 entries (J-13 to today), one per calendar day, ordered by date.
+          Each entry contains: activity_date, day_label ("D/M"), day_letter (L/M/M/J/V/S/D),
+          distance_km (0 if no run), is_current_week.
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__last_activity
+    description: >
+      The most recent running activity (running / trail_running / treadmill_running).
+      Always exactly one row, ordered by activity_date DESC then start_time_local DESC.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier as a string.
+      - name: activity_name
+        description: Display name of the activity as entered on the device.
+      - name: activity_date
+        description: Calendar date of the activity (local timezone).
+      - name: activity_date_label
+        description: Human-readable date in French, e.g. "3 mai 2026".
+      - name: days_ago
+        description: Number of calendar days between the activity date and today (Europe/Paris).
+      - name: distance_km
+        description: Distance in kilometres rounded to 2 decimal places.
+      - name: duration_seconds
+        description: Elapsed duration of the activity in seconds.
+      - name: duration_label
+        description: Human-readable duration — "Xh YY" for >= 1 h, "YY min" otherwise.
+      - name: pace_seconds_per_km
+        description: Average pace in seconds per kilometre.
+      - name: pace_label
+        description: Average pace formatted as M'SS"/km (e.g. 5'12"/km).
+      - name: avg_heart_rate_bpm
+        description: Average heart rate during the activity in BPM.
+      - name: elevation_gain_m
+        description: Total positive elevation gain in metres.
+      - name: polyline
+        description: >
+          GPS track as a JSON string: array of [lat, lng] pairs sampled at ~2s
+          intervals from the Garmin timeseries. NULL if no GPS data was recorded.
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__health
+    description: >
+      Sleep and recovery summary for the last 10 rolling days (J-9 to today, Europe/Paris).
+      Always exactly one row. Aggregate KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
+      Deltas compare the most recent day with data (J0) vs. the average of preceding days (J1..J9).
+    columns:
+      - name: avg_sleep_score
+        description: Average sleep score over J1..J9 (0–100).
+      - name: avg_sleep_duration_minutes
+        description: Average total sleep duration in minutes over J1..J9.
+      - name: avg_hrv_ms
+        description: Average overnight HRV in milliseconds over J1..J9.
+      - name: avg_body_battery_wake
+        description: Average body battery at wake-up over J1..J9.
+      - name: delta_sleep_score
+        description: Sleep score J0 minus average J1..J9.
+      - name: delta_sleep_score_tone
+        description: Tone label for delta_sleep_score — success / neutral / warning / danger.
+      - name: delta_sleep_minutes
+        description: Sleep duration delta in minutes — J0 minus average J1..J9.
+      - name: delta_hrv_ms
+        description: HRV delta in ms — J0 minus average J1..J9.
+      - name: delta_body_battery
+        description: Body battery at wake-up delta — J0 minus average J1..J9.
+      - name: delta_body_battery_tone
+        description: Tone label for delta_body_battery — success / neutral / warning / danger.
+      - name: delta_sleep_score_pct
+        description: Sleep score delta as a percentage of the J1..J9 average.
+      - name: delta_sleep_minutes_pct
+        description: Sleep duration delta as a percentage of the J1..J9 average.
+      - name: delta_hrv_pct
+        description: HRV delta as a percentage of the J1..J9 average.
+      - name: delta_body_battery_pct
+        description: Body battery delta as a percentage of the J1..J9 average.
+      - name: days
+        description: >
+          Array of 10 entries (J-9 to today), one per calendar day, ordered by date.
+          Each entry contains: activity_date, day_label ("D/M"), sleep_score,
+          sleep_duration_minutes, hrv_morning_ms, body_battery_at_sleep, body_battery_at_wake.
+          NULL metrics indicate no Garmin data recorded for that day.
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__training_state
+    description: >
+      Snapshot of the current training state, VO2 max, and training load.
+      Always exactly one row — the most recent entry from svc_garmin__training_status.
+    columns:
+      - name: snapshot_date
+        description: Date of the training status snapshot.
+      - name: training_state
+        description: Normalised training state label derived from Garmin feedback phrase.
+      - name: vo2_max
+        description: Most recent VO2 max estimate (precise value if available).
+      - name: vo2_max_status
+        description: VO2 max trend vs the previous measurement.
+      - name: training_load_7d
+        description: Acute (7-day rolling) training load score.
+      - name: training_load_target_low
+        description: Lower bound of the optimal chronic training load range.
+      - name: training_load_target_high
+        description: Upper bound of the optimal chronic training load range.
+      - name: active_goal_name
+        description: Name of the active race goal (NULL — not available in lake data).
+      - name: active_goal_date
+        description: Date of the active race goal (NULL — not available in lake data).
+      - name: active_goal_days_left
+        description: Days remaining until the active goal (NULL — not available in lake data).
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__music_trend
+    description: >
+      Spotify listening trend over the last 10 rolling days (J-9 to today, Europe/Paris).
+      Always exactly one row. Aggregate KPIs are flat columns; daily breakdown is
+      an ARRAY<STRUCT> ready to be serialised as JSON by the API.
+    columns:
+      - name: total_minutes_10d
+        description: Total listening minutes over the full 10-day current period.
+      - name: total_label
+        description: Formatted total — "XhYY" (e.g. "9h12").
+      - name: total_minutes_prev_10d
+        description: Total listening minutes for the previous 10-day period (J-19 to J-10).
+      - name: delta_pct
+        description: Percentage change between current and previous 10-day period. NULL if previous period had 0 minutes.
+      - name: delta_tone
+        description: Tone label for the listening trend — success / danger / neutral.
+      - name: days
+        description: >
+          Array of 10 entries (J-9 to today), one per calendar day, ordered by date.
+          Each entry contains: stream_date, day_label ("D/M"), listening_minutes (0 if no streams).
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_homepage__music_rankings
+    description: >
+      Top 5 artists, albums, and tracks ranked by listening time over the last
+      7 days (J-6 to today, Europe/Paris), with rank change vs the previous
+      7-day period (J-13 to J-7). Always exactly one row.
+      Each ranking is an ARRAY<STRUCT> ready to be serialised as JSON by the API.
+    columns:
+      - name: period_start
+        description: Start date of the current ranking period (J-6).
+      - name: period_end
+        description: End date of the current ranking period (today).
+      - name: artists
+        description: >
+          Top 5 artists ordered by rank. Each entry: rank, name, subtitle (NULL),
+          listening_minutes, listening_label, image_url, rank_change.
+      - name: albums
+        description: >
+          Top 5 albums ordered by rank. Each entry: rank, name, subtitle (primary artist),
+          listening_minutes, listening_label, image_url, rank_change.
+      - name: tracks
+        description: >
+          Top 5 tracks ordered by rank. Each entry: rank, name, subtitle (primary artist),
+          listening_minutes, listening_label, image_url, rank_change.

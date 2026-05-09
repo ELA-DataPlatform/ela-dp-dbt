@@ -1,0 +1,103 @@
+version: 2
+
+models:
+  - name: pct_ranking__artist
+    description: >
+      Artist rankings by play count for each time window (7d, 30d, 90d, all).
+      Includes rank delta vs the previous equivalent window for trend display.
+      One row per (period, artist_id) combination.
+    columns:
+      - name: period
+        description: Time window for the ranking (7d, 30d, 90d, all).
+      - name: rank
+        description: Position in the ranking within the period, starting at 1.
+      - name: rank_previous
+        description: Rank in the previous equivalent window (NULL if the artist did not appear).
+      - name: artist_id
+        description: Spotify artist identifier.
+      - name: artist_name
+        description: Artist display name.
+      - name: artist_image_url
+        description: URL of the artist profile image (640x640 from Spotify CDN).
+      - name: play_count
+        description: Number of track plays credited to this artist in the period.
+      - name: listening_time_min
+        description: Total listening time credited to this artist in the period, in minutes.
+      - name: unique_tracks
+        description: Number of distinct tracks played for this artist in the period.
+      - name: last_played_at
+        description: Timestamp of the most recent play for this artist in the period.
+      - name: is_new_entry
+        description: True if the artist appears in this period but not in the previous equivalent window.
+
+  - name: pct_ranking__album
+    description: >
+      Album rankings by play count for each time window (7d, 30d, 90d, all).
+      Includes rank delta vs the previous equivalent window for trend display.
+      One row per (period, album_id) combination. Primary artist only.
+    columns:
+      - name: period
+        description: Time window for the ranking (7d, 30d, 90d, all).
+      - name: rank
+        description: Position in the ranking within the period, starting at 1.
+      - name: rank_previous
+        description: Rank in the previous equivalent window (NULL if the album did not appear).
+      - name: album_id
+        description: Spotify album identifier.
+      - name: album_name
+        description: Album display name.
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+      - name: artist_name
+        description: Display name of the primary artist.
+      - name: album_image_url
+        description: URL of the album cover image (640x640 from Spotify CDN).
+      - name: play_count
+        description: Total number of track plays from this album in the period.
+      - name: listening_time_min
+        description: Total listening time for this album in the period, in minutes.
+      - name: unique_tracks
+        description: Number of distinct tracks from this album played in the period.
+      - name: last_played_at
+        description: Timestamp of the most recent play from this album in the period.
+      - name: is_new_entry
+        description: True if the album appears in this period but not in the previous equivalent window.
+      - name: release_year
+        description: Release year of the album, extracted from release_date.
+      - name: total_tracks
+        description: Total number of tracks in the album.
+
+  - name: pct_ranking__track
+    description: >
+      Track rankings by play count for each time window (7d, 30d, 90d, all).
+      Includes rank delta vs the previous equivalent window for trend display.
+      One row per (period, track_id, album_id) combination. Primary artist only.
+    columns:
+      - name: period
+        description: Time window for the ranking (7d, 30d, 90d, all).
+      - name: rank
+        description: Position in the ranking within the period, starting at 1.
+      - name: rank_previous
+        description: Rank in the previous equivalent window (NULL if the track did not appear).
+      - name: track_id
+        description: Spotify track identifier.
+      - name: track_name
+        description: Track display name.
+      - name: artist_name
+        description: Display name of the primary artist (artist_position = 0).
+      - name: album_id
+        description: Spotify album identifier the track was played from.
+      - name: album_name
+        description: Album display name.
+      - name: album_image_url
+        description: URL of the album cover image (640x640 from Spotify CDN).
+      - name: play_count
+        description: Number of times the track was played in the period.
+      - name: listening_time_min
+        description: Total listening time for this track in the period, in minutes.
+      - name: duration_ms
+        description: Duration of the track in milliseconds.
+      - name: last_played_at
+        description: Timestamp of the most recent play for this track in the period.
+      - name: is_new_entry
+        description: True if the track appears in this period but not in the previous equivalent window.
