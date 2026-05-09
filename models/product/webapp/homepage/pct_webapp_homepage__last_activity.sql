@@ -20,6 +20,23 @@ WITH last_activity AS (
     FROM {{ ref('svc_hub__master_running_activities') }}
     ORDER BY activity_date DESC, start_time_local DESC
     LIMIT 1
+),
+
+gps_points AS (
+    SELECT
+        ts.latitude,
+        ts.longitude,
+        ts_offset AS point_index,
+        COUNT(*) OVER () AS total_points
+    FROM last_activity
+    CROSS JOIN UNNEST(timeseries) AS ts WITH OFFSET AS ts_offset
+    WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL
+),
+
+sampled_gps AS (
+    SELECT latitude, longitude, point_index
+    FROM gps_points
+    WHERE MOD(point_index, GREATEST(1, CAST(CEIL(total_points / 400.0) AS INT64))) = 0
 )
 
 SELECT
@@ -35,13 +52,12 @@ SELECT
             concat(
                 '[',
                 string_agg(
-                    concat('[', cast(ts.latitude AS string), ',', cast(ts.longitude AS string), ']'),
-                    ','
+                    concat('[', cast(latitude AS string), ',', cast(longitude AS string), ']'),
+                    ',' ORDER BY point_index
                 ),
                 ']'
             )
-        FROM unnest(timeseries) AS ts
-        WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL
+        FROM sampled_gps
     ) AS polyline,
     concat(
         cast(extract(DAY FROM activity_date) AS string),
