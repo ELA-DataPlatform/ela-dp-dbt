@@ -1,0 +1,45 @@
+version: 2
+
+models:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_activities__activity_list
+    description: >
+      One row per Garmin activity (all types — running, cycling, walking, strength training, etc.),
+      ordered by start time descending. Provides the basic metrics needed to render an activity list.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier as a string.
+        tests:
+          - unique
+          - not_null
+      - name: activity_name
+        description: Display name of the activity as entered on the device.
+      - name: activity_type
+        description: >
+          Garmin activity type key (e.g. running, trail_running, treadmill_running, cycling,
+          walking, strength_training, hiking, badminton, tennis_v2, etc.).
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (local timezone).
+        tests:
+          - not_null
+      - name: start_time_local
+        description: Start timestamp of the activity in local timezone.
+      - name: distance_km
+        description: Total distance in kilometres, rounded to 2 decimal places. NULL for activities without GPS distance (e.g. strength training).
+      - name: duration_seconds
+        description: Total elapsed duration of the activity in seconds.
+      - name: duration_label
+        description: Human-readable duration — "Xh YY" for >= 1 h, "YY min" otherwise.
+      - name: avg_speed_km_h
+        description: Average speed in km/h, rounded to 2 decimal places. NULL for activities without speed data.
+      - name: pace_label
+        description: >
+          Human-readable pace or speed. Cycling activities show speed in km/h (e.g. "14.6 km/h");
+          all other activities show pace in min/km (e.g. "5'12\"/km"). NULL if no speed data.
+      - name: elevation_gain_m
+        description: Total positive elevation gain in metres. NULL for activities without elevation data.
+      - name: avg_hr_bpm
+        description: Average heart rate during the activity in BPM. NULL if no heart rate was recorded.
