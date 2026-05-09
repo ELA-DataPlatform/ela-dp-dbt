@@ -1,0 +1,93 @@
+version: 2
+
+models:
+  - name: pct_data4agent__stress_daily
+    description: >
+      Daily stress summary, one row per calendar date.
+      Flat scalar fields only — timeseries arrays excluded so an agent can query directly.
+    columns:
+      - name: stress_date
+        description: Calendar date of the stress measurement (Garmin local date).
+      - name: calendar_date
+        description: Calendar date as reported in the Garmin payload.
+      - name: avg_stress_level
+        description: Average stress level for the day (0–100).
+      - name: max_stress_level
+        description: Maximum stress level recorded during the day (0–100).
+      - name: start_timestamp_local
+        description: Start of the stress measurement window in local time.
+      - name: end_timestamp_local
+        description: End of the stress measurement window in local time.
+      - name: start_timestamp_gmt
+        description: Start of the stress measurement window in GMT.
+      - name: end_timestamp_gmt
+        description: End of the stress measurement window in GMT.
+      - name: _ingested_at
+        description: Timestamp when the lake source record was ingested.
+
+  - name: pct_data4agent__hrv_daily
+    description: >
+      Daily HRV (heart rate variability) summary, one row per calendar date.
+      Flat columns only — derived directly from svc_garmin__hrv. The lake-side
+      timeseries arrays (hrv_readings) are intentionally excluded so an agent
+      can query without unnesting.
+    columns:
+      - name: hrv_date
+        description: Calendar date of the HRV measurement (Garmin local date).
+
+  - name: pct_data4agent__rhr_daily
+    description: >
+      Daily resting heart rate, one row per calendar date.
+      Derived from svc_garmin__rhr_daily (timeseries arrays excluded).
+    columns:
+      - name: rhr_date
+        description: Calendar date of the resting heart rate measurement.
+
+  - name: pct_data4agent__sleep_daily
+    description: >
+      Daily sleep summary, one row per calendar date. Flat columns only —
+      lake-side timeseries arrays (sleep_levels, sleep_hrv, sleep_heart_rate,
+      sleep_respiration, sleep_spo2, etc.) are excluded so an agent can query
+      directly. Sleep stages are exposed as durations in seconds.
+    columns:
+      - name: sleep_date
+        description: Calendar date of the sleep window (Garmin local date).
+
+  - name: pct_data4agent__training_status_daily
+    description: >
+      Daily Garmin training status, one row per calendar date. Includes a
+      decoded status_label for the numeric status_code, plus the acute /
+      chronic training load context. Sourced from svc_garmin__training_status
+      (which already extracts the primary device payload).
+    columns:
+      - name: status_date
+        description: Calendar date of the training status record.
+
+  - name: pct_data4agent__training_readiness_daily
+    description: >
+      Daily Garmin training readiness, one row per calendar date. Score 0–100
+      with the contributing factors (sleep, HRV, stress history, recovery time,
+      ACWR). Sourced from svc_garmin__training_readiness.
+    columns:
+      - name: readiness_date
+        description: Calendar date of the readiness score.
+
+  - name: pct_data4agent__activities
+    description: >
+      Flat list of every Garmin activity, one row per activity_id. Surfaces
+      the most useful scalar performance metrics (distance, pace, HR, power,
+      cadence, running dynamics, training effect) so an agent can filter and
+      explore without traversing nested STRUCTs.
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier.
+
+  - name: pct_data4agent__activity_intervals
+    description: >
+      Activity intervals (laps), one row per lap of every activity. Built by
+      UNNESTing the laps ARRAY from svc_garmin__activity_splits and joining
+      activity metadata so the agent can filter by activity_date or
+      activity_type without an extra join.
+    columns:
+      - name: activity_id
+        description: Garmin unique activity identifier.
