@@ -6,7 +6,7 @@
     )
 }}
 
-SELECT
+SELECT  -- noqa: ST06
     date AS status_date,
     calendar_date,
     training_status AS status_code,
@@ -20,7 +20,6 @@ SELECT
         WHEN 6 THEN 'OVERREACHING'
         WHEN 7 THEN 'UNPRODUCTIVE'
         WHEN 8 THEN 'STRAINED'
-        ELSE NULL
     END AS status_label,
     training_status_feedback_phrase AS feedback_phrase,
     training_paused,
