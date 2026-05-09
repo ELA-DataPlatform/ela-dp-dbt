@@ -68,12 +68,12 @@ SELECT
     CASE
         WHEN duration_s >= 3600
             THEN concat(
-                cast(cast(duration_s / 3600 AS int64) AS string),
+                cast(div(cast(round(duration_s) AS int64), 3600) AS string),
                 'h ',
-                format('%02d', cast(mod(cast(round(duration_s) AS int64), 3600) / 60 AS int64))
+                format('%02d', div(mod(cast(round(duration_s) AS int64), 3600), 60))
             )
         ELSE concat(
-            cast(cast(duration_s / 60 AS int64) AS string),
+            cast(div(cast(round(duration_s) AS int64), 60) AS string),
             ' min'
         )
     END AS duration_label,
