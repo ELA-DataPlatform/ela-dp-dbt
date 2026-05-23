@@ -8,6 +8,7 @@
 WITH fact_with_artist AS (
     SELECT
         fp.played_at,
+        DATE(fp.played_at, 'Europe/Paris') AS play_date,
         fp.track_id,
         t.duration_ms,
         bta.artist_id
@@ -26,7 +27,9 @@ current_agg AS (
         MAX(played_at) AS last_played_at,
         '7d' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+    WHERE
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 6 DAY)
+        AND play_date <= CURRENT_DATE('Europe/Paris')
     GROUP BY artist_id
 
     UNION ALL
@@ -39,7 +42,9 @@ current_agg AS (
         MAX(played_at) AS last_played_at,
         '30d' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+    WHERE
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 29 DAY)
+        AND play_date <= CURRENT_DATE('Europe/Paris')
     GROUP BY artist_id
 
     UNION ALL
@@ -52,7 +57,9 @@ current_agg AS (
         MAX(played_at) AS last_played_at,
         '6m' AS period
     FROM fact_with_artist
-    WHERE played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
+    WHERE
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 179 DAY)
+        AND play_date <= CURRENT_DATE('Europe/Paris')
     GROUP BY artist_id
 
     UNION ALL
@@ -75,8 +82,8 @@ prev_agg AS (
         '7d' AS period
     FROM fact_with_artist
     WHERE
-        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
-        AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 13 DAY)
+        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 7 DAY)
     GROUP BY artist_id
 
     UNION ALL
@@ -87,8 +94,8 @@ prev_agg AS (
         '30d' AS period
     FROM fact_with_artist
     WHERE
-        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
-        AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 59 DAY)
+        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 30 DAY)
     GROUP BY artist_id
 
     UNION ALL
@@ -99,8 +106,8 @@ prev_agg AS (
         '6m' AS period
     FROM fact_with_artist
     WHERE
-        played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
-        AND played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
+        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 359 DAY)
+        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 180 DAY)
     GROUP BY artist_id
 ),
 
