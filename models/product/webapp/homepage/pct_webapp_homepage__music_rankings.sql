@@ -8,11 +8,9 @@
 WITH
 
 period_bounds AS (
-    SELECT
-        date_sub(current_date('Europe/Paris'), INTERVAL 6 DAY) AS period_start,
-        current_date('Europe/Paris') AS period_end,
-        date_sub(current_date('Europe/Paris'), INTERVAL 13 DAY) AS prev_period_start,
-        date_sub(current_date('Europe/Paris'), INTERVAL 7 DAY) AS prev_period_end
+    SELECT period_start, period_end, prev_period_start, prev_period_end
+    FROM {{ ref('ref_hub__calendar_periods') }}
+    WHERE period = '7d'
 ),
 
 fact_with_duration AS (

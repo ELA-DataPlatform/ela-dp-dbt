@@ -7,8 +7,8 @@
 
 WITH fact_with_artist AS (
     SELECT
-        fp.played_at,
         DATE(fp.played_at, 'Europe/Paris') AS play_date,
+        fp.played_at,
         fp.track_id,
         t.duration_ms,
         bta.artist_id
@@ -20,95 +20,32 @@ WITH fact_with_artist AS (
 
 current_agg AS (
     SELECT
-        artist_id,
+        fa.artist_id,
         COUNT(*) AS play_count,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        COUNT(DISTINCT track_id) AS unique_tracks,
-        MAX(played_at) AS last_played_at,
-        '7d' AS period
-    FROM fact_with_artist
+        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
+        COUNT(DISTINCT fa.track_id) AS unique_tracks,
+        MAX(fa.played_at) AS last_played_at,
+        cp.period
+    FROM fact_with_artist AS fa
+    CROSS JOIN {{ ref('ref_hub__calendar_periods') }} AS cp
     WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 6 DAY)
-        AND play_date <= CURRENT_DATE('Europe/Paris')
-    GROUP BY artist_id
-
-    UNION ALL
-
-    SELECT
-        artist_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        COUNT(DISTINCT track_id) AS unique_tracks,
-        MAX(played_at) AS last_played_at,
-        '30d' AS period
-    FROM fact_with_artist
-    WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 29 DAY)
-        AND play_date <= CURRENT_DATE('Europe/Paris')
-    GROUP BY artist_id
-
-    UNION ALL
-
-    SELECT
-        artist_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        COUNT(DISTINCT track_id) AS unique_tracks,
-        MAX(played_at) AS last_played_at,
-        '6m' AS period
-    FROM fact_with_artist
-    WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 179 DAY)
-        AND play_date <= CURRENT_DATE('Europe/Paris')
-    GROUP BY artist_id
-
-    UNION ALL
-
-    SELECT
-        artist_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        COUNT(DISTINCT track_id) AS unique_tracks,
-        MAX(played_at) AS last_played_at,
-        'all' AS period
-    FROM fact_with_artist
-    GROUP BY artist_id
+        (cp.period_start IS NULL OR fa.play_date >= cp.period_start)
+        AND fa.play_date <= cp.period_end
+    GROUP BY fa.artist_id, cp.period
 ),
 
 prev_agg AS (
     SELECT
-        artist_id,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '7d' AS period
-    FROM fact_with_artist
+        fa.artist_id,
+        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
+        cp.period
+    FROM fact_with_artist AS fa
+    CROSS JOIN {{ ref('ref_hub__calendar_periods') }} AS cp
     WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 13 DAY)
-        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 7 DAY)
-    GROUP BY artist_id
-
-    UNION ALL
-
-    SELECT
-        artist_id,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '30d' AS period
-    FROM fact_with_artist
-    WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 59 DAY)
-        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 30 DAY)
-    GROUP BY artist_id
-
-    UNION ALL
-
-    SELECT
-        artist_id,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '6m' AS period
-    FROM fact_with_artist
-    WHERE
-        play_date >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 359 DAY)
-        AND play_date <= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 180 DAY)
-    GROUP BY artist_id
+        cp.prev_period_start IS NOT NULL
+        AND fa.play_date >= cp.prev_period_start
+        AND fa.play_date <= cp.prev_period_end
+    GROUP BY fa.artist_id, cp.period
 ),
 
 current_ranked AS (

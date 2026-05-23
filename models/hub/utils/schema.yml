@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: ref_hub__calendar_periods
+    description: >
+      Vue de référence des périodes standard de la plateforme.
+      Source unique de vérité pour les bornes temporelles — tous les modèles
+      qui ont besoin de fenêtres 7j/30j/6m/all doivent référencer ce modèle
+      plutôt que de recalculer leurs propres dates.
+      Toutes les dates sont en jours calendaires timezone Europe/Paris.
+    columns:
+      - name: period
+        description: Identifiant de la période ('7d', '30d', '6m', 'all').
+      - name: period_start
+        description: Premier jour de la période courante (NULL pour 'all').
+      - name: period_end
+        description: Dernier jour de la période courante (aujourd'hui en Europe/Paris).
+      - name: prev_period_start
+        description: Premier jour de la période précédente équivalente (NULL pour 'all').
+      - name: prev_period_end
+        description: Dernier jour de la période précédente équivalente (NULL pour 'all').
