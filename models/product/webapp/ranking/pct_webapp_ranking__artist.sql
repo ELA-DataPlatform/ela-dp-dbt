@@ -27,7 +27,7 @@ current_agg AS (
         MAX(fa.played_at) AS last_played_at,
         cp.period
     FROM fact_with_artist AS fa
-    CROSS JOIN {{ ref('ref_hub__calendar_periods') }} AS cp
+    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE
         (cp.period_start IS NULL OR fa.play_date >= cp.period_start)
         AND fa.play_date <= cp.period_end
@@ -40,7 +40,7 @@ prev_agg AS (
         CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
         cp.period
     FROM fact_with_artist AS fa
-    CROSS JOIN {{ ref('ref_hub__calendar_periods') }} AS cp
+    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE
         cp.prev_period_start IS NOT NULL
         AND fa.play_date >= cp.prev_period_start

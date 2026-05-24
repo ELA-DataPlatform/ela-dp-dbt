@@ -61,20 +61,8 @@ SELECT
             j.activity_date,
             j.distance_km,
             j.is_current_week,
-            concat(
-                cast(extract(DAY FROM j.activity_date) AS string),
-                '/',
-                cast(extract(MONTH FROM j.activity_date) AS string)
-            ) AS day_label,
-            CASE extract(DAYOFWEEK FROM j.activity_date)
-                WHEN 1 THEN 'D'
-                WHEN 2 THEN 'L'
-                WHEN 3 THEN 'M'
-                WHEN 4 THEN 'M'
-                WHEN 5 THEN 'J'
-                WHEN 6 THEN 'V'
-                WHEN 7 THEN 'S'
-            END AS day_letter
+            {{ format_day_label('j.activity_date') }} AS day_label,
+            {{ dayofweek_to_french_letter('j.activity_date') }} AS day_letter
         FROM joined AS j
         ORDER BY j.activity_date
     ) AS days
