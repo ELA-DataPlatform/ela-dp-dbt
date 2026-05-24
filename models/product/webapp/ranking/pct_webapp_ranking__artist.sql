@@ -7,11 +7,11 @@
 
 WITH fact_with_artist AS (
     SELECT
-        DATE(fp.played_at, 'Europe/Paris') AS play_date,
         fp.played_at,
         fp.track_id,
         t.duration_ms,
-        bta.artist_id
+        bta.artist_id,
+        DATE(fp.played_at, 'Europe/Paris') AS play_date
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
     INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
@@ -21,11 +21,11 @@ WITH fact_with_artist AS (
 current_agg AS (
     SELECT
         fa.artist_id,
+        cp.period,
         COUNT(*) AS play_count,
         CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
         COUNT(DISTINCT fa.track_id) AS unique_tracks,
-        MAX(fa.played_at) AS last_played_at,
-        cp.period
+        MAX(fa.played_at) AS last_played_at
     FROM fact_with_artist AS fa
     CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE
@@ -37,8 +37,8 @@ current_agg AS (
 prev_agg AS (
     SELECT
         fa.artist_id,
-        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        cp.period
+        cp.period,
+        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min
     FROM fact_with_artist AS fa
     CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE

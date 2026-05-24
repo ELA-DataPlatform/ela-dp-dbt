@@ -8,7 +8,11 @@
 WITH
 
 period_bounds AS (
-    SELECT period_start, period_end, prev_period_start, prev_period_end
+    SELECT
+        period_start,
+        period_end,
+        prev_period_start,
+        prev_period_end
     FROM {{ ref('stg_hub__ref_calendar') }}
     WHERE period = '7d'
 ),
