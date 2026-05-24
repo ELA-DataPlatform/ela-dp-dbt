@@ -57,6 +57,10 @@ Les datasets BigQuery suivent la convention `dp_<couche>_<source>_<env>` pour le
 - Le projet GCP de dev est `ela-dp-dev`, celui de prod est `ela-dp-prd`.
 - **Ne jamais utiliser le projet `polar-scene-*`** — c'est un projet par défaut qui n'a rien à voir avec la plateforme ELA. Toujours cibler explicitement `ela-dp-dev` ou `ela-dp-prd`.
 
+## Règles d'architecture
+
+- **Les modèles de la couche product ne peuvent pas consommer d'autres modèles de la couche product.** Ils ne peuvent référencer que des modèles du hub (ou du lake en dernier recours). Toute logique partagée entre modèles product doit remonter dans le hub.
+
 ## Documentation
 
 Documenter autant que possible : descriptions dans les fichiers `schema.yml` pour les modèles, colonnes et sources.
