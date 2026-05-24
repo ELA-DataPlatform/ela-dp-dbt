@@ -65,25 +65,6 @@ SELECT
     ) AS activity_date_label,
     date_diff(current_date('Europe/Paris'), activity_date, DAY) AS days_ago,
     round(distance_m / 1000.0, 2) AS distance_km,
-    CASE
-        WHEN duration_s >= 3600
-            THEN concat(
-                cast(div(cast(round(duration_s) AS int64), 3600) AS string),
-                'h ',
-                format('%02d', div(mod(cast(round(duration_s) AS int64), 3600), 60))
-            )
-        ELSE concat(
-            cast(div(cast(round(duration_s) AS int64), 60) AS string),
-            ' min'
-        )
-    END AS duration_label,
-    concat(
-        cast(cast(avg_pace_min_per_km AS int64) AS string),
-        "'",
-        format('%02d', cast(
-            round((avg_pace_min_per_km - cast(avg_pace_min_per_km AS int64)) * 60)
-            AS int64
-        )),
-        '"/km'
-    ) AS pace_label
+    {{ format_duration_label('duration_s') }} AS duration_label,
+    {{ format_pace_label('avg_pace_min_per_km') }} AS pace_label
 FROM last_activity

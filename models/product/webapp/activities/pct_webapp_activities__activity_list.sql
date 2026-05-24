@@ -15,18 +15,7 @@ SELECT  -- noqa: ST06
     ROUND(distance / 1000.0, 2) AS distance_km,
 
     CAST(ROUND(duration) AS INT64) AS duration_seconds,
-    CASE
-        WHEN duration >= 3600
-            THEN CONCAT(
-                CAST(DIV(CAST(ROUND(duration) AS INT64), 3600) AS STRING),
-                'h ',
-                FORMAT('%02d', DIV(MOD(CAST(ROUND(duration) AS INT64), 3600), 60))
-            )
-        ELSE CONCAT(
-            CAST(DIV(CAST(ROUND(duration) AS INT64), 60) AS STRING),
-            ' min'
-        )
-    END AS duration_label,
+    {{ format_duration_label('duration') }} AS duration_label,
 
     ROUND(averagespeed * 3.6, 2) AS avg_speed_km_h,
 
@@ -36,12 +25,7 @@ SELECT  -- noqa: ST06
         WHEN activity_type.type_key IN ('cycling', 'indoor_cycling')
             THEN CONCAT(CAST(ROUND(averagespeed * 3.6, 1) AS STRING), ' km/h')
         WHEN averagespeed IS NOT NULL AND averagespeed > 0
-            THEN CONCAT(
-                CAST(CAST(SAFE_DIVIDE(1000.0, averagespeed) / 60.0 AS INT64) AS STRING),
-                "'",
-                FORMAT('%02d', CAST(MOD(CAST(ROUND(SAFE_DIVIDE(1000.0, averagespeed)) AS INT64), 60) AS INT64)),
-                '"/km'
-            )
+            THEN {{ format_pace_label('SAFE_DIVIDE(1000.0, averagespeed) / 60.0') }}
     END AS pace_label,
 
     CAST(ROUND(elevationgain) AS INT64) AS elevation_gain_m,
