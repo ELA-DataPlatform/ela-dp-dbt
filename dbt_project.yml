@@ -27,6 +27,8 @@ models:
         +tags: ["garmin"]
     hub:
       +schema: "dp_hub_{{ target.name }}"
+      utils:
+        +materialized: view
       music:
         staging:
           +materialized: view

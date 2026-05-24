@@ -57,11 +57,7 @@ SELECT
     -- ── KPIs haut niveau (plats) ─────────────────────────────────────────────────
     t.total_minutes_10d,
     p.total_minutes_prev_10d,
-    concat(
-        cast(cast(t.total_minutes_10d / 60 AS int64) AS string),
-        'h',
-        format('%02d', mod(cast(t.total_minutes_10d AS int64), 60))
-    ) AS total_label,
+    {{ minutes_to_label('t.total_minutes_10d') }} AS total_label,
     CASE
         WHEN p.total_minutes_prev_10d > 0
             THEN round(
@@ -82,20 +78,8 @@ SELECT
         SELECT AS STRUCT
             j.stream_date,
             j.listening_minutes,
-            concat(
-                cast(extract(DAY FROM j.stream_date) AS string),
-                '/',
-                cast(extract(MONTH FROM j.stream_date) AS string)
-            ) AS day_label,
-            CASE extract(DAYOFWEEK FROM j.stream_date)
-                WHEN 1 THEN 'D'
-                WHEN 2 THEN 'L'
-                WHEN 3 THEN 'M'
-                WHEN 4 THEN 'M'
-                WHEN 5 THEN 'J'
-                WHEN 6 THEN 'V'
-                WHEN 7 THEN 'S'
-            END AS day_letter
+            {{ format_day_label('j.stream_date') }} AS day_label,
+            {{ dayofweek_to_french_letter('j.stream_date') }} AS day_letter
         FROM joined AS j
         ORDER BY j.stream_date
     ) AS days

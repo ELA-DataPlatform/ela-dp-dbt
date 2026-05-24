@@ -9,10 +9,12 @@ WITH
 
 period_bounds AS (
     SELECT
-        date_sub(current_date('Europe/Paris'), INTERVAL 6 DAY) AS period_start,
-        current_date('Europe/Paris') AS period_end,
-        date_sub(current_date('Europe/Paris'), INTERVAL 13 DAY) AS prev_period_start,
-        date_sub(current_date('Europe/Paris'), INTERVAL 7 DAY) AS prev_period_end
+        period_start,
+        period_end,
+        prev_period_start,
+        prev_period_end
+    FROM {{ ref('stg_hub__ref_calendar') }}
+    WHERE period = '7d'
 ),
 
 fact_with_duration AS (
@@ -269,16 +271,7 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
-            CASE
-                WHEN listening_minutes >= 60
-                    THEN
-                        concat(
-                            cast(cast(listening_minutes / 60 AS int64) AS string),
-                            'h',
-                            format('%02d', mod(listening_minutes, 60))
-                        )
-                ELSE concat(cast(listening_minutes AS string), 'min')
-            END AS listening_label
+            {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM artists_top5
         ORDER BY rank
     ) AS artists,
@@ -291,16 +284,7 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
-            CASE
-                WHEN listening_minutes >= 60
-                    THEN
-                        concat(
-                            cast(cast(listening_minutes / 60 AS int64) AS string),
-                            'h',
-                            format('%02d', mod(listening_minutes, 60))
-                        )
-                ELSE concat(cast(listening_minutes AS string), 'min')
-            END AS listening_label
+            {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM albums_top5
         ORDER BY rank
     ) AS albums,
@@ -313,16 +297,7 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
-            CASE
-                WHEN listening_minutes >= 60
-                    THEN
-                        concat(
-                            cast(cast(listening_minutes / 60 AS int64) AS string),
-                            'h',
-                            format('%02d', mod(listening_minutes, 60))
-                        )
-                ELSE concat(cast(listening_minutes AS string), 'min')
-            END AS listening_label
+            {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM tracks_top5
         ORDER BY rank
     ) AS tracks
