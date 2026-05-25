@@ -1,0 +1,292 @@
+version: 2
+
+models:
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__summary
+    description: >
+      One row per listened artist. Powers the Artist Focus hero card, the
+      all-time artist rank and the artist selector (GET /webapp/artists, sorted
+      by total_listening_time_min desc; GET /webapp/artist/{id}/summary).
+
+      Business rules:
+        * Timezone: all calendar logic uses Europe/Paris.
+        * A "play" is one row of svc_hub__fact_played (sourced from Spotify
+          recently-played). The source has NO per-stream ms_played, so the 30s
+          Spotify threshold (var play_min_ms in the original spec) is not
+          applicable: every recorded play is counted.
+        * total_plays = COUNT of plays credited to the artist (primary artist of
+          the track, bridge_track_artist.artist_position = 0).
+        * total_listening_time_min = SUM(track duration_ms) / 60000, an
+          approximation of time listened (full track duration per play),
+          consistent with the existing ranking marts.
+        * A studio album is album_type = 'album', unless overridden by
+          seed_album_studio_overrides (e.g. live records flagged false).
+        * studio_albums_total counts the artist's KNOWN studio discography, i.e.
+          albums present in svc_hub__ref_album for which the artist is the primary
+          album artist. The source only contains albums already encountered
+          through listening/saves, so it is not the exhaustive Spotify
+          discography.
+        * An album is complete when distinct listened tracks >= official
+          total_tracks; studio_albums_completed counts complete studio albums.
+        * all_time_rank ranks artists by total_listening_time_min desc, tie-broken
+          by total_plays desc then artist_id.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier (primary key).
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('svc_hub__ref_artist')
+              field: artist_id
+              config:
+                severity: warn
+      - name: artist_name
+        description: Artist display name.
+      - name: artist_image_url
+        description: URL of the artist profile image from the Spotify CDN (nullable).
+      - name: genres
+        description: >
+          Array of genres associated with the artist (ARRAY<STRING>), parsed from
+          the JSON-encoded genres of svc_hub__ref_artist. Empty when unknown.
+      - name: first_listened_at
+        description: Timestamp (UTC) of the first ever play credited to the artist.
+        tests:
+          - not_null
+      - name: first_listened_date
+        description: Calendar date (Europe/Paris) of the first play.
+      - name: first_listened_year
+        description: Year (Europe/Paris) of the first play.
+      - name: total_listening_time_min
+        description: All-time listening time in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: total_plays
+        description: All-time number of plays credited to the artist.
+        tests:
+          - not_null
+      - name: distinct_tracks_listened
+        description: All-time count of distinct tracks played for the artist.
+        tests:
+          - not_null
+      - name: studio_albums_total
+        description: Number of studio albums in the artist's known discography.
+        tests:
+          - not_null
+      - name: studio_albums_completed
+        description: Number of studio albums listened to in full (is_complete).
+        tests:
+          - not_null
+      - name: all_time_rank
+        description: All-time rank among all artists by total_listening_time_min.
+        tests:
+          - not_null
+      - name: last_listened_at
+        description: Timestamp (UTC) of the most recent play credited to the artist.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "studio_albums_completed <= studio_albums_total"
+      - dbt_utils.expression_is_true:
+          expression: "total_listening_time_min >= 0 and total_plays >= 0"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__albums
+    description: >
+      One row per (artist_id, album_id) for the album's primary artist. Covers
+      the artist's full KNOWN discography (every album in svc_hub__ref_album),
+      including albums with no plays yet (listening metrics default to 0). Feeds
+      the studio discography gallery (filter is_studio_album) and the per-artist
+      album ranking ordered by listening_time_min
+      (GET /webapp/artist/{id}/albums). See pct_webapp_artist__summary for the
+      shared business rules (timezone, play definition, studio/complete).
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary album artist (artist_position = 0).
+        tests:
+          - not_null
+          - relationships:
+              to: ref('svc_hub__ref_artist')
+              field: artist_id
+              config:
+                severity: warn
+      - name: album_id
+        description: Spotify unique album identifier.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('svc_hub__ref_album')
+              field: album_id
+      - name: album_name
+        description: Album display name.
+      - name: album_image_url
+        description: URL of the album cover image from the Spotify CDN (nullable).
+      - name: release_date
+        description: >
+          Release date as a DATE. NULL when Spotify only provides year/month
+          precision (the raw string could not be parsed as a full date).
+      - name: release_year
+        description: Release year, extracted from the first 4 chars of release_date.
+      - name: album_type
+        description: Spotify album type (album, single, compilation).
+        tests:
+          - accepted_values:
+              values: ['album', 'single', 'compilation']
+      - name: is_studio_album
+        description: >
+          Whether the album counts as a studio album. Defaults to
+          album_type = 'album', overridden by seed_album_studio_overrides.
+        tests:
+          - not_null
+      - name: total_tracks
+        description: Official number of tracks on the album (from album metadata).
+      - name: listened_tracks
+        description: Distinct tracks of the album played at least once.
+        tests:
+          - not_null
+      - name: is_complete
+        description: TRUE when listened_tracks >= total_tracks (album heard in full).
+        tests:
+          - not_null
+      - name: completion_pct
+        description: listened_tracks / total_tracks * 100, capped at 100 (0 if unknown).
+        tests:
+          - not_null
+      - name: listening_time_min
+        description: Listening time for the album in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays from this album credited to the artist.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - album_id
+      - dbt_utils.expression_is_true:
+          expression: "completion_pct >= 0 and completion_pct <= 100"
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "listened_tracks <= total_tracks"
+          config:
+            severity: warn
+            where: "total_tracks is not null"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__tracks
+    description: >
+      One row per (artist_id, track_id) for tracks credited to the primary
+      artist. Feeds the per-artist track ranking ordered by listening_time_min
+      (GET /webapp/artist/{id}/tracks?limit=N). All-time scope. See
+      pct_webapp_artist__summary for the shared business rules.
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+        tests:
+          - not_null
+          - relationships:
+              to: ref('svc_hub__ref_artist')
+              field: artist_id
+              config:
+                severity: warn
+      - name: track_id
+        description: Spotify unique track identifier.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('svc_hub__ref_track')
+              field: track_id
+              config:
+                severity: warn
+      - name: track_name
+        description: Track display name.
+      - name: album_id
+        description: Spotify identifier of the track's album (from track metadata).
+      - name: album_name
+        description: Album display name.
+      - name: listening_time_min
+        description: Listening time for the track in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays of the track credited to the artist.
+        tests:
+          - not_null
+      - name: artist_track_rank
+        description: Rank of the track within the artist by listening_time_min desc.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - track_id
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__listening_daily
+    description: >
+      Sparse daily listening per artist over the last 365 days (Europe/Paris):
+      one row only for days with listening. The frontend fills empty days with
+      zeros (GitHub-style heatmap, GET /webapp/artist/{id}/listening/daily).
+      Partitioned by listen_date, clustered by artist_id.
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+        tests:
+          - not_null
+      - name: listen_date
+        description: Calendar date of listening (Europe/Paris).
+        tests:
+          - not_null
+      - name: listening_time_min
+        description: Listening time on that day in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays on that day credited to the artist.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - listen_date
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__listening_weekly
+    description: >
+      Dense weekly listening per artist over the last 52 full weeks
+      (Europe/Paris, weeks starting Monday; the in-progress week is excluded).
+      Every (artist, week) is present even with zero listening, for any artist
+      active in the window (GET /webapp/artist/{id}/listening/weekly).
+      Partitioned by week_start_date, clustered by artist_id.
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+        tests:
+          - not_null
+      - name: week_start_date
+        description: Monday (Europe/Paris) that starts the week.
+        tests:
+          - not_null
+      - name: listening_time_min
+        description: Listening time that week in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays that week credited to the artist.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - week_start_date
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"
