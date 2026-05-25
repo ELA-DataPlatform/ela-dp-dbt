@@ -48,13 +48,3 @@ models:
         +schema: "dp_product_data4agent_{{ target.name }}"
         +materialized: table
         +tags: ["garmin", "data4agent"]
-
-seeds:
-  ela_dp:
-    music:
-      +schema: "dp_hub_{{ target.name }}"
-      +tags: ["spotify"]
-      seed_album_studio_overrides:
-        +column_types:
-          album_id: STRING
-          is_studio: BOOLEAN

@@ -14,6 +14,13 @@
 -- one row only for days that had listening. The frontend fills empty days with
 -- zeros (GitHub-style heatmap). Plays are credited to the primary artist of each
 -- track. listening_time_min approximates time with full track duration.
+-- Window driven by stg_hub__ref_calendar period '1y'.
+
+WITH cal AS (
+    SELECT period_start
+    FROM {{ ref('stg_hub__ref_calendar') }}
+    WHERE period = '1y'
+)
 
 SELECT
     bta.artist_id,
@@ -25,6 +32,5 @@ INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
     ON fp.track_id = bta.track_id AND bta.artist_position = 0
 LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
 WHERE
-    DATE(fp.played_at, 'Europe/Paris')
-    >= DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 364 DAY)
-GROUP BY bta.artist_id, listen_date
+    DATE(fp.played_at, 'Europe/Paris') >= (SELECT period_start FROM cal)
+GROUP BY bta.artist_id, DATE(fp.played_at, 'Europe/Paris')

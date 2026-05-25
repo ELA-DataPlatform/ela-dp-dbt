@@ -51,7 +51,7 @@ artist_albums AS (
     SELECT
         baa.artist_id,
         al.album_id,
-        COALESCE(ov.is_studio, al.album_type = 'album') AS is_studio_album,
+        al.album_type = 'album' AS is_studio_album,
         COALESCE(
             COALESCE(albl.listened_tracks, 0) >= al.total_tracks AND al.total_tracks > 0,
             FALSE
@@ -59,7 +59,6 @@ artist_albums AS (
     FROM {{ ref('svc_hub__bridge_album_artist') }} AS baa
     INNER JOIN {{ ref('svc_hub__ref_album') }} AS al ON baa.album_id = al.album_id
     LEFT JOIN album_listened AS albl ON al.album_id = albl.album_id
-    LEFT JOIN {{ ref('seed_album_studio_overrides') }} AS ov ON al.album_id = ov.album_id
     WHERE baa.artist_position = 0
 ),
 
@@ -92,7 +91,10 @@ artist_images AS (
         JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url
     FROM {{ ref('svc_spotify__artist_detail') }}
     WHERE images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY artist_id ORDER BY _ingested_at DESC) = 1
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY artist_id
+        ORDER BY _ingested_at DESC
+    ) = 1
 )
 
 SELECT

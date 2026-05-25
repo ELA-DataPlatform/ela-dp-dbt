@@ -2,6 +2,25 @@ version: 2
 
 models:
   # ──────────────────────────────────────────────────────────────────────────
+  - name: pct_webapp_artist__selector
+    description: >
+      Ordered list of artists eligible for the app dropdown: all artists with
+      at least 10 minutes of all-time listening (primary artist credit only),
+      sorted by total_listening_time_min desc so the most-listened appear first.
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier (primary key).
+        tests:
+          - unique
+          - not_null
+      - name: artist_name
+        description: Artist display name.
+      - name: total_listening_time_min
+        description: All-time listening time in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+
+  # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__summary
     description: >
       One row per listened artist. Powers the Artist Focus hero card, the
@@ -19,8 +38,7 @@ models:
         * total_listening_time_min = SUM(track duration_ms) / 60000, an
           approximation of time listened (full track duration per play),
           consistent with the existing ranking marts.
-        * A studio album is album_type = 'album', unless overridden by
-          seed_album_studio_overrides (e.g. live records flagged false).
+        * A studio album is album_type = 'album'.
         * studio_albums_total counts the artist's KNOWN studio discography, i.e.
           albums present in svc_hub__ref_album for which the artist is the primary
           album artist. The source only contains albums already encountered
@@ -92,13 +110,13 @@ models:
   # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__albums
     description: >
-      One row per (artist_id, album_id) for the album's primary artist. Covers
-      the artist's full KNOWN discography (every album in svc_hub__ref_album),
-      including albums with no plays yet (listening metrics default to 0). Feeds
-      the studio discography gallery (filter is_studio_album) and the per-artist
-      album ranking ordered by listening_time_min
+      One row per (artist_id, album_id) for the album's primary artist.
+      Restricted to album_type = 'album' (singles and compilations excluded).
+      Covers the artist's full KNOWN discography including albums with no plays
+      yet (listening metrics default to 0). Feeds the discography gallery and the
+      per-artist album ranking ordered by listening_time_min
       (GET /webapp/artist/{id}/albums). See pct_webapp_artist__summary for the
-      shared business rules (timezone, play definition, studio/complete).
+      shared business rules (timezone, play definition, completion).
     columns:
       - name: artist_id
         description: Spotify identifier of the primary album artist (artist_position = 0).
@@ -126,17 +144,6 @@ models:
           precision (the raw string could not be parsed as a full date).
       - name: release_year
         description: Release year, extracted from the first 4 chars of release_date.
-      - name: album_type
-        description: Spotify album type (album, single, compilation).
-        tests:
-          - accepted_values:
-              values: ['album', 'single', 'compilation']
-      - name: is_studio_album
-        description: >
-          Whether the album counts as a studio album. Defaults to
-          album_type = 'album', overridden by seed_album_studio_overrides.
-        tests:
-          - not_null
       - name: total_tracks
         description: Official number of tracks on the album (from album metadata).
       - name: listened_tracks

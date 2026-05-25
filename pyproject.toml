@@ -10,3 +10,8 @@ dependencies = [
     "sqlfluff-templater-dbt>=4.0.1",
     "requests>=2.33.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+]

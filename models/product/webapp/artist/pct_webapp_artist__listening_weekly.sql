@@ -15,12 +15,19 @@
 -- (artist, week) is present even with zero listening, for any artist active in
 -- the window. Plays are credited to the primary artist of each track.
 -- listening_time_min approximates time with full track duration.
+-- Spine driven by stg_hub__ref_calendar period '1y'.
 
-WITH week_spine AS (
+WITH cal AS (
+    SELECT period_start
+    FROM {{ ref('stg_hub__ref_calendar') }}
+    WHERE period = '1y'
+),
+
+week_spine AS (
     SELECT week_start_date
     FROM UNNEST(
         GENERATE_DATE_ARRAY(
-            DATE_SUB(DATE_TRUNC(CURRENT_DATE('Europe/Paris'), WEEK (MONDAY)), INTERVAL 52 WEEK),
+            DATE_TRUNC((SELECT period_start FROM cal), WEEK (MONDAY)),
             DATE_SUB(DATE_TRUNC(CURRENT_DATE('Europe/Paris'), WEEK (MONDAY)), INTERVAL 1 WEEK),
             INTERVAL 1 WEEK
         )
@@ -41,7 +48,7 @@ weekly_plays AS (
         DATE_TRUNC(DATE(fp.played_at, 'Europe/Paris'), WEEK (MONDAY)) BETWEEN
         (SELECT MIN(week_start_date) FROM week_spine)
         AND (SELECT MAX(week_start_date) FROM week_spine)
-    GROUP BY bta.artist_id, week_start_date
+    GROUP BY bta.artist_id, DATE_TRUNC(DATE(fp.played_at, 'Europe/Paris'), WEEK (MONDAY))
 ),
 
 active_artists AS (
