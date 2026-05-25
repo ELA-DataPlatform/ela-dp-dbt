@@ -36,6 +36,15 @@ SELECT
 UNION ALL
 
 SELECT
+    '1y' AS period,
+    DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 364 DAY) AS period_start,
+    CURRENT_DATE('Europe/Paris') AS period_end,
+    DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 729 DAY) AS prev_period_start,
+    DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 365 DAY) AS prev_period_end
+
+UNION ALL
+
+SELECT
     'all' AS period,
     CAST(NULL AS DATE) AS period_start,
     CURRENT_DATE('Europe/Paris') AS period_end,
