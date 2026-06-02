@@ -44,6 +44,8 @@ models:
       webapp:
         +schema: "dp_product_webapp_{{ target.name }}"
         +tags: ["webapp"]
+        activity_focus:
+          +materialized: table
       data4agent:
         +schema: "dp_product_data4agent_{{ target.name }}"
         +materialized: table

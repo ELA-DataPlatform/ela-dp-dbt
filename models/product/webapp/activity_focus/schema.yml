@@ -1,0 +1,495 @@
+version: 2
+
+models:
+
+  # ── Vue liste ───────────────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__activity_list
+    description: >
+      One row per running activity (running, trail_running, treadmill_running),
+      ordered by start time descending. Provides the essential metrics needed
+      to render the activity list on the Activity Focus page.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activity_name
+        description: Display name of the activity as entered on the device or app.
+      - name: activity_type
+        description: Garmin activity type key (running, trail_running, treadmill_running).
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (local timezone).
+        tests:
+          - not_null
+      - name: start_time_local
+        description: Start timestamp of the activity in local timezone.
+        tests:
+          - not_null
+      - name: distance_km
+        description: Total distance in kilometres, rounded to 2 decimal places.
+      - name: duration_seconds
+        description: Total elapsed duration in seconds.
+      - name: duration_label
+        description: Human-readable duration — "Xh YY" for ≥ 1 h, "YY min" otherwise.
+      - name: avg_pace_min_per_km
+        description: Average pace in decimal minutes per kilometre.
+      - name: pace_label
+        description: Human-readable pace, formatted as M'SS"/km.
+      - name: avg_hr_bpm
+        description: Average heart rate during the activity in BPM.
+      - name: elevation_gain_m
+        description: Total positive elevation gain in metres.
+      - name: is_pr
+        description: True if Garmin detected a personal record during this activity.
+
+  # ── Vue détail ──────────────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__activity_detail
+    description: >
+      One row per running activity with all flat metrics needed to render the
+      Activity Focus detail page: header, weather conditions, KPI hero panel,
+      GPS route, and context (sleep, training readiness, athletic context).
+      Arrays (timeseries, laps, HR zones, segments) are in dedicated models.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activity_name
+        description: Display name of the activity.
+      - name: activity_type
+        description: Garmin activity type key.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (local timezone).
+        tests:
+          - not_null
+      - name: start_time_local
+        description: Start timestamp in local timezone.
+      - name: end_time_gmt
+        description: End timestamp in GMT.
+      - name: location_name
+        description: Name of the location where the activity was recorded.
+      - name: is_pr
+        description: True if Garmin detected a personal record.
+      - name: is_favorite
+        description: True if the activity is marked as favourite.
+      - name: route
+        description: >
+          GPS route STRUCT containing start_point, end_point, bounding box
+          (min_lat, max_lat, min_lon, max_lon) and a polyline
+          ARRAY<STRUCT<lat, lon, altitude, ...>> for map rendering.
+      - name: temp_celsius
+        description: Air temperature at the start of the activity in °C.
+      - name: apparent_temp_celsius
+        description: Feels-like temperature at the start in °C.
+      - name: humidity_pct
+        description: Relative humidity in percent.
+      - name: wind_speed_kph
+        description: Wind speed in km/h.
+      - name: wind_direction_deg
+        description: Wind direction in degrees (0–360).
+      - name: wind_direction_compass
+        description: Wind direction as a compass point (N, NE, E, etc.).
+      - name: weather_type
+        description: Weather description key (e.g. CLOUDY, CLEAR, RAIN).
+      - name: distance_km
+        description: Total distance in kilometres.
+      - name: duration_seconds
+        description: Total elapsed duration in seconds.
+      - name: duration_label
+        description: Human-readable duration.
+      - name: avg_pace_min_per_km
+        description: Average pace in decimal minutes per kilometre.
+      - name: pace_label
+        description: Human-readable pace formatted as M'SS"/km.
+      - name: avg_hr_bpm
+        description: Average heart rate in BPM.
+      - name: max_hr_bpm
+        description: Maximum heart rate recorded during the activity in BPM.
+      - name: elevation_gain_m
+        description: Total positive elevation gain in metres.
+      - name: elevation_loss_m
+        description: Total negative elevation (descent) in metres.
+      - name: avg_cadence_spm
+        description: Average running cadence in steps per minute.
+      - name: training_load
+        description: Garmin training load score for the activity.
+      - name: aerobic_training_effect
+        description: Garmin aerobic training effect score (0–5).
+      - name: anaerobic_training_effect
+        description: Garmin anaerobic training effect score (0–5).
+      - name: training_effect_label
+        description: Label for the overall training effect (e.g. MAINTAINING, IMPROVING).
+      - name: aerobic_te_message
+        description: Human-readable message describing the aerobic training effect.
+      - name: anaerobic_te_message
+        description: Human-readable message describing the anaerobic training effect.
+      - name: calories
+        description: Total calories burned during the activity.
+      - name: avg_speed_km_h
+        description: Average speed in km/h.
+      - name: steps
+        description: Total number of steps during the activity.
+      - name: lap_count
+        description: Number of laps recorded.
+      - name: vo2max_during_activity
+        description: VO2max value estimated by Garmin during the activity.
+      - name: fastest_splits
+        description: >
+          STRUCT containing the fastest time for standard distances
+          (1000m, 1609m, 5000m, 10000m, 21098m, 42195m) in seconds.
+      - name: readiness_score
+        description: Training readiness score on the day of the activity (0–100).
+      - name: readiness_level
+        description: Training readiness level label.
+      - name: vo2_max
+        description: Most recent VO2max estimate valid on the day of the activity.
+      - name: weight_kg
+        description: Most recent body weight in kg valid on the day of the activity.
+      - name: training_status_code
+        description: Garmin training status code.
+      - name: training_status_feedback
+        description: Human-readable training status feedback phrase.
+      - name: acute_training_load
+        description: Acute (short-term) training load on the day of the activity.
+      - name: recovery_time_hours
+        description: Estimated recovery time in hours on the day of the activity.
+      - name: sleep_score
+        description: Garmin overall sleep score for the night before the activity.
+      - name: sleep_score_qualifier
+        description: Qualifier for the sleep score (e.g. GOOD, FAIR, POOR).
+      - name: total_sleep_s
+        description: Total sleep duration in seconds for the night before.
+      - name: sleep_hrv
+        description: Average overnight HRV for the night before the activity.
+
+  # ── Graphique temporel ──────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__timeseries
+    description: >
+      One row per ~1-second measurement point per activity.
+      Provides the data for all time-based charts on the Activity Focus page
+      (pace, GAP, heart rate, cadence, elevation) plotted against cumulative
+      distance on the x-axis. Filtered to remove points with invalid epoch timestamps.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (for partitioning).
+        tests:
+          - not_null
+      - name: timestamp_gmt
+        description: Timestamp of the measurement point in GMT.
+      - name: elapsed_s
+        description: Elapsed time in seconds since the start of the activity.
+      - name: cum_distance_m
+        description: Cumulative distance in metres at this measurement point.
+      - name: cum_distance_km
+        description: Cumulative distance in kilometres at this measurement point.
+      - name: pace_min_per_km
+        description: Instantaneous pace in decimal minutes per kilometre.
+      - name: gap_min_per_km
+        description: Grade-adjusted pace (GAP) in decimal minutes per kilometre.
+      - name: heart_rate_bpm
+        description: Heart rate in BPM at this measurement point.
+      - name: cadence_spm
+        description: Running cadence in steps per minute.
+      - name: elevation_m
+        description: Elevation in metres (corrected if available, raw otherwise).
+      - name: latitude
+        description: GPS latitude at this measurement point.
+      - name: longitude
+        description: GPS longitude at this measurement point.
+      - name: power_w
+        description: Running power in watts.
+      - name: vertical_oscillation_mm
+        description: Vertical oscillation in millimetres.
+      - name: vertical_ratio
+        description: Vertical ratio (vertical oscillation / stride length × 100).
+      - name: ground_contact_ms
+        description: Ground contact time in milliseconds.
+      - name: stride_length_m
+        description: Stride length in metres.
+      - name: stamina_available
+        description: Available stamina estimate (Garmin proprietary metric, 0–100).
+      - name: stamina_potential
+        description: Potential stamina estimate (Garmin proprietary metric, 0–100).
+      - name: air_temp_celsius
+        description: Air temperature in °C at this measurement point.
+
+  # ── Splits par kilomètre ────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__splits
+    description: >
+      One row per lap (kilometre split) per activity. Provides the data
+      for the splits table on the Activity Focus page.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (for partitioning).
+        tests:
+          - not_null
+      - name: lap_index
+        description: Zero-based index of the lap within the activity.
+      - name: intensity_type
+        description: Lap intensity type from the workout (e.g. INTERVAL, WARMUP, RECOVERY).
+      - name: distance_m
+        description: Distance covered in this lap in metres.
+      - name: duration_seconds
+        description: Duration of this lap in seconds.
+      - name: duration_label
+        description: Human-readable lap duration.
+      - name: pace_min_per_km
+        description: Average pace for this lap in decimal minutes per kilometre.
+      - name: pace_label
+        description: Human-readable pace formatted as M'SS"/km.
+      - name: gap_min_per_km
+        description: Grade-adjusted pace (GAP) for this lap in decimal minutes per kilometre.
+      - name: avg_hr_bpm
+        description: Average heart rate during this lap in BPM.
+      - name: max_hr_bpm
+        description: Maximum heart rate during this lap in BPM.
+      - name: avg_cadence_spm
+        description: Average running cadence during this lap in steps per minute.
+      - name: elevation_gain_m
+        description: Positive elevation gain during this lap in metres.
+      - name: elevation_loss_m
+        description: Negative elevation (descent) during this lap in metres.
+      - name: calories
+        description: Calories burned during this lap.
+      - name: avg_power_w
+        description: Average running power during this lap in watts.
+      - name: normalized_power_w
+        description: Normalized power during this lap in watts.
+
+  # ── Segments structurés ─────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__segments
+    description: >
+      One row per structured workout segment per activity, sourced from laps with a non-null
+      intensity_type (WARMUP, INTERVAL, RECOVERY, COOLDOWN, etc.).
+      Only populated for planned structured workouts — free runs produce no rows.
+      Provides the data for the segments table on the Activity Focus page.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (for partitioning).
+        tests:
+          - not_null
+      - name: segment_index
+        description: Message index identifying the segment within the activity.
+      - name: segment_type
+        description: >
+          Workout phase type (e.g. WARMUP, INTERVAL, RECOVERY, COOLDOWN, ACTIVE).
+          Corresponds to the intensity_type field from Garmin's typed splits.
+      - name: start_time_local
+        description: Start timestamp of the segment in local timezone.
+      - name: distance_m
+        description: Distance covered in this segment in metres.
+      - name: duration_seconds
+        description: Duration of this segment in seconds.
+      - name: duration_label
+        description: Human-readable segment duration.
+      - name: pace_min_per_km
+        description: Average pace for this segment in decimal minutes per kilometre.
+      - name: pace_label
+        description: Human-readable pace formatted as M'SS"/km.
+      - name: gap_min_per_km
+        description: Grade-adjusted pace for this segment in decimal minutes per kilometre.
+      - name: avg_hr_bpm
+        description: Average heart rate during this segment in BPM.
+      - name: max_hr_bpm
+        description: Maximum heart rate during this segment in BPM.
+      - name: avg_cadence_spm
+        description: Average running cadence during this segment in steps per minute.
+      - name: elevation_gain_m
+        description: Positive elevation gain during this segment in metres.
+      - name: elevation_loss_m
+        description: Negative elevation (descent) during this segment in metres.
+      - name: calories
+        description: Calories burned during this segment.
+
+  # ── Zones cardiaques ────────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__hr_zones
+    description: >
+      One row per heart rate zone per activity (5 zones total when data is available).
+      Zone boundaries come from the athlete's Garmin profile settings.
+      Provides data for the HR zones panel on the Activity Focus page.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity (for partitioning).
+        tests:
+          - not_null
+      - name: zone_number
+        description: Heart rate zone number (1 = Recovery through 5 = VO2max).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: zone_name
+        description: Human-readable zone name in French (e.g. "Z1 — Récupération").
+      - name: zone_min_bpm
+        description: Lower heart rate boundary of this zone in BPM (from athlete's Garmin settings).
+      - name: zone_max_bpm
+        description: Upper heart rate boundary of this zone in BPM (NULL for zone 5 — no ceiling).
+      - name: athlete_max_hr_bpm
+        description: >
+          Maximum heart rate recorded during the activity, used as a proxy for the athlete's
+          physiological max HR when no explicit setting is available.
+      - name: secs_in_zone
+        description: Total seconds spent in this heart rate zone during the activity.
+      - name: time_in_zone_label
+        description: Human-readable time spent in zone (e.g. "12 min" or "1h 04").
+      - name: pct_time_in_zone
+        description: Percentage of total activity duration spent in this zone.
+
+  # ── Séances similaires ──────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__similar_activities
+    description: >
+      For each running activity, the 5 most recent comparable past sessions
+      of the same activity type with a similar distance (within ±30%).
+      Provides data for the "recent similar sessions" panel.
+    columns:
+      - name: reference_activity_id
+        description: The activity for which similar sessions are shown.
+        tests:
+          - not_null
+      - name: similar_activity_id
+        description: A past activity considered comparable.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the similar activity.
+      - name: start_time_local
+        description: Start timestamp of the similar activity in local timezone.
+      - name: distance_km
+        description: Distance of the similar activity in kilometres.
+      - name: duration_seconds
+        description: Duration of the similar activity in seconds.
+      - name: duration_label
+        description: Human-readable duration of the similar activity.
+      - name: avg_pace_min_per_km
+        description: Average pace of the similar activity in decimal minutes per kilometre.
+      - name: pace_label
+        description: Human-readable pace formatted as M'SS"/km.
+      - name: avg_hr_bpm
+        description: Average heart rate during the similar activity in BPM.
+      - name: training_load
+        description: Training load score of the similar activity.
+      - name: is_pr
+        description: True if Garmin detected a personal record during the similar activity.
+
+  # ── Timeline musicale ───────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__music_timeline
+    description: >
+      One row per Spotify track played during a running activity.
+      The starting kilometre is estimated from the nearest timeseries point
+      preceding the played_at timestamp. Provides data for the music timeline panel.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity.
+        tests:
+          - not_null
+      - name: played_at
+        description: Timestamp (GMT) when the track started playing on Spotify.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify track identifier.
+      - name: track_name
+        description: Name of the track.
+      - name: artist_id
+        description: Spotify identifier of the primary artist.
+      - name: artist_name
+        description: Name of the primary artist.
+      - name: album_id
+        description: Spotify album identifier.
+      - name: album_name
+        description: Name of the album.
+      - name: duration_seconds
+        description: Track duration in seconds.
+      - name: km_start
+        description: >
+          Estimated kilometre at which the track started, derived from the timeseries
+          point whose GMT timestamp is closest to (and before) played_at.
+          NULL if the timeseries is unavailable for this activity.
+
+  # ── Verdict LLM ─────────────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__verdict
+    description: >
+      Stub table for the pre-computed LLM analysis verdict.
+      One row per activity with NULL analysis columns by default.
+      The analysis fields (tldr, strengths, warnings, recommendations) are
+      intended to be populated by an external LLM pipeline via MERGE on activity_id.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity.
+        tests:
+          - not_null
+      - name: tldr
+        description: One-sentence summary of the session generated by the LLM. NULL until populated.
+      - name: strengths_json
+        description: JSON array of strength points identified by the LLM. NULL until populated.
+      - name: warnings_json
+        description: JSON array of warning points identified by the LLM. NULL until populated.
+      - name: recommendations_json
+        description: JSON array of recommendations from the LLM. NULL until populated.
+      - name: generated_at
+        description: Timestamp when the LLM analysis was generated. NULL until populated.
+
+  # ── Deltas vs séance précédente ─────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__deltas
+    description: >
+      One row per running activity with delta metrics compared to the immediately
+      preceding activity of the same type. Provides data for the "vs previous session"
+      comparison panel.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity.
+        tests:
+          - not_null
+      - name: delta_distance_pct
+        description: >
+          Percentage change in distance compared to the previous same-type activity.
+          Positive = longer, negative = shorter. NULL for the first activity of a type.
+      - name: delta_pace_seconds
+        description: >
+          Change in average pace compared to the previous same-type activity, in seconds
+          per kilometre. Negative = faster, positive = slower. NULL for the first activity.
+      - name: delta_hr_bpm
+        description: >
+          Change in average heart rate compared to the previous same-type activity, in BPM.
+          Negative = lower HR (better aerobic efficiency), positive = higher HR.
+          NULL for the first activity.
+      - name: delta_training_load_pct
+        description: >
+          Percentage change in training load compared to the previous same-type activity.
+          Positive = higher load, negative = lower load. NULL for the first activity.

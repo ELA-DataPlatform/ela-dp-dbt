@@ -18,6 +18,12 @@ repos:
           - dbt-bigquery
         args: ['--dialect', 'bigquery']
         files: '(models|macros|snapshots)/.*\.sql$'
+      - id: sqlfluff-fix
+        additional_dependencies:
+          - sqlfluff-templater-dbt==3.3.1
+          - dbt-bigquery
+        args: ['--dialect', 'bigquery']
+        files: '(models|macros|snapshots)/.*\.sql$'
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
