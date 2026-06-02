@@ -42,6 +42,18 @@ track_artist AS (
     WHERE tar.rn = 1
 ),
 
+album_images AS (
+    SELECT
+        sad.album_id,
+        JSON_VALUE(JSON_QUERY(sad.images, '$[0]'), '$.url') AS album_image_url
+    FROM {{ ref('svc_spotify__album_detail') }} AS sad
+    WHERE sad.images IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY sad.album_id
+        ORDER BY sad._ingested_at DESC
+    ) = 1
+),
+
 played_during_activity AS (
     SELECT
         a.activity_id,
@@ -55,6 +67,7 @@ played_during_activity AS (
         al.album_name,
         ta.artist_id,
         ta.artist_name,
+        ai.album_image_url,
         (
             SELECT ROUND(ts.cum_distance_m / 1000.0, 2)
             FROM UNNEST(a.timeseries) AS ts
@@ -63,7 +76,27 @@ played_during_activity AS (
                 AND ts.timestamp_gmt > TIMESTAMP('1971-01-01')
             ORDER BY ts.timestamp_gmt DESC
             LIMIT 1
-        ) AS km_start
+        ) AS km_start,
+        (
+            SELECT ts.latitude
+            FROM UNNEST(a.timeseries) AS ts
+            WHERE
+                ts.timestamp_gmt <= fp.played_at
+                AND ts.timestamp_gmt > TIMESTAMP('1971-01-01')
+                AND ts.latitude IS NOT NULL
+            ORDER BY ts.timestamp_gmt DESC
+            LIMIT 1
+        ) AS latitude,
+        (
+            SELECT ts.longitude
+            FROM UNNEST(a.timeseries) AS ts
+            WHERE
+                ts.timestamp_gmt <= fp.played_at
+                AND ts.timestamp_gmt > TIMESTAMP('1971-01-01')
+                AND ts.longitude IS NOT NULL
+            ORDER BY ts.timestamp_gmt DESC
+            LIMIT 1
+        ) AS longitude
     FROM activities AS a
     INNER JOIN {{ ref('svc_hub__fact_played') }} AS fp
         ON fp.played_at BETWEEN a.start_time_gmt AND a.end_time_gmt
@@ -73,6 +106,8 @@ played_during_activity AS (
         ON fp.album_id = al.album_id
     LEFT JOIN track_artist AS ta
         ON fp.track_id = ta.track_id
+    LEFT JOIN album_images AS ai
+        ON fp.album_id = ai.album_id
 )
 
 SELECT
@@ -85,7 +120,10 @@ SELECT
     pda.artist_name,
     pda.album_id,
     pda.album_name,
+    pda.album_image_url,
     pda.km_start,
+    pda.latitude,
+    pda.longitude,
     pda._ingested_at,
     ROUND(pda.duration_ms / 1000.0, 0) AS duration_seconds
 FROM played_during_activity AS pda

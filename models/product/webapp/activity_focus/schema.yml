@@ -287,13 +287,26 @@ models:
         tests:
           - not_null
       - name: segment_index
-        description: Message index identifying the segment within the activity.
+        description: Lap index from Garmin identifying the order of the segment within the activity.
+      - name: intensity_type
+        description: Raw Garmin intensity type (WARMUP, ACTIVE, REST, INTERVAL, RECOVERY, COOLDOWN).
       - name: segment_type
         description: >
-          Workout phase type (e.g. WARMUP, INTERVAL, RECOVERY, COOLDOWN, ACTIVE).
-          Corresponds to the intensity_type field from Garmin's typed splits.
-      - name: start_time_local
-        description: Start timestamp of the segment in local timezone.
+          Frontend-normalised phase type mapped from intensity_type:
+          warmup, interval (INTERVAL + ACTIVE), recovery (RECOVERY + REST), cooldown.
+        tests:
+          - accepted_values:
+              values: ['warmup', 'interval', 'recovery', 'cooldown']
+      - name: segment_name
+        description: >
+          Human-readable French label. Numbered for repeating phases:
+          "Échauffement", "Intervalle N", "Répétition N", "Repos", "Récupération", "Retour au calme".
+      - name: start_time_gmt
+        description: Start timestamp of the segment in GMT.
+      - name: start_km
+        description: Cumulative distance at the beginning of the segment in kilometres.
+      - name: end_km
+        description: Cumulative distance at the end of the segment in kilometres.
       - name: distance_m
         description: Distance covered in this segment in metres.
       - name: duration_seconds
@@ -424,6 +437,10 @@ models:
         description: Spotify album identifier.
       - name: album_name
         description: Name of the album.
+      - name: album_image_url
+        description: >
+          URL of the album cover image (640x640) from the Spotify CDN.
+          Extracted from svc_spotify__album_detail. NULL if not available.
       - name: duration_seconds
         description: Track duration in seconds.
       - name: km_start
@@ -431,6 +448,14 @@ models:
           Estimated kilometre at which the track started, derived from the timeseries
           point whose GMT timestamp is closest to (and before) played_at.
           NULL if the timeseries is unavailable for this activity.
+      - name: latitude
+        description: >
+          GPS latitude at the moment the track started playing, interpolated from
+          the nearest preceding timeseries point. NULL for treadmill activities.
+      - name: longitude
+        description: >
+          GPS longitude at the moment the track started playing, interpolated from
+          the nearest preceding timeseries point. NULL for treadmill activities.
 
   # ── Verdict LLM ─────────────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__verdict
