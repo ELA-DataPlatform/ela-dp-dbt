@@ -4,7 +4,8 @@ dialect = bigquery
 max_line_length = 120
 large_file_skip_byte_limit = 25000
 # RF02 désactivé : trop bruyant avec les modèles dbt ({{ this }}, {{ ref() }})
-exclude_rules = RF02
+# RF01 désactivé : faux positifs sur CROSS JOIN UNNEST BigQuery (SQLFluff ne résout pas le scope du tableau parent)
+exclude_rules = RF02,RF01
 
 [sqlfluff:templater:dbt]
 project_dir = ./
