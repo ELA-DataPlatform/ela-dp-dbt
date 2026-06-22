@@ -68,10 +68,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build & push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          # provenance:false → image single-manifest (pas d'index d'attestation),
+          # pour que tag et digest soient sans ambiguïté côté Cloud Run.
+          provenance: false
           tags: |
             ${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}
             ${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}-${{ github.sha }}
@@ -80,7 +84,9 @@ jobs:
 
       - name: Update Cloud Run Jobs
         run: |
-          IMAGE="${{ steps.env.outputs.base }}:${{ steps.env.outputs.tag }}-${{ github.sha }}"
+          # Épinglage par DIGEST (et non par tag mutable) : garantit que le job
+          # tourne exactement l'image qui vient d'être buildée/poussée.
+          IMAGE="${{ steps.env.outputs.base }}@${{ steps.build.outputs.digest }}"
           PROJECT="${{ steps.env.outputs.project }}"
           JOBS=$(gcloud run jobs list \
             --project "$PROJECT" \
