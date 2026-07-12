@@ -30,7 +30,7 @@ last_played AS (
         b.artist_id,
         MAX(p.played_at) AS last_played_at
     FROM {{ ref('stg_hub__fact_played') }} AS p
-    JOIN {{ ref('stg_hub__bridge_track_artist') }} AS b USING (track_id)
+    INNER JOIN {{ ref('stg_hub__bridge_track_artist') }} AS b ON p.track_id = b.track_id
     WHERE b.artist_id IS NOT NULL
     GROUP BY b.artist_id
 ),
@@ -40,8 +40,8 @@ pending AS (
         u.artist_id,
         lp.last_played_at
     FROM universe AS u
-    LEFT JOIN already_detailed AS d USING (artist_id)
-    LEFT JOIN last_played AS lp USING (artist_id)
+    LEFT JOIN already_detailed AS d ON u.artist_id = d.artist_id
+    LEFT JOIN last_played AS lp ON u.artist_id = lp.artist_id
     WHERE d.artist_id IS NULL
 )
 

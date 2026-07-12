@@ -43,8 +43,8 @@ pending AS (
         u.album_id,
         lp.last_played_at
     FROM universe AS u
-    LEFT JOIN already_detailed AS d USING (album_id)
-    LEFT JOIN last_played AS lp USING (album_id)
+    LEFT JOIN already_detailed AS d ON u.album_id = d.album_id
+    LEFT JOIN last_played AS lp ON u.album_id = lp.album_id
     WHERE d.album_id IS NULL
 )
 
