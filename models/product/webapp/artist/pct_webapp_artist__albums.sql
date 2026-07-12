@@ -23,23 +23,12 @@ WITH album_plays AS (
     GROUP BY fp.album_id
 ),
 
-album_images AS (
-    SELECT
-        album_id,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS album_image_url
-    FROM {{ ref('svc_spotify__album_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY album_id
-        ORDER BY _ingested_at DESC
-    ) = 1
-),
-
 artist_albums AS (
     SELECT
         baa.artist_id,
         al.album_id,
         al.album_name,
+        al.album_image_url,
         al.total_tracks,
         al.release_date
     FROM {{ ref('svc_hub__bridge_album_artist') }} AS baa
@@ -53,7 +42,7 @@ SELECT
     aa.artist_id,
     aa.album_id,
     aa.album_name,
-    ai.album_image_url,
+    aa.album_image_url,
     aa.total_tracks,
     SAFE.PARSE_DATE('%Y-%m-%d', aa.release_date) AS release_date,
     SAFE_CAST(SUBSTR(aa.release_date, 1, 4) AS INT64) AS release_year,
@@ -71,4 +60,3 @@ SELECT
     COALESCE(ap.plays, 0) AS plays
 FROM artist_albums AS aa
 LEFT JOIN album_plays AS ap ON aa.album_id = ap.album_id
-LEFT JOIN album_images AS ai ON aa.album_id = ai.album_id

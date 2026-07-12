@@ -9,94 +9,33 @@ WITH current_agg AS (
     SELECT
         fp.track_id,
         fp.album_id,
+        cp.period,
         COUNT(*) AS play_count,
         CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        MAX(fp.played_at) AS last_played_at,
-        '7d' AS period
+        MAX(fp.played_at) AS last_played_at
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-    GROUP BY fp.track_id, fp.album_id
-
-    UNION ALL
-
-    SELECT
-        fp.track_id,
-        fp.album_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        MAX(fp.played_at) AS last_played_at,
-        '30d' AS period
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
-    GROUP BY fp.track_id, fp.album_id
-
-    UNION ALL
-
-    SELECT
-        fp.track_id,
-        fp.album_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        MAX(fp.played_at) AS last_played_at,
-        '6m' AS period
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
-    GROUP BY fp.track_id, fp.album_id
-
-    UNION ALL
-
-    SELECT
-        fp.track_id,
-        fp.album_id,
-        COUNT(*) AS play_count,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        MAX(fp.played_at) AS last_played_at,
-        'all' AS period
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    GROUP BY fp.track_id, fp.album_id
+    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
+    WHERE
+        (cp.period_start IS NULL OR DATE(fp.played_at, 'Europe/Paris') >= cp.period_start)
+        AND DATE(fp.played_at, 'Europe/Paris') <= cp.period_end
+    GROUP BY fp.track_id, fp.album_id, cp.period
 ),
 
 prev_agg AS (
     SELECT
         fp.track_id,
+        cp.period,
         CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '7d' AS period
+        MAX(fp.played_at) AS last_played_at
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE
-        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 14 DAY)
-        AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-    GROUP BY fp.track_id
-
-    UNION ALL
-
-    SELECT
-        fp.track_id,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '30d' AS period
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE
-        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 60 DAY)
-        AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
-    GROUP BY fp.track_id
-
-    UNION ALL
-
-    SELECT
-        fp.track_id,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
-        '6m' AS period
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    WHERE
-        fp.played_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 360 DAY)
-        AND fp.played_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 180 DAY)
-    GROUP BY fp.track_id
+        cp.prev_period_start IS NOT NULL
+        AND DATE(fp.played_at, 'Europe/Paris') >= cp.prev_period_start
+        AND DATE(fp.played_at, 'Europe/Paris') <= cp.prev_period_end
+    GROUP BY fp.track_id, cp.period
 ),
 
 current_ranked AS (
@@ -121,15 +60,6 @@ primary_artist AS (
     FROM {{ ref('svc_hub__bridge_track_artist') }} AS bta
     INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a ON bta.artist_id = a.artist_id
     WHERE bta.artist_position = 0
-),
-
-album_images AS (
-    SELECT
-        album_id,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS album_image_url
-    FROM {{ ref('svc_spotify__album_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY album_id ORDER BY _ingested_at DESC) = 1
 )
 
 SELECT
@@ -141,7 +71,7 @@ SELECT
     pa.artist_name,
     c.album_id,
     al.album_name,
-    ai.album_image_url,
+    al.album_image_url,
     c.play_count,
     c.listening_time_min,
     t.duration_ms,
@@ -153,6 +83,5 @@ LEFT JOIN prev_ranked AS pr
 LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON c.track_id = t.track_id
 LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON c.album_id = al.album_id
 LEFT JOIN primary_artist AS pa ON c.track_id = pa.track_id
-LEFT JOIN album_images AS ai ON c.album_id = ai.album_id
 WHERE c.rank <= 20
 ORDER BY c.period, c.rank
