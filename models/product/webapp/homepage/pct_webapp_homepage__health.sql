@@ -18,7 +18,7 @@ sleep_data AS (
     SELECT
         date AS activity_date,
         sleep_overall_score AS sleep_score,
-        cast(round(sleep_time_seconds / 60.0) AS int64) AS sleep_duration_minutes,
+        cast({{ seconds_to_minutes('sleep_time_seconds', 0) }} AS int64) AS sleep_duration_minutes,
         cast(round(avgovernighthrv) AS int64) AS hrv_morning_ms,
         if(
             array_length(sleep_body_battery) > 0,

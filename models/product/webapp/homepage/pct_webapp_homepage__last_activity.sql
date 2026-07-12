@@ -27,7 +27,7 @@ SELECT
     activity_name,
     activity_date,
     cast(round(duration_s) AS int64) AS duration_seconds,
-    cast(round(avg_pace_min_per_km * 60) AS int64) AS pace_seconds_per_km,
+    cast({{ minutes_per_km_to_seconds_per_km('avg_pace_min_per_km') }} AS int64) AS pace_seconds_per_km,
     cast(round(avg_hr_bpm) AS int64) AS avg_heart_rate_bpm,
     cast(round(elevation_gain_m) AS int64) AS elevation_gain_m,
     (
@@ -64,7 +64,7 @@ SELECT
         cast(extract(YEAR FROM activity_date) AS string)
     ) AS activity_date_label,
     date_diff(current_date('Europe/Paris'), activity_date, DAY) AS days_ago,
-    round(distance_m / 1000.0, 2) AS distance_km,
+    {{ meters_to_kilometers('distance_m', 2) }} AS distance_km,
     {{ format_duration_label('duration_s') }} AS duration_label,
     {{ format_pace_label('avg_pace_min_per_km') }} AS pace_label
 FROM last_activity

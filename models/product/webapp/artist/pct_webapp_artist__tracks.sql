@@ -16,7 +16,7 @@ WITH track_plays AS (
         bta.artist_id,
         fp.track_id,
         COUNT(*) AS plays,
-        CAST(SUM(COALESCE(t.duration_ms, 0)) / 60000 AS INT64) AS listening_time_min
+        {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS listening_time_min
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0

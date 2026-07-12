@@ -30,7 +30,7 @@ artist_totals AS (
         MIN(played_at) AS first_listened_at,
         MAX(played_at) AS last_listened_at,
         COUNT(*) AS total_plays,
-        CAST(SUM(duration_ms) / 60000 AS INT64) AS total_listening_time_min,
+        {{ milliseconds_to_minutes('SUM(duration_ms)') }} AS total_listening_time_min,
         COUNT(DISTINCT track_id) AS distinct_tracks_listened
     FROM track_plays
     GROUP BY artist_id

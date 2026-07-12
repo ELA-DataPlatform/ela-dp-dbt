@@ -57,7 +57,7 @@ played_during_activity AS (
         ta.artist_name,
         al.album_image_url,
         (
-            SELECT ROUND(ts.cum_distance_m / 1000.0, 2)
+            SELECT {{ meters_to_kilometers('ts.cum_distance_m', 2) }}
             FROM UNNEST(a.timeseries) AS ts
             WHERE
                 ts.timestamp_gmt <= fp.played_at
@@ -111,7 +111,7 @@ SELECT
     pda.latitude,
     pda.longitude,
     pda._ingested_at,
-    ROUND(pda.duration_ms / 1000.0, 0) AS duration_seconds
+    {{ milliseconds_to_seconds('pda.duration_ms') }} AS duration_seconds
 FROM played_during_activity AS pda
 
 {% if is_incremental() %}

@@ -28,9 +28,9 @@ SELECT
     hub.weather.wind_direction_compass,
     hub.weather.weather_type,
 
-    ROUND(hub.performance.distance_m / 1000.0, 2) AS distance_km,
+    {{ meters_to_kilometers('hub.performance.distance_m', 2) }} AS distance_km,
     CAST(ROUND(hub.performance.duration_s) AS INT64) AS duration_seconds,
-    {{ format_duration_label('hub.performance.duration_s') }}        AS duration_label,
+    {{ format_duration_label('hub.performance.duration_s') }} AS duration_label,
 
     hub.performance.avg_pace_min_per_km,
     CASE
@@ -53,7 +53,7 @@ SELECT
     hub.performance.anaerobic_te_message,
 
     CAST(ROUND(hub.performance.calories) AS INT64) AS calories,
-    ROUND(hub.performance.avg_speed_m_per_s * 3.6, 2) AS avg_speed_km_h,
+    {{ speed_mps_to_kmh('hub.performance.avg_speed_m_per_s') }} AS avg_speed_km_h,
     CAST(ROUND(hub.performance.steps) AS INT64) AS steps,
     CAST(ROUND(hub.performance.lap_count) AS INT64) AS lap_count,
     hub.performance.vo2max_during_activity,

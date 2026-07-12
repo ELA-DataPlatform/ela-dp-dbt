@@ -31,7 +31,7 @@ SELECT
     ) AS zone_max_bpm,
     hub.performance.max_hr_bpm AS athlete_max_hr_bpm,
     CAST(ROUND(hz.secs_in_zone) AS INT64) AS secs_in_zone,
-    {{ format_duration_label('hz.secs_in_zone') }}                   AS time_in_zone_label,
+    {{ format_duration_label('hz.secs_in_zone') }} AS time_in_zone_label,
     ROUND(SAFE_DIVIDE(hz.secs_in_zone, hub.performance.duration_s) * 100, 1) AS pct_time_in_zone,
 
     hub._ingested_at

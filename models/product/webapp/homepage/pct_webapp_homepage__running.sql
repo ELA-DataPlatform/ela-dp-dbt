@@ -17,7 +17,7 @@ WITH date_spine AS (
 runs_daily AS (
     SELECT
         activity_date,
-        sum(performance.distance_m) / 1000.0 AS distance_km
+        {{ meters_to_kilometers('sum(performance.distance_m)') }} AS distance_km
     FROM {{ ref('svc_hub__master_running_activities') }}
     WHERE activity_date >= date_sub(current_date('Europe/Paris'), INTERVAL 13 DAY)
     GROUP BY activity_date
@@ -38,14 +38,14 @@ week_totals AS (
     SELECT
         round(sum(CASE
             WHEN activity_date >= date_trunc(current_date('Europe/Paris'), ISOWEEK)
-                THEN performance.distance_m / 1000.0
+                THEN {{ meters_to_kilometers('performance.distance_m') }}
             ELSE 0
         END), 2) AS current_week_km,
         round(sum(CASE
             WHEN
                 activity_date >= date_sub(date_trunc(current_date('Europe/Paris'), ISOWEEK), INTERVAL 7 DAY)
                 AND activity_date < date_trunc(current_date('Europe/Paris'), ISOWEEK)
-                THEN performance.distance_m / 1000.0
+                THEN {{ meters_to_kilometers('performance.distance_m') }}
             ELSE 0
         END), 2) AS previous_week_km
     FROM {{ ref('svc_hub__master_running_activities') }}

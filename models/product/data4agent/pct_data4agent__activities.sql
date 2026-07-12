@@ -24,7 +24,7 @@ SELECT  -- noqa: ST06
     a.elapsedduration AS elapsed_duration_s,
 
     -- Pace & speed
-    SAFE_DIVIDE(1000.0, a.averagespeed) / 60.0 AS avg_pace_min_per_km,
+    {{ speed_mps_to_pace_min_per_km('a.averagespeed') }} AS avg_pace_min_per_km,
     a.averagespeed AS avg_speed_m_per_s,
     a.maxspeed AS max_speed_m_per_s,
 
