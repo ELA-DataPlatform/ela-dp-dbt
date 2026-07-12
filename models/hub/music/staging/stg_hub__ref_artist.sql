@@ -13,6 +13,7 @@ WITH from_artist_detail AS (
         genres,
         CAST(JSON_VALUE(followers, '$.total') AS INT64) AS followers_total,
         popularity,
+        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify__artist_detail') }}
@@ -26,6 +27,7 @@ from_top_artists AS (
         genres,
         CAST(JSON_VALUE(followers, '$.total') AS INT64) AS followers_total,
         popularity,
+        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify__top_artists') }}
@@ -39,6 +41,7 @@ from_recently_played_track AS (
         CAST(NULL AS STRING) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS artist_image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }},
@@ -53,6 +56,7 @@ from_recently_played_album AS (
         CAST(NULL AS STRING) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS artist_image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }},
@@ -67,6 +71,7 @@ from_legacy_artist_detail AS (
         TO_JSON_STRING(genres) AS genres,
         followers.total AS followers_total,
         popularity,
+        JSON_VALUE(TO_JSON_STRING(images), '$[0].url') AS artist_image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify_legacy__artist_detail') }}
@@ -80,6 +85,7 @@ from_legacy_top_artists AS (
         TO_JSON_STRING(genres) AS genres,
         followers.total AS followers_total,
         popularity,
+        JSON_VALUE(TO_JSON_STRING(images), '$[0].url') AS artist_image_url,
         _ingested_at,
         0 AS _source_priority
     FROM {{ ref('svc_spotify_legacy__top_artists') }}
@@ -93,6 +99,7 @@ from_legacy_recently_played_track AS (
         CAST(NULL AS STRING) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS artist_image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify_legacy__recently_played') }},
@@ -107,6 +114,7 @@ from_legacy_recently_played_album AS (
         CAST(NULL AS STRING) AS genres,
         CAST(NULL AS INT64) AS followers_total,
         CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS artist_image_url,
         _ingested_at,
         1 AS _source_priority
     FROM {{ ref('svc_spotify_legacy__recently_played') }},

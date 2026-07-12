@@ -1,9 +1,9 @@
 version: 2
 
 models:
-  - name: pct_ranking__artist
+  - name: pct_webapp_ranking__artist
     description: >
-      Artist rankings by play count for each time window (7d, 30d, 90d, all).
+      Artist rankings by play count for each standard time window (7d, 30d, 6m, 1y, all).
       Includes rank delta vs the previous equivalent window for trend display.
       One row per (period, artist_id) combination.
     columns:
@@ -30,9 +30,9 @@ models:
       - name: is_new_entry
         description: True if the artist appears in this period but not in the previous equivalent window.
 
-  - name: pct_ranking__album
+  - name: pct_webapp_ranking__album
     description: >
-      Album rankings by play count for each time window (7d, 30d, 90d, all).
+      Album rankings by play count for each standard time window (7d, 30d, 6m, 1y, all).
       Includes rank delta vs the previous equivalent window for trend display.
       One row per (period, album_id) combination. Primary artist only.
     columns:
@@ -67,9 +67,9 @@ models:
       - name: total_tracks
         description: Total number of tracks in the album.
 
-  - name: pct_ranking__track
+  - name: pct_webapp_ranking__track
     description: >
-      Track rankings by play count for each time window (7d, 30d, 90d, all).
+      Track rankings by play count for each standard time window (7d, 30d, 6m, 1y, all).
       Includes rank delta vs the previous equivalent window for trend display.
       One row per (period, track_id, album_id) combination. Primary artist only.
     columns:

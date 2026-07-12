@@ -42,18 +42,6 @@ track_artist AS (
     WHERE tar.rn = 1
 ),
 
-album_images AS (
-    SELECT
-        sad.album_id,
-        JSON_VALUE(JSON_QUERY(sad.images, '$[0]'), '$.url') AS album_image_url
-    FROM {{ ref('svc_spotify__album_detail') }} AS sad
-    WHERE sad.images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY sad.album_id
-        ORDER BY sad._ingested_at DESC
-    ) = 1
-),
-
 played_during_activity AS (
     SELECT
         a.activity_id,
@@ -67,7 +55,7 @@ played_during_activity AS (
         al.album_name,
         ta.artist_id,
         ta.artist_name,
-        ai.album_image_url,
+        al.album_image_url,
         (
             SELECT ROUND(ts.cum_distance_m / 1000.0, 2)
             FROM UNNEST(a.timeseries) AS ts
@@ -106,8 +94,6 @@ played_during_activity AS (
         ON fp.album_id = al.album_id
     LEFT JOIN track_artist AS ta
         ON fp.track_id = ta.track_id
-    LEFT JOIN album_images AS ai
-        ON fp.album_id = ai.album_id
 )
 
 SELECT
