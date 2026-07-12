@@ -32,9 +32,9 @@ SELECT
     ts.stamina_potential,
     ts.air_temp_celsius,
     hub._ingested_at,
-    ROUND(ts.cum_distance_m / 1000.0, 3) AS cum_distance_km,
-    SAFE_DIVIDE(1000.0, ts.speed_m_per_s) / 60.0 AS pace_min_per_km,
-    SAFE_DIVIDE(1000.0, ts.grade_adj_speed_m_per_s) / 60.0 AS gap_min_per_km,
+    {{ meters_to_kilometers('ts.cum_distance_m', 3) }} AS cum_distance_km,
+    {{ speed_mps_to_pace_min_per_km('ts.speed_m_per_s') }} AS pace_min_per_km,
+    {{ speed_mps_to_pace_min_per_km('ts.grade_adj_speed_m_per_s') }} AS gap_min_per_km,
 
     COALESCE(ts.corrected_elevation_m, ts.elevation_m) AS elevation_m
 

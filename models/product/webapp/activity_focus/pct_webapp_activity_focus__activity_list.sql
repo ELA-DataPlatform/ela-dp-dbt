@@ -14,9 +14,9 @@ SELECT
     hub.activity_date,
     hub.start_time_local,
 
-    ROUND(hub.performance.distance_m / 1000.0, 2) AS distance_km,
+    {{ meters_to_kilometers('hub.performance.distance_m', 2) }} AS distance_km,
     CAST(ROUND(hub.performance.duration_s) AS INT64) AS duration_seconds,
-    {{ format_duration_label('hub.performance.duration_s') }}        AS duration_label,
+    {{ format_duration_label('hub.performance.duration_s') }} AS duration_label,
 
     hub.performance.avg_pace_min_per_km,
     CASE

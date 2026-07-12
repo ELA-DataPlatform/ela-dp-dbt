@@ -20,13 +20,13 @@ SELECT
     lap.intensity_type,
     ROUND(lap.distance, 0) AS distance_m,
     CAST(ROUND(lap.duration) AS INT64) AS duration_seconds,
-    {{ format_duration_label('lap.duration') }}                      AS duration_label,
-    SAFE_DIVIDE(1000.0, lap.average_speed) / 60.0 AS pace_min_per_km,
+    {{ format_duration_label('lap.duration') }} AS duration_label,
+    {{ speed_mps_to_pace_min_per_km('lap.average_speed') }} AS pace_min_per_km,
     CASE
-        WHEN SAFE_DIVIDE(1000.0, lap.average_speed) / 60.0 > 0
-            THEN {{ format_pace_label('SAFE_DIVIDE(1000.0, lap.average_speed) / 60.0') }}
+        WHEN {{ speed_mps_to_pace_min_per_km('lap.average_speed') }} > 0
+            THEN {{ format_pace_label(speed_mps_to_pace_min_per_km('lap.average_speed')) }}
     END AS pace_label,
-    SAFE_DIVIDE(1000.0, lap.avg_grade_adjusted_speed) / 60.0 AS gap_min_per_km,
+    {{ speed_mps_to_pace_min_per_km('lap.avg_grade_adjusted_speed') }} AS gap_min_per_km,
     CAST(ROUND(lap.average_hr) AS INT64) AS avg_hr_bpm,
     CAST(ROUND(lap.max_hr) AS INT64) AS max_hr_bpm,
     ROUND(lap.average_run_cadence, 1) AS avg_cadence_spm,

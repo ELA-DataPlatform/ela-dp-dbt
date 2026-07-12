@@ -29,9 +29,9 @@ ranked AS (
         b.activity_id AS recent_activity_id,
         b.activity_date,
         b.start_time_local,
-        ROUND(b.distance_m / 1000.0, 2) AS distance_km,
+        {{ meters_to_kilometers('b.distance_m', 2) }} AS distance_km,
         CAST(ROUND(b.duration_s) AS INT64) AS duration_seconds,
-        {{ format_duration_label('b.duration_s') }}                 AS duration_label,
+        {{ format_duration_label('b.duration_s') }} AS duration_label,
         b.avg_pace_min_per_km,
         CASE
             WHEN

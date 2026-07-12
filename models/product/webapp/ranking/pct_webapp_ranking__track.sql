@@ -11,7 +11,7 @@ WITH current_agg AS (
         fp.album_id,
         cp.period,
         COUNT(*) AS play_count,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
+        {{ milliseconds_to_minutes('SUM(t.duration_ms)') }} AS listening_time_min,
         MAX(fp.played_at) AS last_played_at
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
@@ -26,7 +26,7 @@ prev_agg AS (
     SELECT
         fp.track_id,
         cp.period,
-        CAST(SUM(t.duration_ms) / 60000 AS INT64) AS listening_time_min,
+        {{ milliseconds_to_minutes('SUM(t.duration_ms)') }} AS listening_time_min,
         MAX(fp.played_at) AS last_played_at
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
