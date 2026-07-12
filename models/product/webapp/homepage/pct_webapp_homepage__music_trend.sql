@@ -26,13 +26,13 @@ streams_raw AS (
 streams_current AS (
     SELECT
         stream_date,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM streams_raw
     GROUP BY stream_date
 ),
 
 streams_prev AS (
-    SELECT cast(sum(t.duration_ms) / 60000 AS int64) AS total_minutes_prev_10d
+    SELECT {{ milliseconds_to_minutes('sum(t.duration_ms)') }} AS total_minutes_prev_10d
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE

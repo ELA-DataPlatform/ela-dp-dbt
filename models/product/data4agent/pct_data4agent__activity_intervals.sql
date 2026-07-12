@@ -27,7 +27,7 @@ SELECT  -- noqa: ST06
     lap.average_speed AS avg_speed_m_per_s,
     lap.average_moving_speed AS avg_moving_speed_m_per_s,
     lap.max_speed AS max_speed_m_per_s,
-    SAFE_DIVIDE(1000.0, lap.average_speed) / 60.0 AS avg_pace_min_per_km,
+    {{ speed_mps_to_pace_min_per_km('lap.average_speed') }} AS avg_pace_min_per_km,
     lap.avg_grade_adjusted_speed AS avg_grade_adjusted_speed_m_per_s,
 
     -- Elevation

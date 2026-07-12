@@ -46,7 +46,7 @@ artist_plays AS (
 artist_current AS (
     SELECT
         artist_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM artist_plays
     CROSS JOIN period_bounds AS pb
     WHERE play_date >= pb.period_start AND play_date <= pb.period_end
@@ -56,7 +56,7 @@ artist_current AS (
 artist_prev AS (
     SELECT
         artist_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM artist_plays
     CROSS JOIN period_bounds AS pb
     WHERE play_date >= pb.prev_period_start AND play_date <= pb.prev_period_end
@@ -103,7 +103,7 @@ artists_top5 AS (
 album_current AS (
     SELECT
         album_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM fact_with_duration
     CROSS JOIN period_bounds AS pb
     WHERE play_date >= pb.period_start AND play_date <= pb.period_end
@@ -113,7 +113,7 @@ album_current AS (
 album_prev AS (
     SELECT
         album_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM fact_with_duration
     CROSS JOIN period_bounds AS pb
     WHERE play_date >= pb.prev_period_start AND play_date <= pb.prev_period_end
@@ -170,7 +170,7 @@ albums_top5 AS (
 track_current AS (
     SELECT
         track_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes,
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes,
         max(album_id) AS album_id
     FROM fact_with_duration
     CROSS JOIN period_bounds AS pb
@@ -181,7 +181,7 @@ track_current AS (
 track_prev AS (
     SELECT
         track_id,
-        cast(sum(duration_ms) / 60000 AS int64) AS listening_minutes
+        {{ milliseconds_to_minutes('sum(duration_ms)') }} AS listening_minutes
     FROM fact_with_duration
     CROSS JOIN period_bounds AS pb
     WHERE play_date >= pb.prev_period_start AND play_date <= pb.prev_period_end

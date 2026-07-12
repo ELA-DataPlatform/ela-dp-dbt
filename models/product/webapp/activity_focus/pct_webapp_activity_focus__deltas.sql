@@ -54,7 +54,9 @@ SELECT
     wp.activity_date,
     wp._ingested_at,
     ROUND(SAFE_DIVIDE(wp.distance_m - wp.prev_distance_m, wp.prev_distance_m) * 100, 1) AS delta_distance_pct,
-    ROUND((wp.avg_pace_min_per_km - wp.prev_avg_pace_min_per_km) * 60, 0) AS delta_pace_seconds,
+    {{ minutes_per_km_to_seconds_per_km(
+        'wp.avg_pace_min_per_km - wp.prev_avg_pace_min_per_km'
+    ) }} AS delta_pace_seconds,
     ROUND(wp.avg_hr_bpm - wp.prev_avg_hr_bpm, 0) AS delta_hr_bpm,
     ROUND(SAFE_DIVIDE(wp.training_load - wp.prev_training_load, wp.prev_training_load) * 100, 1)
         AS delta_training_load_pct

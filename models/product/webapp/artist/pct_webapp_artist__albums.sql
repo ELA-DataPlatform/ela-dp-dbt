@@ -15,7 +15,7 @@ WITH album_plays AS (
     SELECT
         fp.album_id,
         COUNT(*) AS plays,
-        CAST(SUM(COALESCE(t.duration_ms, 0)) / 60000 AS INT64) AS listening_time_min,
+        {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS listening_time_min,
         COUNT(DISTINCT fp.track_id) AS listened_tracks
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id

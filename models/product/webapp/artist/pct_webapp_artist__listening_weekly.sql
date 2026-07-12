@@ -38,7 +38,7 @@ weekly_plays AS (
     SELECT
         bta.artist_id,
         DATE_TRUNC(DATE(fp.played_at, 'Europe/Paris'), WEEK (MONDAY)) AS week_start_date,
-        CAST(SUM(COALESCE(t.duration_ms, 0)) / 60000 AS INT64) AS listening_time_min,
+        {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS listening_time_min,
         COUNT(*) AS plays
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta

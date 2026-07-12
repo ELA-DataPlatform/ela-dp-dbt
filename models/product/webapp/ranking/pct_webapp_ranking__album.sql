@@ -22,7 +22,7 @@ current_agg AS (
         fa.album_id,
         cp.period,
         COUNT(*) AS play_count,
-        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min,
+        {{ milliseconds_to_minutes('SUM(fa.duration_ms)') }} AS listening_time_min,
         COUNT(DISTINCT fa.track_id) AS unique_tracks,
         MAX(fa.played_at) AS last_played_at
     FROM fact_with_album AS fa
@@ -37,7 +37,7 @@ prev_agg AS (
     SELECT
         fa.album_id,
         cp.period,
-        CAST(SUM(fa.duration_ms) / 60000 AS INT64) AS listening_time_min
+        {{ milliseconds_to_minutes('SUM(fa.duration_ms)') }} AS listening_time_min
     FROM fact_with_album AS fa
     CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
     WHERE

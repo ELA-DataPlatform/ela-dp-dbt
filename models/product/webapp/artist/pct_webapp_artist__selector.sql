@@ -12,13 +12,13 @@
 WITH artist_listening AS (
     SELECT
         bta.artist_id,
-        CAST(SUM(COALESCE(t.duration_ms, 0)) / 60000 AS INT64) AS total_listening_time_min
+        {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS total_listening_time_min
     FROM {{ ref('svc_hub__fact_played') }} AS fp
     INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
     GROUP BY bta.artist_id
-    HAVING CAST(SUM(COALESCE(t.duration_ms, 0)) / 60000 AS INT64) >= 60
+    HAVING {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} >= 60
 )
 
 SELECT
