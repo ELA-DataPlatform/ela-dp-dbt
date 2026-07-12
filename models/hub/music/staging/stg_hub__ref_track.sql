@@ -23,6 +23,24 @@ WITH from_top_tracks AS (
     FROM {{ ref('svc_spotify__top_tracks') }}
 ),
 
+from_album_tracks AS (
+    SELECT
+        track_id,
+        name AS track_name,
+        uri AS track_uri,
+        duration_ms,
+        explicit,
+        track_number,
+        disc_number,
+        CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS isrc,
+        album_id,
+        is_local,
+        _ingested_at,
+        1 AS _source_priority
+    FROM {{ ref('svc_spotify__album_tracks') }}
+),
+
 from_recently_played AS (
     SELECT
         track_id,
@@ -37,7 +55,7 @@ from_recently_played AS (
         JSON_VALUE(track, '$.album.id') AS album_id,
         CAST(JSON_VALUE(track, '$.is_local') AS BOOL) AS is_local,
         _ingested_at,
-        1 AS _source_priority
+        2 AS _source_priority
     FROM {{ ref('svc_spotify__recently_played') }}
 ),
 
@@ -59,6 +77,24 @@ from_legacy_top_tracks AS (
     FROM {{ ref('svc_spotify_legacy__top_tracks') }}
 ),
 
+from_legacy_album_tracks AS (
+    SELECT
+        id AS track_id,
+        name AS track_name,
+        uri AS track_uri,
+        duration_ms,
+        explicit,
+        track_number,
+        disc_number,
+        CAST(NULL AS INT64) AS popularity,
+        CAST(NULL AS STRING) AS isrc,
+        album_id,
+        is_local,
+        _ingested_at,
+        1 AS _source_priority
+    FROM {{ ref('svc_spotify_legacy__album_tracks') }}
+),
+
 from_legacy_recently_played AS (
     SELECT
         track_id,
@@ -73,16 +109,20 @@ from_legacy_recently_played AS (
         track.album.id AS album_id,
         track.is_local,
         _ingested_at,
-        1 AS _source_priority
+        2 AS _source_priority
     FROM {{ ref('svc_spotify_legacy__recently_played') }}
 ),
 
 combined AS (
     SELECT * FROM from_top_tracks
     UNION ALL
+    SELECT * FROM from_album_tracks
+    UNION ALL
     SELECT * FROM from_recently_played
     UNION ALL
     SELECT * FROM from_legacy_top_tracks
+    UNION ALL
+    SELECT * FROM from_legacy_album_tracks
     UNION ALL
     SELECT * FROM from_legacy_recently_played
 ),

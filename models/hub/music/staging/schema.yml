@@ -21,8 +21,8 @@ models:
 
   - name: stg_hub__ref_track
     description: >
-      Deduplicated view of track metadata. Consolidates data from top tracks and recently
-      played, favouring top tracks (richer source). One row per track_id.
+      Deduplicated view of track metadata. Consolidates top tracks (preferred for popularity
+      and ISRC), album tracks, and recently played tracks. One row per track_id.
     columns:
       - name: track_id
         description: Spotify unique track identifier.
