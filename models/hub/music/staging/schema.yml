@@ -167,3 +167,29 @@ models:
         description: 0-based position of the artist in the album's artist list.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this pair.
+
+  - name: stg_hub__albums_pending_detail
+    description: >
+      Worklist of albums that are known (seen in any Spotify source) but not yet present in
+      svc_spotify__album_detail. Consumed by the album-detail ingestion job so it fetches
+      only missing albums in small batches instead of the whole catalogue (bounds job memory,
+      avoids the OOM that froze detail enrichment from 2026-06-23). Ordered by most recent
+      play so albums visible in the /music rankings are enriched first. Row count capped by
+      the var album_detail_batch_size (default 50).
+    columns:
+      - name: album_id
+        description: Spotify unique album identifier awaiting detail enrichment.
+      - name: last_played_at
+        description: Most recent play timestamp for this album, or NULL if only saved (sorts last).
+
+  - name: stg_hub__artists_pending_detail
+    description: >
+      Worklist of artists known but not yet present in svc_spotify__artist_detail. Counterpart
+      of stg_hub__albums_pending_detail, consumed by the artist-detail ingestion job. Ordered
+      by most recent play (via the track-artist bridge); artists only ever seen as album artists
+      have NULL last_played_at and sort last. Row count capped by artist_detail_batch_size (default 50).
+    columns:
+      - name: artist_id
+        description: Spotify unique artist identifier awaiting detail enrichment.
+      - name: last_played_at
+        description: Most recent play timestamp for a track by this artist, or NULL (sorts last).

@@ -13,6 +13,13 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Taille des lots pour l'enrichissement incrémental des détails Spotify.
+# Consommées par stg_hub__albums_pending_detail / stg_hub__artists_pending_detail,
+# elles-mêmes lues par les jobs d'ingestion album-detail / artist-detail.
+vars:
+  album_detail_batch_size: 50
+  artist_detail_batch_size: 50
+
 models:
   ela_dp:
     lake:
