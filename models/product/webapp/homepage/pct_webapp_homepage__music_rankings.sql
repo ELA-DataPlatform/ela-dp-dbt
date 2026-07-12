@@ -31,26 +31,6 @@ fact_with_duration AS (
         AND date(fp.played_at, 'Europe/Paris') <= pb.period_end
 ),
 
--- ── Precomputed images ───────────────────────────────────────────────────────
-
-artist_images AS (
-    SELECT
-        artist_id,
-        json_value(json_query(images, '$[0]'), '$.url') AS image_url
-    FROM {{ ref('svc_spotify__artist_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY row_number() OVER (PARTITION BY artist_id ORDER BY _ingested_at DESC) = 1
-),
-
-album_images AS (
-    SELECT
-        album_id,
-        json_value(json_query(images, '$[0]'), '$.url') AS image_url
-    FROM {{ ref('svc_spotify__album_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY row_number() OVER (PARTITION BY album_id ORDER BY _ingested_at DESC) = 1
-),
-
 -- ── ARTIST ───────────────────────────────────────────────────────────────────
 
 artist_plays AS (
@@ -105,7 +85,7 @@ artists_top5 AS (
         a.artist_name AS entity_name,
         cast(NULL AS string) AS subtitle,
         c.listening_minutes,
-        ai.image_url,
+        a.artist_image_url AS image_url,
         CASE
             WHEN p.rank_prev IS NULL THEN 'new'
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
@@ -115,7 +95,6 @@ artists_top5 AS (
     FROM artist_current_ranked AS c
     LEFT JOIN artist_prev_ranked AS p ON c.artist_id = p.artist_id
     LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
-    LEFT JOIN artist_images AS ai ON c.artist_id = ai.artist_id
     WHERE c.rank <= 5
 ),
 
@@ -172,7 +151,7 @@ albums_top5 AS (
         alb.album_name AS entity_name,
         pa.artist_name AS subtitle,
         c.listening_minutes,
-        ai.image_url,
+        alb.album_image_url AS image_url,
         CASE
             WHEN p.rank_prev IS NULL THEN 'new'
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
@@ -183,7 +162,6 @@ albums_top5 AS (
     LEFT JOIN album_prev_ranked AS p ON c.album_id = p.album_id
     LEFT JOIN {{ ref('svc_hub__ref_album') }} AS alb ON c.album_id = alb.album_id
     LEFT JOIN album_primary_artist AS pa ON c.album_id = pa.album_id
-    LEFT JOIN album_images AS ai ON c.album_id = ai.album_id
     WHERE c.rank <= 5
 ),
 
@@ -242,7 +220,7 @@ tracks_top5 AS (
         t.track_name AS entity_name,
         pa.artist_name AS subtitle,
         c.listening_minutes,
-        ai.image_url,
+        al.album_image_url AS image_url,
         CASE
             WHEN p.rank_prev IS NULL THEN 'new'
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
@@ -252,8 +230,8 @@ tracks_top5 AS (
     FROM track_current_ranked AS c
     LEFT JOIN track_prev_ranked AS p ON c.track_id = p.track_id
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON c.track_id = t.track_id
+    LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON c.album_id = al.album_id
     LEFT JOIN track_primary_artist AS pa ON c.track_id = pa.track_id
-    LEFT JOIN album_images AS ai ON c.album_id = ai.album_id
     WHERE c.rank <= 5
 )
 

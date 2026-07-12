@@ -61,15 +61,6 @@ prev_ranked AS (
         period,
         ROW_NUMBER() OVER (PARTITION BY period ORDER BY listening_time_min DESC) AS rank_previous
     FROM prev_agg
-),
-
-artist_images AS (
-    SELECT
-        artist_id,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url
-    FROM {{ ref('svc_spotify__artist_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY artist_id ORDER BY _ingested_at DESC) = 1
 )
 
 SELECT
@@ -78,7 +69,7 @@ SELECT
     pr.rank_previous,
     c.artist_id,
     a.artist_name,
-    ai.artist_image_url,
+    a.artist_image_url,
     c.play_count,
     c.listening_time_min,
     c.unique_tracks,
@@ -88,6 +79,5 @@ FROM current_ranked AS c
 LEFT JOIN prev_ranked AS pr
     ON c.artist_id = pr.artist_id AND c.period = pr.period
 LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
-LEFT JOIN artist_images AS ai ON c.artist_id = ai.artist_id
 WHERE c.rank <= 20
 ORDER BY c.period, c.rank

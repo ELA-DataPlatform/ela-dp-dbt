@@ -83,24 +83,12 @@ combined AS (
         COALESCE(asg.studio_albums_completed, 0) AS studio_albums_completed
     FROM artist_totals AS att
     LEFT JOIN artist_studio AS asg ON att.artist_id = asg.artist_id
-),
-
-artist_images AS (
-    SELECT
-        artist_id,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url
-    FROM {{ ref('svc_spotify__artist_detail') }}
-    WHERE images IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY artist_id
-        ORDER BY _ingested_at DESC
-    ) = 1
 )
 
 SELECT
     c.artist_id,
     a.artist_name,
-    ai.artist_image_url,
+    a.artist_image_url,
     c.first_listened_at,
     c.total_listening_time_min,
     c.total_plays,
@@ -116,4 +104,3 @@ SELECT
     ) AS all_time_rank
 FROM combined AS c
 LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
-LEFT JOIN artist_images AS ai ON c.artist_id = ai.artist_id
