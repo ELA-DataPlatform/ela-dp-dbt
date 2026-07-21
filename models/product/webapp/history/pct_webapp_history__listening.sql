@@ -27,4 +27,3 @@ FROM {{ ref('svc_hub__fact_played') }} AS fp
 LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
 LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON fp.album_id = al.album_id
 LEFT JOIN primary_artist AS pa ON fp.track_id = pa.track_id
-

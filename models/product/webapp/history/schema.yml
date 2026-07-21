@@ -26,4 +26,3 @@ models:
         description: URL of the album cover image supplied by Spotify.
       - name: duration_ms
         description: Track duration in milliseconds.
-
