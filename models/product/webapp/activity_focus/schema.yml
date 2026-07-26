@@ -383,6 +383,7 @@ models:
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4, 5]
+                quote: false
       - name: zone_name
         description: Human-readable zone name in French (e.g. "Z1 — Récupération").
       - name: zone_min_bpm
@@ -413,7 +414,7 @@ models:
         description: The activity for which similar sessions are shown.
         tests:
           - not_null
-      - name: similar_activity_id
+      - name: recent_activity_id
         description: A past activity considered comparable.
         tests:
           - not_null
