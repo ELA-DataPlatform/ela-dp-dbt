@@ -15,7 +15,9 @@ RUN apk add --no-cache \
 RUN pip install --no-cache-dir uv
 
 RUN uv venv /opt/venv \
-    && VIRTUAL_ENV=/opt/venv uv pip install --no-cache "dbt-bigquery>=1.9.0,<2.0.0"
+    && VIRTUAL_ENV=/opt/venv uv pip install --no-cache \
+        "dbt-bigquery>=1.9.0,<1.12.0" \
+        "dbt-core<1.12.0"
 
 # =============================================================================
 # Stage 2 : Minimal Alpine runtime
