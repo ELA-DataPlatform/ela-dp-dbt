@@ -51,7 +51,10 @@ prev_agg AS (
 current_ranked AS (
     SELECT
         *,
-        ROW_NUMBER() OVER (PARTITION BY period ORDER BY listening_time_min DESC) AS rank
+        ROW_NUMBER() OVER (
+            PARTITION BY period
+            ORDER BY listening_time_min DESC
+        ) AS rank
     FROM current_agg
 ),
 
@@ -59,7 +62,10 @@ prev_ranked AS (
     SELECT
         artist_id,
         period,
-        ROW_NUMBER() OVER (PARTITION BY period ORDER BY listening_time_min DESC) AS rank_previous
+        ROW_NUMBER() OVER (
+            PARTITION BY period
+            ORDER BY listening_time_min DESC
+        ) AS rank_previous
     FROM prev_agg
 )
 
@@ -74,7 +80,15 @@ SELECT
     c.listening_time_min,
     c.unique_tracks,
     c.last_played_at,
-    (pr.rank_previous IS NULL AND c.period != 'all') AS is_new_entry
+    (pr.rank_previous IS NULL AND c.period != 'all') AS is_new_entry,
+    CASE
+        WHEN pr.rank_previous IS NULL AND c.period != 'all' THEN 'new'
+        WHEN pr.rank_previous IS NULL THEN 'none'
+        WHEN pr.rank_previous > c.rank THEN 'up'
+        WHEN pr.rank_previous < c.rank THEN 'down'
+        ELSE 'same'
+    END AS rank_change_direction,
+    COALESCE(ABS(pr.rank_previous - c.rank), 0) AS rank_change_places
 FROM current_ranked AS c
 LEFT JOIN prev_ranked AS pr
     ON c.artist_id = pr.artist_id AND c.period = pr.period

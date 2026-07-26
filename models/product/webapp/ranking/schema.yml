@@ -29,6 +29,10 @@ models:
         description: Timestamp of the most recent play for this artist in the period.
       - name: is_new_entry
         description: True if the artist appears in this period but not in the previous equivalent window.
+      - name: rank_change_direction
+        description: Display-ready rank movement category — new, none, up, down, or same.
+      - name: rank_change_places
+        description: Absolute number of positions gained or lost; zero for new, none, and unchanged entries.
 
   - name: pct_webapp_ranking__album
     description: >
@@ -62,6 +66,10 @@ models:
         description: Timestamp of the most recent play from this album in the period.
       - name: is_new_entry
         description: True if the album appears in this period but not in the previous equivalent window.
+      - name: rank_change_direction
+        description: Display-ready rank movement category — new, none, up, down, or same.
+      - name: rank_change_places
+        description: Absolute number of positions gained or lost; zero for new, none, and unchanged entries.
       - name: release_year
         description: Release year of the album, extracted from release_date.
       - name: total_tracks
@@ -101,3 +109,7 @@ models:
         description: Timestamp of the most recent play for this track in the period.
       - name: is_new_entry
         description: True if the track appears in this period but not in the previous equivalent window.
+      - name: rank_change_direction
+        description: Display-ready rank movement category — new, none, up, down, or same.
+      - name: rank_change_places
+        description: Absolute number of positions gained or lost; zero for new, none, and unchanged entries.

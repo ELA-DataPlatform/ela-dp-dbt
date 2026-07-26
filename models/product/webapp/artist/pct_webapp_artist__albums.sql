@@ -57,6 +57,13 @@ SELECT
         ELSE 0.0
     END AS completion_pct,
     COALESCE(ap.listening_time_min, 0) AS listening_time_min,
-    COALESCE(ap.plays, 0) AS plays
+    COALESCE(ap.plays, 0) AS plays,
+    RANK() OVER (
+        PARTITION BY aa.artist_id
+        ORDER BY
+            COALESCE(ap.listening_time_min, 0) DESC,
+            COALESCE(ap.plays, 0) DESC,
+            aa.album_id ASC
+    ) AS artist_album_rank
 FROM artist_albums AS aa
 LEFT JOIN album_plays AS ap ON aa.album_id = ap.album_id

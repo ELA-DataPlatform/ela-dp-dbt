@@ -13,6 +13,12 @@ models:
         description: Total km run during the current ISO week (Monday to today).
       - name: previous_week_km
         description: Total km run during the full previous ISO week (Monday to Sunday).
+      - name: week_km_delta_pct
+        description: Percentage difference between current-week and previous-week kilometres.
+      - name: week_km_delta_label
+        description: Display-ready rounded delta label, or an em dash when the previous week has no distance.
+      - name: week_km_delta_tone
+        description: Display-ready semantic tone for the distance delta — success or danger.
       - name: days
         description: >
           Array of 14 entries (J-13 to today), one per calendar day, ordered by date.
@@ -70,14 +76,28 @@ models:
         description: Average overnight HRV in milliseconds over J1..J9.
       - name: avg_body_battery_wake
         description: Average body battery at wake-up over J1..J9.
+      - name: latest_activity_date
+        description: Most recent date in the window with sleep data.
+      - name: latest_sleep_score
+        description: Sleep score on latest_activity_date.
+      - name: latest_sleep_duration_minutes
+        description: Sleep duration on latest_activity_date in minutes.
+      - name: latest_hrv_ms
+        description: Overnight HRV on latest_activity_date in milliseconds.
+      - name: latest_body_battery_wake
+        description: Body battery at wake-up on latest_activity_date.
       - name: delta_sleep_score
         description: Sleep score J0 minus average J1..J9.
       - name: delta_sleep_score_tone
         description: Tone label for delta_sleep_score — success / neutral / warning / danger.
       - name: delta_sleep_minutes
         description: Sleep duration delta in minutes — J0 minus average J1..J9.
+      - name: delta_sleep_minutes_tone
+        description: Display-ready semantic tone for the sleep-duration delta.
       - name: delta_hrv_ms
         description: HRV delta in ms — J0 minus average J1..J9.
+      - name: delta_hrv_tone
+        description: Display-ready semantic tone for the HRV delta.
       - name: delta_body_battery
         description: Body battery at wake-up delta — J0 minus average J1..J9.
       - name: delta_body_battery_tone
@@ -133,12 +153,16 @@ models:
     columns:
       - name: total_minutes_10d
         description: Total listening minutes over the full 10-day current period.
+      - name: avg_daily_listening_minutes_10d
+        description: Average daily listening minutes over all 10 days, including zero-listening days.
       - name: total_label
         description: Formatted total — "XhYY" (e.g. "9h12").
       - name: total_minutes_prev_10d
         description: Total listening minutes for the previous 10-day period (J-19 to J-10).
       - name: delta_pct
         description: Percentage change between current and previous 10-day period. NULL if previous period had 0 minutes.
+      - name: delta_label
+        description: Display-ready rounded trend label, or an em dash when the previous period has no listening.
       - name: delta_tone
         description: Tone label for the listening trend — success / danger / neutral.
       - name: days
@@ -161,12 +185,15 @@ models:
       - name: artists
         description: >
           Top 5 artists ordered by rank. Each entry: rank, name, subtitle (NULL),
-          listening_minutes, listening_label, image_url, rank_change.
+          listening_minutes, listening_label, image_url, rank_change,
+          rank_change_direction, rank_change_places.
       - name: albums
         description: >
           Top 5 albums ordered by rank. Each entry: rank, name, subtitle (primary artist),
-          listening_minutes, listening_label, image_url, rank_change.
+          listening_minutes, listening_label, image_url, rank_change,
+          rank_change_direction, rank_change_places.
       - name: tracks
         description: >
           Top 5 tracks ordered by rank. Each entry: rank, name, subtitle (primary artist),
-          listening_minutes, listening_label, image_url, rank_change.
+          listening_minutes, listening_label, image_url, rank_change,
+          rank_change_direction, rank_change_places.

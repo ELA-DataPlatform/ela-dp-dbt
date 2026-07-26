@@ -44,6 +44,7 @@ WITH segments_raw AS (
     CROSS JOIN UNNEST(hub.laps) AS lap
     WHERE
         lap.intensity_type IS NOT NULL
+        AND lap.average_speed > 0
 
         {% if is_incremental() %}
             AND hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
@@ -63,6 +64,7 @@ SELECT
         WHEN 'ACTIVE' THEN 'interval'
         WHEN 'RECOVERY' THEN 'recovery'
         WHEN 'REST' THEN 'recovery'
+        ELSE 'unknown'
     END AS segment_type,
     CASE sr.intensity_type
         WHEN 'WARMUP' THEN 'Échauffement'
@@ -71,6 +73,7 @@ SELECT
         WHEN 'REST' THEN 'Repos'
         WHEN 'INTERVAL' THEN CONCAT('Intervalle ', CAST(sr.active_rank AS STRING))
         WHEN 'ACTIVE' THEN CONCAT('Répétition ', CAST(sr.active_rank AS STRING))
+        ELSE CONCAT('Segment ', CAST(sr.segment_index AS STRING))
     END AS segment_name,
 
     sr.start_time_gmt,
@@ -78,16 +81,29 @@ SELECT
     {{ meters_to_kilometers('sr.cum_distance_m', 3) }} AS end_km,
 
     ROUND(sr.distance, 0) AS distance_m,
+    {{ meters_to_kilometers('sr.distance', 3) }} AS distance_km,
     CAST(ROUND(sr.duration) AS INT64) AS duration_seconds,
     {{ format_duration_label('sr.duration') }} AS duration_label,
     {{ speed_mps_to_pace_min_per_km('sr.average_speed') }} AS pace_min_per_km,
+    CAST(
+        ROUND({{ speed_mps_to_pace_min_per_km('sr.average_speed') }} * 60)
+        AS INT64
+    ) AS pace_seconds_per_km,
     CASE
         WHEN {{ speed_mps_to_pace_min_per_km('sr.average_speed') }} > 0
             THEN {{ format_pace_label(speed_mps_to_pace_min_per_km('sr.average_speed')) }}
     END AS pace_label,
     {{ speed_mps_to_pace_min_per_km('sr.avg_grade_adjusted_speed') }} AS gap_min_per_km,
+    CAST(
+        ROUND({{ speed_mps_to_pace_min_per_km('sr.avg_grade_adjusted_speed') }} * 60)
+        AS INT64
+    ) AS gap_seconds_per_km,
     CAST(ROUND(sr.average_hr) AS INT64) AS avg_hr_bpm,
     CAST(ROUND(sr.max_hr) AS INT64) AS max_hr_bpm,
+    ROUND(
+        SAFE_DIVIDE(sr.average_hr, hub.performance.max_hr_bpm) * 100,
+        1
+    ) AS avg_hr_pct_of_activity_max,
     ROUND(sr.average_run_cadence, 1) AS avg_cadence_spm,
     CAST(ROUND(sr.elevation_gain) AS INT64) AS elevation_gain_m,
     CAST(ROUND(sr.elevation_loss) AS INT64) AS elevation_loss_m,
@@ -96,3 +112,5 @@ SELECT
     sr._ingested_at
 
 FROM segments_raw AS sr
+INNER JOIN {{ ref('svc_hub__master_running_activities') }} AS hub
+    ON sr.activity_id = hub.activity_id
