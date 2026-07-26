@@ -95,6 +95,20 @@ models:
         description: Number of studio albums listened to in full (is_complete).
         tests:
           - not_null
+      - name: active_days_365
+        description: Number of days with at least one credited play in the dense trailing 365-day window.
+      - name: avg_active_day_listening_time_min
+        description: Average listening minutes across active days in the trailing 365-day window.
+      - name: max_day_listening_time_min
+        description: Highest daily listening minutes in the trailing 365-day window.
+      - name: total_listening_time_365d_min
+        description: Total listening minutes in the trailing 365-day window.
+      - name: max_active_day_streak_365
+        description: Longest consecutive active-day streak in the trailing 365-day window.
+      - name: avg_weekly_listening_time_52w_min
+        description: Average listening minutes across the last 52 full Monday-based weeks, including zero weeks.
+      - name: max_week_listening_time_min
+        description: Highest weekly listening minutes across the last 52 full weeks.
       - name: all_time_rank
         description: All-time rank among all artists by total_listening_time_min.
         tests:
@@ -166,6 +180,10 @@ models:
         description: Number of plays from this album credited to the artist.
         tests:
           - not_null
+      - name: artist_album_rank
+        description: Rank of the album within the artist by listening time, plays, then album identifier.
+        tests:
+          - not_null
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -213,6 +231,8 @@ models:
         description: Spotify identifier of the track's album (from track metadata).
       - name: album_name
         description: Album display name.
+      - name: album_image_url
+        description: URL of the album artwork supplied with the track row.
       - name: listening_time_min
         description: Listening time for the track in minutes (SUM(duration_ms)/60000).
         tests:
@@ -236,9 +256,9 @@ models:
   # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__listening_daily
     description: >
-      Sparse daily listening per artist over the last 365 days (Europe/Paris):
-      one row only for days with listening. The frontend fills empty days with
-      zeros (GitHub-style heatmap, GET /webapp/artist/{id}/listening/daily).
+      Dense daily listening per artist over the last 365 days (Europe/Paris):
+      every artist/day pair is returned, including zero-listening days, together
+      with a pre-bucketed heatmap level for direct rendering.
       Partitioned by listen_date, clustered by artist_id.
     columns:
       - name: artist_id
@@ -257,6 +277,13 @@ models:
         description: Number of plays on that day credited to the artist.
         tests:
           - not_null
+      - name: heatmap_level
+        description: Display-ready intensity bucket relative to the artist's maximum day (0–4).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4]
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
@@ -270,8 +297,8 @@ models:
     description: >
       Dense weekly listening per artist over the last 52 full weeks
       (Europe/Paris, weeks starting Monday; the in-progress week is excluded).
-      Every (artist, week) is present even with zero listening, for any artist
-      active in the window (GET /webapp/artist/{id}/listening/weekly).
+      Every (artist, week) is present even with zero listening, for every artist
+      listened to at any point (GET /webapp/artist/{id}/listening/weekly).
       Partitioned by week_start_date, clustered by artist_id.
     columns:
       - name: artist_id

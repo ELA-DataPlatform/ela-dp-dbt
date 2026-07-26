@@ -105,12 +105,18 @@ models:
         description: Human-readable duration.
       - name: avg_pace_min_per_km
         description: Average pace in decimal minutes per kilometre.
+      - name: avg_pace_seconds_per_km
+        description: Average pace in whole seconds per kilometre.
+      - name: avg_gap_seconds_per_km
+        description: Average grade-adjusted pace in whole seconds per kilometre; NULL when Garmin provides no GAP.
       - name: pace_label
         description: Human-readable pace formatted as M'SS"/km.
       - name: avg_hr_bpm
         description: Average heart rate in BPM.
       - name: max_hr_bpm
         description: Maximum heart rate recorded during the activity in BPM.
+      - name: avg_hr_pct_of_activity_max
+        description: Average heart rate as a percentage of the maximum heart rate recorded during this activity.
       - name: elevation_gain_m
         description: Total positive elevation gain in metres.
       - name: elevation_loss_m
@@ -194,8 +200,14 @@ models:
         description: Cumulative distance in kilometres at this measurement point.
       - name: pace_min_per_km
         description: Instantaneous pace in decimal minutes per kilometre.
+      - name: pace_seconds_per_km
+        description: Instantaneous pace in whole seconds per kilometre.
       - name: gap_min_per_km
         description: Grade-adjusted pace (GAP) in decimal minutes per kilometre.
+      - name: gap_seconds_per_km
+        description: Grade-adjusted pace in whole seconds per kilometre; NULL when unavailable.
+      - name: display_gap_seconds_per_km
+        description: GAP in whole seconds per kilometre, falling back to raw pace in the data product when GAP is unavailable.
       - name: heart_rate_bpm
         description: Heart rate in BPM at this measurement point.
       - name: cadence_spm
@@ -249,14 +261,22 @@ models:
         description: Human-readable lap duration.
       - name: pace_min_per_km
         description: Average pace for this lap in decimal minutes per kilometre.
+      - name: pace_seconds_per_km
+        description: Average pace for this lap in whole seconds per kilometre.
       - name: pace_label
         description: Human-readable pace formatted as M'SS"/km.
       - name: gap_min_per_km
         description: Grade-adjusted pace (GAP) for this lap in decimal minutes per kilometre.
+      - name: gap_seconds_per_km
+        description: Grade-adjusted pace for this lap in whole seconds per kilometre; NULL when unavailable.
+      - name: display_gap_seconds_per_km
+        description: GAP in whole seconds per kilometre, falling back to lap pace in the data product when GAP is unavailable.
       - name: avg_hr_bpm
         description: Average heart rate during this lap in BPM.
       - name: max_hr_bpm
         description: Maximum heart rate during this lap in BPM.
+      - name: avg_hr_pct_of_activity_max
+        description: Lap average heart rate as a percentage of the activity maximum.
       - name: avg_cadence_spm
         description: Average running cadence during this lap in steps per minute.
       - name: elevation_gain_m
@@ -296,7 +316,8 @@ models:
           warmup, interval (INTERVAL + ACTIVE), recovery (RECOVERY + REST), cooldown.
         tests:
           - accepted_values:
-              values: ['warmup', 'interval', 'recovery', 'cooldown']
+              arguments:
+                values: ['warmup', 'interval', 'recovery', 'cooldown', 'unknown']
       - name: segment_name
         description: >
           Human-readable French label. Numbered for repeating phases:
@@ -309,20 +330,28 @@ models:
         description: Cumulative distance at the end of the segment in kilometres.
       - name: distance_m
         description: Distance covered in this segment in metres.
+      - name: distance_km
+        description: Distance covered in this segment in kilometres.
       - name: duration_seconds
         description: Duration of this segment in seconds.
       - name: duration_label
         description: Human-readable segment duration.
       - name: pace_min_per_km
         description: Average pace for this segment in decimal minutes per kilometre.
+      - name: pace_seconds_per_km
+        description: Average pace for this segment in whole seconds per kilometre.
       - name: pace_label
         description: Human-readable pace formatted as M'SS"/km.
       - name: gap_min_per_km
         description: Grade-adjusted pace for this segment in decimal minutes per kilometre.
+      - name: gap_seconds_per_km
+        description: Grade-adjusted pace for this segment in whole seconds per kilometre.
       - name: avg_hr_bpm
         description: Average heart rate during this segment in BPM.
       - name: max_hr_bpm
         description: Maximum heart rate during this segment in BPM.
+      - name: avg_hr_pct_of_activity_max
+        description: Segment average heart rate as a percentage of the activity maximum.
       - name: avg_cadence_spm
         description: Average running cadence during this segment in steps per minute.
       - name: elevation_gain_m
@@ -352,13 +381,16 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3, 4, 5]
+              arguments:
+                values: [1, 2, 3, 4, 5]
       - name: zone_name
         description: Human-readable zone name in French (e.g. "Z1 — Récupération").
       - name: zone_min_bpm
         description: Lower heart rate boundary of this zone in BPM (from athlete's Garmin settings).
       - name: zone_max_bpm
         description: Upper heart rate boundary of this zone in BPM (NULL for zone 5 — no ceiling).
+      - name: zone_display_max_bpm
+        description: Display-ready upper boundary; zone 5 uses the greater of its lower boundary and the recorded activity maximum.
       - name: athlete_max_hr_bpm
         description: >
           Maximum heart rate recorded during the activity, used as a proxy for the athlete's
@@ -397,6 +429,8 @@ models:
         description: Human-readable duration of the similar activity.
       - name: avg_pace_min_per_km
         description: Average pace of the similar activity in decimal minutes per kilometre.
+      - name: avg_pace_seconds_per_km
+        description: Average pace of the similar activity in whole seconds per kilometre.
       - name: pace_label
         description: Human-readable pace formatted as M'SS"/km.
       - name: avg_hr_bpm
@@ -407,6 +441,25 @@ models:
         description: True if Garmin detected a personal record during the similar activity.
 
   # ── Timeline musicale ───────────────────────────────────────────────────────
+  - name: pct_webapp_activity_focus__music_summary
+    description: >
+      One row per running activity with display-ready Spotify totals. Activities
+      without music are retained with zero tracks and zero minutes.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - unique
+          - not_null
+      - name: track_count
+        description: Number of Spotify tracks associated with the activity.
+        tests:
+          - not_null
+      - name: total_duration_minutes
+        description: Rounded sum of associated track durations in minutes.
+        tests:
+          - not_null
+
   - name: pct_webapp_activity_focus__music_timeline
     description: >
       One row per Spotify track played during a running activity.

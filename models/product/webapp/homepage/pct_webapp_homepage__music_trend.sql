@@ -49,27 +49,49 @@ joined AS (
 ),
 
 totals AS (
-    SELECT sum(listening_minutes) AS total_minutes_10d
+    SELECT
+        cast(round(avg(listening_minutes)) AS INT64) AS avg_daily_listening_minutes_10d,
+        sum(listening_minutes) AS total_minutes_10d
     FROM joined
 )
 
 SELECT
     -- ── KPIs haut niveau (plats) ─────────────────────────────────────────────────
     t.total_minutes_10d,
+    t.avg_daily_listening_minutes_10d,
     p.total_minutes_prev_10d,
     {{ minutes_to_label('t.total_minutes_10d') }} AS total_label,
     CASE
         WHEN p.total_minutes_prev_10d > 0
             THEN round(
-                (cast(t.total_minutes_10d AS float64) - cast(p.total_minutes_prev_10d AS float64))
-                / cast(p.total_minutes_prev_10d AS float64) * 100,
+                (cast(t.total_minutes_10d AS FLOAT64) - cast(p.total_minutes_prev_10d AS FLOAT64))
+                / cast(p.total_minutes_prev_10d AS FLOAT64) * 100,
                 1
             )
     END AS delta_pct,
     CASE
+        WHEN p.total_minutes_prev_10d > 0
+            THEN concat(
+                if(t.total_minutes_10d >= p.total_minutes_prev_10d, '+', ''),
+                cast(
+                    cast(
+                        round(
+                            (
+                                cast(t.total_minutes_10d AS FLOAT64)
+                                - cast(p.total_minutes_prev_10d AS FLOAT64)
+                            )
+                            / cast(p.total_minutes_prev_10d AS FLOAT64) * 100
+                        ) AS INT64
+                    ) AS STRING
+                ),
+                '% vs préc.'
+            )
+        ELSE '— vs préc.'
+    END AS delta_label,
+    CASE
         WHEN p.total_minutes_prev_10d IS NULL OR p.total_minutes_prev_10d = 0 THEN 'neutral'
-        WHEN cast(t.total_minutes_10d AS float64) / cast(p.total_minutes_prev_10d AS float64) >= 1.05 THEN 'success'
-        WHEN cast(t.total_minutes_10d AS float64) / cast(p.total_minutes_prev_10d AS float64) <= 0.95 THEN 'danger'
+        WHEN cast(t.total_minutes_10d AS FLOAT64) / cast(p.total_minutes_prev_10d AS FLOAT64) >= 1.05 THEN 'success'
+        WHEN cast(t.total_minutes_10d AS FLOAT64) / cast(p.total_minutes_prev_10d AS FLOAT64) <= 0.95 THEN 'danger'
         ELSE 'neutral'
     END AS delta_tone,
 

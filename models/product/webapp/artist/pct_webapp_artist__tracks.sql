@@ -30,6 +30,7 @@ SELECT
     t.track_name,
     t.album_id,
     al.album_name,
+    al.album_image_url,
     tp.listening_time_min,
     tp.plays,
     RANK() OVER (

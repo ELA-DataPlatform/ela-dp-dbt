@@ -33,6 +33,10 @@ ranked AS (
         CAST(ROUND(b.duration_s) AS INT64) AS duration_seconds,
         {{ format_duration_label('b.duration_s') }} AS duration_label,
         b.avg_pace_min_per_km,
+        CAST(
+            {{ minutes_per_km_to_seconds_per_km('b.avg_pace_min_per_km') }}
+            AS INT64
+        ) AS avg_pace_seconds_per_km,
         CASE
             WHEN
                 b.avg_pace_min_per_km IS NOT NULL
@@ -63,6 +67,7 @@ SELECT
     ranked.duration_seconds,
     ranked.duration_label,
     ranked.avg_pace_min_per_km,
+    ranked.avg_pace_seconds_per_km,
     ranked.pace_label,
     ranked.avg_hr_bpm,
     ranked.training_load,

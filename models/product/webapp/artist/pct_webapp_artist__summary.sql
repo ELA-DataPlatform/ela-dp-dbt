@@ -71,6 +71,57 @@ artist_studio AS (
     GROUP BY artist_id
 ),
 
+active_days_numbered AS (
+    SELECT
+        artist_id,
+        listen_date,
+        ROW_NUMBER() OVER (
+            PARTITION BY artist_id
+            ORDER BY listen_date
+        ) AS active_day_number
+    FROM {{ ref('pct_webapp_artist__listening_daily') }}
+    WHERE plays > 0
+),
+
+active_day_streaks AS (
+    SELECT
+        artist_id,
+        COUNT(*) AS streak_days
+    FROM active_days_numbered
+    GROUP BY
+        artist_id,
+        DATE_SUB(listen_date, INTERVAL active_day_number DAY)
+),
+
+max_active_day_streak AS (
+    SELECT
+        artist_id,
+        MAX(streak_days) AS max_active_day_streak_365
+    FROM active_day_streaks
+    GROUP BY artist_id
+),
+
+daily_behavior AS (
+    SELECT
+        d.artist_id,
+        COUNTIF(d.plays > 0) AS active_days_365,
+        CAST(ROUND(AVG(IF(d.plays > 0, d.listening_time_min, NULL))) AS INT64)
+            AS avg_active_day_listening_time_min,
+        MAX(d.listening_time_min) AS max_day_listening_time_min,
+        SUM(d.listening_time_min) AS total_listening_time_365d_min
+    FROM {{ ref('pct_webapp_artist__listening_daily') }} AS d
+    GROUP BY d.artist_id
+),
+
+weekly_behavior AS (
+    SELECT
+        artist_id,
+        CAST(ROUND(AVG(listening_time_min)) AS INT64) AS avg_weekly_listening_time_52w_min,
+        MAX(listening_time_min) AS max_week_listening_time_min
+    FROM {{ ref('pct_webapp_artist__listening_weekly') }}
+    GROUP BY artist_id
+),
+
 combined AS (
     SELECT
         att.artist_id,
@@ -80,9 +131,19 @@ combined AS (
         att.total_listening_time_min,
         att.distinct_tracks_listened,
         COALESCE(asg.studio_albums_total, 0) AS studio_albums_total,
-        COALESCE(asg.studio_albums_completed, 0) AS studio_albums_completed
+        COALESCE(asg.studio_albums_completed, 0) AS studio_albums_completed,
+        COALESCE(db.active_days_365, 0) AS active_days_365,
+        COALESCE(db.avg_active_day_listening_time_min, 0) AS avg_active_day_listening_time_min,
+        COALESCE(db.max_day_listening_time_min, 0) AS max_day_listening_time_min,
+        COALESCE(db.total_listening_time_365d_min, 0) AS total_listening_time_365d_min,
+        COALESCE(ms.max_active_day_streak_365, 0) AS max_active_day_streak_365,
+        COALESCE(wb.avg_weekly_listening_time_52w_min, 0) AS avg_weekly_listening_time_52w_min,
+        COALESCE(wb.max_week_listening_time_min, 0) AS max_week_listening_time_min
     FROM artist_totals AS att
     LEFT JOIN artist_studio AS asg ON att.artist_id = asg.artist_id
+    LEFT JOIN daily_behavior AS db ON att.artist_id = db.artist_id
+    LEFT JOIN max_active_day_streak AS ms ON att.artist_id = ms.artist_id
+    LEFT JOIN weekly_behavior AS wb ON att.artist_id = wb.artist_id
 )
 
 SELECT
@@ -95,6 +156,13 @@ SELECT
     c.distinct_tracks_listened,
     c.studio_albums_total,
     c.studio_albums_completed,
+    c.active_days_365,
+    c.avg_active_day_listening_time_min,
+    c.max_day_listening_time_min,
+    c.total_listening_time_365d_min,
+    c.max_active_day_streak_365,
+    c.avg_weekly_listening_time_52w_min,
+    c.max_week_listening_time_min,
     c.last_listened_at,
     JSON_VALUE_ARRAY(a.genres) AS genres,
     DATE(c.first_listened_at, 'Europe/Paris') AS first_listened_date,

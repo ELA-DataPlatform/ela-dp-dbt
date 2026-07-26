@@ -56,6 +56,28 @@ SELECT
     w.current_week_km,
     w.previous_week_km,
     round(safe_divide(w.current_week_km - w.previous_week_km, w.previous_week_km) * 100, 1) AS week_km_delta_pct,
+    CASE
+        WHEN w.previous_week_km > 0
+            THEN concat(
+                if(w.current_week_km >= w.previous_week_km, '+', ''),
+                cast(
+                    cast(
+                        round(
+                            safe_divide(
+                                w.current_week_km - w.previous_week_km,
+                                w.previous_week_km
+                            ) * 100
+                        ) AS INT64
+                    ) AS STRING
+                ),
+                '% vs sem. préc.'
+            )
+        ELSE '— vs sem. préc.'
+    END AS week_km_delta_label,
+    CASE
+        WHEN w.current_week_km >= w.previous_week_km THEN 'success'
+        ELSE 'danger'
+    END AS week_km_delta_tone,
     array(
         SELECT AS STRUCT
             j.activity_date,

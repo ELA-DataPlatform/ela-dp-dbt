@@ -65,6 +65,11 @@ averages AS (
 
 deltas AS (
     SELECT
+        j.activity_date AS latest_activity_date,
+        j.sleep_score AS latest_sleep_score,
+        j.sleep_duration_minutes AS latest_sleep_duration_minutes,
+        j.hrv_morning_ms AS latest_hrv_ms,
+        j.body_battery_at_wake AS latest_body_battery_wake,
         cast(j.sleep_duration_minutes - a.avg_sleep_duration_minutes AS int64) AS delta_sleep_minutes,
         round(j.sleep_score - a.avg_sleep_score, 1) AS delta_sleep_score,
         round(j.hrv_morning_ms - a.avg_hrv_ms, 1) AS delta_hrv_ms,
@@ -81,6 +86,11 @@ SELECT
     a.avg_sleep_duration_minutes,
     a.avg_hrv_ms,
     a.avg_body_battery_wake,
+    d.latest_activity_date,
+    d.latest_sleep_score,
+    d.latest_sleep_duration_minutes,
+    d.latest_hrv_ms,
+    d.latest_body_battery_wake,
     d.delta_sleep_score,
     d.delta_sleep_minutes,
     d.delta_hrv_ms,
@@ -91,6 +101,16 @@ SELECT
         WHEN d.delta_sleep_score >= -10 THEN 'warning'
         ELSE 'danger'
     END AS delta_sleep_score_tone,
+    CASE
+        WHEN d.delta_sleep_minutes > 0 THEN 'success'
+        WHEN d.delta_sleep_minutes < 0 THEN 'danger'
+        ELSE 'neutral'
+    END AS delta_sleep_minutes_tone,
+    CASE
+        WHEN d.delta_hrv_ms > 0 THEN 'success'
+        WHEN d.delta_hrv_ms < 0 THEN 'danger'
+        ELSE 'neutral'
+    END AS delta_hrv_tone,
     CASE
         WHEN d.delta_body_battery >= 5 THEN 'success'
         WHEN d.delta_body_battery >= 0 THEN 'neutral'
