@@ -46,6 +46,9 @@ SELECT
 FROM {{ ref('svc_hub__master_running_activities') }} AS hub
 CROSS JOIN UNNEST(hub.hr_zones) AS hz
 
-{% if is_incremental() %}
-    WHERE hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}
+WHERE
+    hz.zone_number IS NOT NULL
+
+    {% if is_incremental() %}
+        AND hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
+    {% endif %}
