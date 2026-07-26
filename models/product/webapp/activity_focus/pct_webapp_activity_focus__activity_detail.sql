@@ -33,6 +33,18 @@ SELECT
     {{ format_duration_label('hub.performance.duration_s') }} AS duration_label,
 
     hub.performance.avg_pace_min_per_km,
+    CAST(
+        {{ minutes_per_km_to_seconds_per_km('hub.performance.avg_pace_min_per_km') }}
+        AS INT64
+    ) AS avg_pace_seconds_per_km,
+    CAST(
+        ROUND(
+            {{ speed_mps_to_pace_min_per_km(
+                'hub.performance.avg_grade_adjusted_speed_m_per_s'
+            ) }} * 60
+        )
+        AS INT64
+    ) AS avg_gap_seconds_per_km,
     CASE
         WHEN
             hub.performance.avg_pace_min_per_km IS NOT NULL
@@ -42,6 +54,10 @@ SELECT
 
     CAST(ROUND(hub.performance.avg_hr_bpm) AS INT64) AS avg_hr_bpm,
     CAST(ROUND(hub.performance.max_hr_bpm) AS INT64) AS max_hr_bpm,
+    ROUND(
+        SAFE_DIVIDE(hub.performance.avg_hr_bpm, hub.performance.max_hr_bpm) * 100,
+        1
+    ) AS avg_hr_pct_of_activity_max,
     CAST(ROUND(hub.performance.elevation_gain_m) AS INT64) AS elevation_gain_m,
     CAST(ROUND(hub.performance.elevation_loss_m) AS INT64) AS elevation_loss_m,
     ROUND(hub.performance.avg_cadence_spm, 1) AS avg_cadence_spm,
