@@ -1,4 +1,11 @@
-{% macro format_duration_label(seconds_col) %}
+{% macro format_duration_label(seconds_col, include_seconds=false) %}
+    {% if include_seconds %}
+        concat(
+            cast(DIV(cast(round({{ seconds_col }}) AS int64), 60) AS string),
+            ':',
+            format('%02d', MOD(cast(round({{ seconds_col }}) AS int64), 60))
+        )
+    {% else %}
     CASE
         WHEN {{ seconds_col }} >= 3600
             THEN concat(
@@ -11,4 +18,5 @@
             ' min'
         )
     END
+    {% endif %}
 {% endmacro %}
