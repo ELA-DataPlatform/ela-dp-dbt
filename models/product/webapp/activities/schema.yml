@@ -35,6 +35,8 @@ models:
         description: Human-readable duration — "Xh YY" for >= 1 h, "YY min" otherwise.
       - name: avg_speed_km_h
         description: Average speed in km/h, rounded to 2 decimal places. NULL for activities without speed data.
+      - name: pace_seconds_per_km
+        description: Average pace in whole seconds per kilometre, computed by the data product for direct display and sorting.
       - name: pace_label
         description: >
           Human-readable pace or speed. Cycling activities show speed in km/h (e.g. "14.6 km/h");

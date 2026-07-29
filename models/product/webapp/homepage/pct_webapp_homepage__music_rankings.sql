@@ -67,14 +67,18 @@ artist_current_ranked AS (
     SELECT
         artist_id,
         listening_minutes,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank
     FROM artist_current
 ),
 
 artist_prev_ranked AS (
     SELECT
         artist_id,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank_prev
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank_prev
     FROM artist_prev
 ),
 
@@ -91,7 +95,14 @@ artists_top5 AS (
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
             WHEN p.rank_prev - c.rank < 0 THEN cast(p.rank_prev - c.rank AS string)
             ELSE '0'
-        END AS rank_change
+        END AS rank_change,
+        CASE
+            WHEN p.rank_prev IS NULL THEN 'new'
+            WHEN p.rank_prev > c.rank THEN 'up'
+            WHEN p.rank_prev < c.rank THEN 'down'
+            ELSE 'same'
+        END AS rank_change_direction,
+        abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM artist_current_ranked AS c
     LEFT JOIN artist_prev_ranked AS p ON c.artist_id = p.artist_id
     LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
@@ -124,14 +135,18 @@ album_current_ranked AS (
     SELECT
         album_id,
         listening_minutes,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank
     FROM album_current
 ),
 
 album_prev_ranked AS (
     SELECT
         album_id,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank_prev
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank_prev
     FROM album_prev
 ),
 
@@ -157,7 +172,14 @@ albums_top5 AS (
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
             WHEN p.rank_prev - c.rank < 0 THEN cast(p.rank_prev - c.rank AS string)
             ELSE '0'
-        END AS rank_change
+        END AS rank_change,
+        CASE
+            WHEN p.rank_prev IS NULL THEN 'new'
+            WHEN p.rank_prev > c.rank THEN 'up'
+            WHEN p.rank_prev < c.rank THEN 'down'
+            ELSE 'same'
+        END AS rank_change_direction,
+        abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM album_current_ranked AS c
     LEFT JOIN album_prev_ranked AS p ON c.album_id = p.album_id
     LEFT JOIN {{ ref('svc_hub__ref_album') }} AS alb ON c.album_id = alb.album_id
@@ -193,14 +215,18 @@ track_current_ranked AS (
         track_id,
         album_id,
         listening_minutes,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank
     FROM track_current
 ),
 
 track_prev_ranked AS (
     SELECT
         track_id,
-        row_number() OVER (ORDER BY listening_minutes DESC) AS rank_prev
+        row_number() OVER (
+            ORDER BY listening_minutes DESC
+        ) AS rank_prev
     FROM track_prev
 ),
 
@@ -226,7 +252,14 @@ tracks_top5 AS (
             WHEN p.rank_prev - c.rank > 0 THEN concat('+', cast(p.rank_prev - c.rank AS string))
             WHEN p.rank_prev - c.rank < 0 THEN cast(p.rank_prev - c.rank AS string)
             ELSE '0'
-        END AS rank_change
+        END AS rank_change,
+        CASE
+            WHEN p.rank_prev IS NULL THEN 'new'
+            WHEN p.rank_prev > c.rank THEN 'up'
+            WHEN p.rank_prev < c.rank THEN 'down'
+            ELSE 'same'
+        END AS rank_change_direction,
+        abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM track_current_ranked AS c
     LEFT JOIN track_prev_ranked AS p ON c.track_id = p.track_id
     LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON c.track_id = t.track_id
@@ -249,6 +282,8 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
+            rank_change_direction,
+            rank_change_places,
             {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM artists_top5
         ORDER BY rank
@@ -262,6 +297,8 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
+            rank_change_direction,
+            rank_change_places,
             {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM albums_top5
         ORDER BY rank
@@ -275,6 +312,8 @@ SELECT
             listening_minutes,
             image_url,
             rank_change,
+            rank_change_direction,
+            rank_change_places,
             {{ minutes_to_label('listening_minutes') }} AS listening_label
         FROM tracks_top5
         ORDER BY rank

@@ -29,6 +29,13 @@ SELECT
         PARTITION BY hub.activity_id
         ORDER BY hz.zone_number
     ) AS zone_max_bpm,
+    CAST(ROUND(COALESCE(
+        LEAD(hz.zone_low_boundary) OVER (
+            PARTITION BY hub.activity_id
+            ORDER BY hz.zone_number
+        ),
+        GREATEST(hub.performance.max_hr_bpm, hz.zone_low_boundary)
+    )) AS INT64) AS zone_display_max_bpm,
     hub.performance.max_hr_bpm AS athlete_max_hr_bpm,
     CAST(ROUND(hz.secs_in_zone) AS INT64) AS secs_in_zone,
     {{ format_duration_label('hz.secs_in_zone') }} AS time_in_zone_label,
@@ -39,6 +46,9 @@ SELECT
 FROM {{ ref('svc_hub__master_running_activities') }} AS hub
 CROSS JOIN UNNEST(hub.hr_zones) AS hz
 
-{% if is_incremental() %}
-    WHERE hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}
+WHERE
+    hz.zone_number IS NOT NULL
+
+    {% if is_incremental() %}
+        AND hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
+    {% endif %}

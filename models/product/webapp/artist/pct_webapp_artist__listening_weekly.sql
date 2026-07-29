@@ -10,24 +10,15 @@
     )
 }}
 
--- Dense weekly listening per artist over the last 52 full weeks (Europe/Paris,
--- weeks starting Monday). The current, in-progress week is excluded. Every
--- (artist, week) is present even with zero listening, for any artist active in
--- the window. Plays are credited to the primary artist of each track.
--- listening_time_min approximates time with full track duration.
--- Spine driven by stg_hub__ref_calendar period '1y'.
+-- Dense weekly listening per artist over the last 52 full ISO weeks
+-- (Europe/Paris, Monday start). Every all-time listened artist is returned even
+-- when all 52 weeks are zero, so clients never rebuild weeks from daily data.
 
-WITH cal AS (
-    SELECT period_start
-    FROM {{ ref('stg_hub__ref_calendar') }}
-    WHERE period = '1y'
-),
-
-week_spine AS (
+WITH week_spine AS (
     SELECT week_start_date
     FROM UNNEST(
         GENERATE_DATE_ARRAY(
-            DATE_TRUNC((SELECT period_start FROM cal), WEEK (MONDAY)),
+            DATE_SUB(DATE_TRUNC(CURRENT_DATE('Europe/Paris'), WEEK (MONDAY)), INTERVAL 52 WEEK),
             DATE_SUB(DATE_TRUNC(CURRENT_DATE('Europe/Paris'), WEEK (MONDAY)), INTERVAL 1 WEEK),
             INTERVAL 1 WEEK
         )
@@ -51,16 +42,18 @@ weekly_plays AS (
     GROUP BY bta.artist_id, DATE_TRUNC(DATE(fp.played_at, 'Europe/Paris'), WEEK (MONDAY))
 ),
 
-active_artists AS (
-    SELECT DISTINCT artist_id
-    FROM weekly_plays
+all_artists AS (
+    SELECT DISTINCT bta.artist_id
+    FROM {{ ref('svc_hub__fact_played') }} AS fp
+    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+        ON fp.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
 densified AS (
     SELECT
         aa.artist_id,
         ws.week_start_date
-    FROM active_artists AS aa
+    FROM all_artists AS aa
     CROSS JOIN week_spine AS ws
 )
 

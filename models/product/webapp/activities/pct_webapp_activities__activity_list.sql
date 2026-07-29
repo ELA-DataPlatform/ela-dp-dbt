@@ -18,6 +18,10 @@ SELECT  -- noqa: ST06
     {{ format_duration_label('duration') }} AS duration_label,
 
     {{ speed_mps_to_kmh('averagespeed') }} AS avg_speed_km_h,
+    CAST(
+        ROUND({{ speed_mps_to_pace_min_per_km('averagespeed') }} * 60)
+        AS INT64
+    ) AS pace_seconds_per_km,
 
     CASE
         WHEN activity_type.type_key IN ('tennis_v2', 'badminton', 'table_tennis', 'volleyball')
