@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: svc_spotify_legacy__recently_played
+  - name: dlk_spotify_legacy_svc__recently_played
     description: Service table for legacy Spotify recently played tracks. Incrementally merges from staging, unique on played_at + track_id.
     columns:
       - name: played_at
@@ -15,7 +15,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested into the normalized table.
 
-  - name: svc_spotify_legacy__saved_tracks
+  - name: dlk_spotify_legacy_svc__saved_tracks
     description: Service table for legacy Spotify saved tracks. Incrementally merges from staging, unique on track_id.
     columns:
       - name: track_id
@@ -27,7 +27,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__saved_albums
+  - name: dlk_spotify_legacy_svc__saved_albums
     description: Service table for legacy Spotify saved albums. Incrementally merges from staging, unique on album_id.
     columns:
       - name: album_id
@@ -39,7 +39,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__top_artists
+  - name: dlk_spotify_legacy_svc__top_artists
     description: Service table for legacy Spotify top artists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
@@ -59,7 +59,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__top_tracks
+  - name: dlk_spotify_legacy_svc__top_tracks
     description: Service table for legacy Spotify top tracks. Incrementally merges from staging, unique on id.
     columns:
       - name: id
@@ -79,7 +79,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__playlists
+  - name: dlk_spotify_legacy_svc__playlists
     description: Service table for legacy Spotify playlists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
@@ -95,7 +95,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__album_detail
+  - name: dlk_spotify_legacy_svc__album_detail
     description: Service table for legacy Spotify album details. Incrementally merges from staging, unique on id.
     columns:
       - name: id
@@ -113,7 +113,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__album_tracks
+  - name: dlk_spotify_legacy_svc__album_tracks
     description: Service table for legacy Spotify album tracks. Incrementally merges from staging, unique on album_id + id.
     columns:
       - name: id
@@ -131,7 +131,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: svc_spotify_legacy__artist_detail
+  - name: dlk_spotify_legacy_svc__artist_detail
     description: Service table for legacy Spotify artist details. Incrementally merges from staging, unique on id.
     columns:
       - name: id

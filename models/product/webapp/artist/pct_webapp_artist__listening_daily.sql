@@ -26,8 +26,8 @@ WITH date_spine AS (
 
 artists AS (
     SELECT DISTINCT bta.artist_id
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    INNER JOIN {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
@@ -37,10 +37,10 @@ daily_plays AS (
         DATE(fp.played_at, 'Europe/Paris') AS listen_date,
         {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS listening_time_min,
         COUNT(*) AS plays
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    INNER JOIN {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE
         DATE(fp.played_at, 'Europe/Paris')
         BETWEEN DATE_SUB(CURRENT_DATE('Europe/Paris'), INTERVAL 364 DAY)

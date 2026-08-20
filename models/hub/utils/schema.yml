@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_hub__ref_calendar
+  - name: hub_utils_stg__ref_calendar
     description: >
       Vue de référence des périodes standard de la plateforme.
       Source unique de vérité pour les bornes temporelles — tous les modèles

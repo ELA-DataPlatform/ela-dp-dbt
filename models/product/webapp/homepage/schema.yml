@@ -121,7 +121,7 @@ models:
   - name: pct_webapp_homepage__training_state
     description: >
       Snapshot of the current training state, VO2 max, and training load.
-      Always exactly one row — the most recent entry from svc_garmin__training_status.
+      Always exactly one row — the most recent entry from dlk_garmin_svc__training_status.
     columns:
       - name: snapshot_date
         description: Date of the training status snapshot.

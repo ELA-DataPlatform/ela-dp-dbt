@@ -72,7 +72,7 @@ SELECT  -- noqa: ST06
     a.manualactivity AS is_manual,
 
     a._ingested_at
-FROM {{ ref('svc_garmin__activities') }} AS a
+FROM {{ ref('dlk_garmin_svc__activities') }} AS a
 WHERE
     a.starttimelocal IS NOT NULL
     AND DATE(a.starttimelocal) >= '2025-01-01'

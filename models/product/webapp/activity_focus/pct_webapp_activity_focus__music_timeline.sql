@@ -15,7 +15,7 @@ WITH activities AS (
         act.end_time_gmt,
         act.timeseries,
         act._ingested_at
-    FROM {{ ref('svc_hub__master_running_activities') }} AS act
+    FROM {{ ref('hub_activities_svc__master_running_activities') }} AS act
     WHERE act.end_time_gmt IS NOT NULL
 ),
 
@@ -28,8 +28,8 @@ track_artist_ranked AS (
             PARTITION BY bta.track_id
             ORDER BY ar.artist_id
         ) AS rn
-    FROM {{ ref('svc_hub__bridge_track_artist') }} AS bta
-    INNER JOIN {{ ref('svc_hub__ref_artist') }} AS ar
+    FROM {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
+    INNER JOIN {{ ref('hub_music_svc__ref_artist') }} AS ar
         ON bta.artist_id = ar.artist_id
 ),
 
@@ -86,11 +86,11 @@ played_during_activity AS (
             LIMIT 1
         ) AS longitude
     FROM activities AS a
-    INNER JOIN {{ ref('svc_hub__fact_played') }} AS fp
+    INNER JOIN {{ ref('hub_music_svc__fact_played') }} AS fp
         ON fp.played_at BETWEEN a.start_time_gmt AND a.end_time_gmt
-    INNER JOIN {{ ref('svc_hub__ref_track') }} AS t
+    INNER JOIN {{ ref('hub_music_svc__ref_track') }} AS t
         ON fp.track_id = t.track_id
-    INNER JOIN {{ ref('svc_hub__ref_album') }} AS al
+    INNER JOIN {{ ref('hub_music_svc__ref_album') }} AS al
         ON fp.album_id = al.album_id
     LEFT JOIN track_artist AS ta
         ON fp.track_id = ta.track_id

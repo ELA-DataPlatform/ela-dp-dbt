@@ -19,5 +19,5 @@ SELECT
     hrv_baseline_balanced_upper,
     hrv_baseline_marker_value,
     _ingested_at
-FROM {{ ref('svc_garmin__hrv') }}
+FROM {{ ref('dlk_garmin_svc__hrv') }}
 WHERE hrv_date IS NOT NULL AND hrv_date >= '2025-01-01'

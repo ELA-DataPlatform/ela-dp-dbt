@@ -16,5 +16,5 @@ SELECT
     starttimestampgmt AS start_timestamp_gmt,
     endtimestampgmt AS end_timestamp_gmt,
     _ingested_at
-FROM {{ ref('svc_garmin__stress') }}
+FROM {{ ref('dlk_garmin_svc__stress') }}
 WHERE date IS NOT NULL AND date >= '2025-01-01'

@@ -17,6 +17,6 @@
         added_at,
         album.artists[safe_offset(0)].id AS artist_id,
         album.artists[safe_offset(0)].name AS artist_name
-    FROM {{ ref('svc_spotify__saved_albums') }}
+    FROM {{ ref('dlk_spotify_svc__saved_albums') }}
 
 {% endsnapshot %}

@@ -18,7 +18,7 @@ runs_daily AS (
     SELECT
         activity_date,
         {{ meters_to_kilometers('sum(performance.distance_m)') }} AS distance_km
-    FROM {{ ref('svc_hub__master_running_activities') }}
+    FROM {{ ref('hub_activities_svc__master_running_activities') }}
     WHERE activity_date >= date_sub(current_date('Europe/Paris'), INTERVAL 13 DAY)
     GROUP BY activity_date
 ),
@@ -48,7 +48,7 @@ week_totals AS (
                 THEN {{ meters_to_kilometers('performance.distance_m') }}
             ELSE 0
         END), 2) AS previous_week_km
-    FROM {{ ref('svc_hub__master_running_activities') }}
+    FROM {{ ref('hub_activities_svc__master_running_activities') }}
     WHERE activity_date >= date_sub(date_trunc(current_date('Europe/Paris'), ISOWEEK), INTERVAL 7 DAY)
 )
 

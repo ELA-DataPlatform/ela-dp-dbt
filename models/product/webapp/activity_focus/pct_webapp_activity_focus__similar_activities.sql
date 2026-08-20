@@ -20,7 +20,7 @@ WITH base AS (
         hub.performance.training_load,
         hub.is_pr,
         hub._ingested_at
-    FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+    FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
 ),
 
 ranked AS (
