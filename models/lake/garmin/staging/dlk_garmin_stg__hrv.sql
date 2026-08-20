@@ -51,7 +51,7 @@ new_format AS (
         cast(json_value(item, '$.baseline.balancedLow') AS float64) AS hrv_baseline_balanced_low,
         cast(json_value(item, '$.baseline.balancedUpper') AS float64) AS hrv_baseline_balanced_upper,
         cast(json_value(item, '$.baseline.markerValue') AS float64) AS hrv_baseline_marker_value,
-        cast([] AS array<struct<hrv_value float64, reading_time_gmt string, reading_time_local string>>) AS hrv_readings
+        cast([] AS ARRAY<STRUCT<hrv_value float64, reading_time_gmt string, reading_time_local string>>) AS hrv_readings
     FROM {{ source('garmin', 'normalized_hrv') }} AS n
     CROSS JOIN unnest(json_query_array(n.hrvsummaries)) AS item
     WHERE n.date IS NULL AND n.hrvsummaries IS NOT NULL

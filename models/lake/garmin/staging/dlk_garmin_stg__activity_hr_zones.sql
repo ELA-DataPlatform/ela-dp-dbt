@@ -51,7 +51,7 @@ aggregated AS (
         CASE
             WHEN countif(zonenumber IS NOT NULL) > 0
                 THEN array_agg(
-                    struct(
+                    STRUCT(
                         zonenumber AS zone_number,
                         secsinzone AS secs_in_zone,
                         zonelowboundary AS zone_low_boundary
@@ -61,7 +61,7 @@ aggregated AS (
             ELSE any_value(
                 array(
                     SELECT
-                        struct(
+                        STRUCT(
                             cast(json_value(item, '$.zoneNumber') AS int64) AS zone_number,
                             cast(json_value(item, '$.secsInZone') AS float64) AS secs_in_zone,
                             cast(json_value(item, '$.zoneLowBoundary') AS int64) AS zone_low_boundary

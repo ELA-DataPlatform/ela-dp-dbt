@@ -12,7 +12,7 @@ WITH source AS (
         -- Parse hillScoreDTOList → ARRAY<STRUCT>
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.userProfilePK') AS int64) AS user_profile_pk,
                     cast(json_value(item, '$.deviceId') AS int64) AS device_id,
                     json_value(item, '$.calendarDate') AS calendar_date,

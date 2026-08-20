@@ -62,7 +62,7 @@ WITH source AS (
         cast(json_value(wellnessspo2sleepsummarydto, '$.lowestSPO2') AS int64) AS spo2_sleep_lowest,
         array(
             SELECT
-                struct(
+                STRUCT(
                     json_value(item, '$.startGMT') AS start_gmt,
                     json_value(item, '$.endGMT') AS end_gmt,
                     cast(json_value(item, '$.activityLevel') AS float64) AS activity_level
@@ -71,7 +71,7 @@ WITH source AS (
         ) AS sleep_levels,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.value') AS int64) AS `value`
                 )
@@ -79,7 +79,7 @@ WITH source AS (
         ) AS sleep_restless_moments,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.value') AS int64) AS `value`
                 )
@@ -87,7 +87,7 @@ WITH source AS (
         ) AS sleep_heart_rate,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.value') AS int64) AS `value`
                 )
@@ -95,7 +95,7 @@ WITH source AS (
         ) AS sleep_body_battery,
         array(
             SELECT
-                struct(
+                STRUCT(
                     json_value(item, '$.startGMT') AS start_gmt,
                     json_value(item, '$.endGMT') AS end_gmt,
                     cast(json_value(item, '$.activityLevel') AS float64) AS activity_level
@@ -104,7 +104,7 @@ WITH source AS (
         ) AS sleep_movement,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.value') AS int64) AS `value`
                 )
@@ -112,7 +112,7 @@ WITH source AS (
         ) AS sleep_stress,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.value') AS float64) AS `value`
                 )
@@ -120,7 +120,7 @@ WITH source AS (
         ) AS sleep_hrv,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startGMT') AS int64) AS start_gmt,
                     cast(json_value(item, '$.endGMT') AS int64) AS end_gmt,
                     cast(json_value(item, '$.value') AS int64) AS `value`
@@ -129,7 +129,7 @@ WITH source AS (
         ) AS sleep_breathing_disruption,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.startTimeGMT') AS int64) AS start_time_gmt,
                     cast(json_value(item, '$.respirationValue') AS float64) AS respiration_value
                 )
@@ -137,7 +137,7 @@ WITH source AS (
         ) AS sleep_respiration,
         array(
             SELECT
-                struct(
+                STRUCT(
                     json_value(item, '$.epochTimestamp') AS epoch_timestamp,
                     cast(json_value(item, '$.epochDuration') AS int64) AS epoch_duration,
                     cast(json_value(item, '$.spo2Reading') AS int64) AS spo2_reading,
@@ -148,7 +148,7 @@ WITH source AS (
         ) AS sleep_spo2,
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.epochEndTimestampGmt') AS int64) AS epoch_end_timestamp_gmt,
                     cast(json_value(item, '$.respirationAverageValue') AS float64) AS respiration_average_value,
                     cast(json_value(item, '$.respirationHighValue') AS float64) AS respiration_high_value,

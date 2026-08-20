@@ -12,7 +12,7 @@ WITH source AS (
         -- Parse split_summaries → nested splitSummaries array
         array(
             SELECT
-                struct(
+                STRUCT(
                     cast(json_value(item, '$.splitType') AS string) AS split_type,
                     cast(json_value(item, '$.noOfSplits') AS int64) AS no_of_splits,
                     cast(json_value(item, '$.distance') AS float64) AS distance,
@@ -47,7 +47,7 @@ WITH source AS (
         -- Parse typed_splits → nested splits array
         array(
             SELECT
-                struct(
+                STRUCT(
                     json_value(item, '$.startTimeGMT') AS start_time_gmt,
                     json_value(item, '$.startTimeLocal') AS start_time_local,
                     cast(json_value(item, '$.startLatitude') AS float64) AS start_latitude,
@@ -83,7 +83,7 @@ WITH source AS (
         -- Parse splits → nested lapDTOs array
         array(
             SELECT
-                struct(
+                STRUCT(
                     json_value(item, '$.startTimeGMT') AS start_time_gmt,
                     cast(json_value(item, '$.startLatitude') AS float64) AS start_latitude,
                     cast(json_value(item, '$.startLongitude') AS float64) AS start_longitude,
