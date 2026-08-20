@@ -62,9 +62,9 @@ aggregated AS (
                 array(
                     SELECT
                         STRUCT(
-                            cast(json_value(item, '$.zoneNumber') AS int64) AS zone_number,
-                            cast(json_value(item, '$.secsInZone') AS float64) AS secs_in_zone,
-                            cast(json_value(item, '$.zoneLowBoundary') AS int64) AS zone_low_boundary
+                            cast(json_value(item, '$.zoneNumber') AS INT64) AS zone_number,
+                            cast(json_value(item, '$.secsInZone') AS FLOAT64) AS secs_in_zone,
+                            cast(json_value(item, '$.zoneLowBoundary') AS INT64) AS zone_low_boundary
                         )
                     FROM unnest(json_query_array(hr_zones_data)) AS item
                 )

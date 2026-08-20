@@ -12,19 +12,19 @@ WITH old_format AS (
         data_type,
         userprofilepk,
         date AS hrv_date,
-        cast(json_value(hrvsummary, '$.calendarDate') AS date) AS hrv_calendar_date,
+        cast(json_value(hrvsummary, '$.calendarDate') AS DATE) AS hrv_calendar_date,
         json_value(hrvsummary, '$.status') AS hrv_status,
         json_value(hrvsummary, '$.feedbackPhrase') AS hrv_feedback_phrase,
-        cast(json_value(hrvsummary, '$.lastNightAvg') AS float64) AS hrv_last_night_avg,
-        cast(json_value(hrvsummary, '$.lastNight5MinHigh') AS float64) AS hrv_last_night_5min_high,
-        cast(json_value(hrvsummary, '$.weeklyAvg') AS float64) AS hrv_weekly_avg,
-        cast(json_value(hrvsummary, '$.baseline.lowUpper') AS float64) AS hrv_baseline_low_upper,
-        cast(json_value(hrvsummary, '$.baseline.balancedLow') AS float64) AS hrv_baseline_balanced_low,
-        cast(json_value(hrvsummary, '$.baseline.balancedUpper') AS float64) AS hrv_baseline_balanced_upper,
-        cast(json_value(hrvsummary, '$.baseline.markerValue') AS float64) AS hrv_baseline_marker_value,
+        cast(json_value(hrvsummary, '$.lastNightAvg') AS FLOAT64) AS hrv_last_night_avg,
+        cast(json_value(hrvsummary, '$.lastNight5MinHigh') AS FLOAT64) AS hrv_last_night_5min_high,
+        cast(json_value(hrvsummary, '$.weeklyAvg') AS FLOAT64) AS hrv_weekly_avg,
+        cast(json_value(hrvsummary, '$.baseline.lowUpper') AS FLOAT64) AS hrv_baseline_low_upper,
+        cast(json_value(hrvsummary, '$.baseline.balancedLow') AS FLOAT64) AS hrv_baseline_balanced_low,
+        cast(json_value(hrvsummary, '$.baseline.balancedUpper') AS FLOAT64) AS hrv_baseline_balanced_upper,
+        cast(json_value(hrvsummary, '$.baseline.markerValue') AS FLOAT64) AS hrv_baseline_marker_value,
         array(
             SELECT AS STRUCT
-                cast(json_value(item, '$.hrvValue') AS float64) AS hrv_value,
+                cast(json_value(item, '$.hrvValue') AS FLOAT64) AS hrv_value,
                 json_value(item, '$.readingTimeGMT') AS reading_time_gmt,
                 json_value(item, '$.readingTimeLocal') AS reading_time_local
             FROM unnest(json_query_array(hrvreadings)) AS item
@@ -40,18 +40,18 @@ new_format AS (
         n._ingested_at,
         n.data_type,
         n.userprofilepk,
-        cast(json_value(item, '$.calendarDate') AS date) AS hrv_date,
-        cast(json_value(item, '$.calendarDate') AS date) AS hrv_calendar_date,
+        cast(json_value(item, '$.calendarDate') AS DATE) AS hrv_date,
+        cast(json_value(item, '$.calendarDate') AS DATE) AS hrv_calendar_date,
         json_value(item, '$.status') AS hrv_status,
         json_value(item, '$.feedbackPhrase') AS hrv_feedback_phrase,
-        cast(json_value(item, '$.lastNightAvg') AS float64) AS hrv_last_night_avg,
-        cast(json_value(item, '$.lastNight5MinHigh') AS float64) AS hrv_last_night_5min_high,
-        cast(json_value(item, '$.weeklyAvg') AS float64) AS hrv_weekly_avg,
-        cast(json_value(item, '$.baseline.lowUpper') AS float64) AS hrv_baseline_low_upper,
-        cast(json_value(item, '$.baseline.balancedLow') AS float64) AS hrv_baseline_balanced_low,
-        cast(json_value(item, '$.baseline.balancedUpper') AS float64) AS hrv_baseline_balanced_upper,
-        cast(json_value(item, '$.baseline.markerValue') AS float64) AS hrv_baseline_marker_value,
-        cast([] AS ARRAY<STRUCT<hrv_value float64, reading_time_gmt string, reading_time_local string>>) AS hrv_readings
+        cast(json_value(item, '$.lastNightAvg') AS FLOAT64) AS hrv_last_night_avg,
+        cast(json_value(item, '$.lastNight5MinHigh') AS FLOAT64) AS hrv_last_night_5min_high,
+        cast(json_value(item, '$.weeklyAvg') AS FLOAT64) AS hrv_weekly_avg,
+        cast(json_value(item, '$.baseline.lowUpper') AS FLOAT64) AS hrv_baseline_low_upper,
+        cast(json_value(item, '$.baseline.balancedLow') AS FLOAT64) AS hrv_baseline_balanced_low,
+        cast(json_value(item, '$.baseline.balancedUpper') AS FLOAT64) AS hrv_baseline_balanced_upper,
+        cast(json_value(item, '$.baseline.markerValue') AS FLOAT64) AS hrv_baseline_marker_value,
+        cast([] AS ARRAY<STRUCT<hrv_value FLOAT64, reading_time_gmt STRING, reading_time_local STRING>>) AS hrv_readings
     FROM {{ source('garmin', 'normalized_hrv') }} AS n
     CROSS JOIN unnest(json_query_array(n.hrvsummaries)) AS item
     WHERE n.date IS NULL AND n.hrvsummaries IS NOT NULL
