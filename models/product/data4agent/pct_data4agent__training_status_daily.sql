@@ -9,8 +9,8 @@
 SELECT  -- noqa: ST06
     date AS status_date,
     calendar_date,
-    training_status AS status_code,
-    CASE training_status
+    training_status_data.training_status AS status_code,
+    CASE training_status_data.training_status
         WHEN 0 THEN 'NO_STATUS'
         WHEN 1 THEN 'DETRAINING'
         WHEN 2 THEN 'RECOVERY'
@@ -38,5 +38,5 @@ SELECT  -- noqa: ST06
     since_date,
     device_id,
     _ingested_at
-FROM {{ ref('svc_garmin__training_status') }}
+FROM {{ ref('dlk_garmin_svc__training_status') }} AS training_status_data
 WHERE date IS NOT NULL AND date >= '2025-01-01'

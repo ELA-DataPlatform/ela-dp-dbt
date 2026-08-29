@@ -43,7 +43,7 @@ SELECT
 
     hub._ingested_at
 
-FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
 CROSS JOIN UNNEST(hub.hr_zones) AS hz
 
 WHERE

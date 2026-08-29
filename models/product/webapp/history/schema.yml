@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: pct_webapp_history__listening
+    description: >
+      Chronological Spotify listening history prepared for the web application.
+      One row represents one play and includes the primary artist and album metadata.
+    columns:
+      - name: played_at
+        description: Timestamp at which Spotify recorded the play.
+        data_tests:
+          - not_null
+      - name: track_id
+        description: Spotify track identifier.
+        data_tests:
+          - not_null
+      - name: track_name
+        description: Track display name.
+      - name: artist_name
+        description: Display name of the primary artist (artist_position = 0).
+      - name: album_id
+        description: Spotify album identifier associated with the play.
+      - name: album_name
+        description: Album display name.
+      - name: album_image_url
+        description: URL of the album cover image supplied by Spotify.
+      - name: duration_ms
+        description: Track duration in milliseconds.
+      - name: duration_label
+        description: Track duration formatted as unpadded minutes and two-digit seconds (M:SS).

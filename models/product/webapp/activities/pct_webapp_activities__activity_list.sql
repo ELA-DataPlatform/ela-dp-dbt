@@ -35,5 +35,5 @@ SELECT  -- noqa: ST06
     CAST(ROUND(elevationgain) AS INT64) AS elevation_gain_m,
     CAST(ROUND(averagehr) AS INT64) AS avg_hr_bpm
 
-FROM {{ ref('svc_garmin__activities') }}
+FROM {{ ref('dlk_garmin_svc__activities') }}
 ORDER BY starttimelocal DESC

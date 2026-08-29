@@ -14,10 +14,15 @@ RUN apk add --no-cache \
 # uv: fast resolver/installer
 RUN pip install --no-cache-dir uv
 
+# Keep the container on the same dbt-bigquery release resolved in uv.lock.
+# A broad <2 constraint pulled dbt-bigquery 1.12 and its experimental parser,
+# which does not publish a musllinux wheel for Alpine.
+ARG DBT_BIGQUERY_VERSION=1.11.1
+ARG DBT_CORE_VERSION=1.11.7
 RUN uv venv /opt/venv \
     && VIRTUAL_ENV=/opt/venv uv pip install --no-cache \
-        "dbt-bigquery>=1.9.0,<1.12.0" \
-        "dbt-core<1.12.0"
+        "dbt-bigquery==${DBT_BIGQUERY_VERSION}" \
+        "dbt-core==${DBT_CORE_VERSION}"
 
 # =============================================================================
 # Stage 2 : Minimal Alpine runtime

@@ -13,7 +13,7 @@ period_bounds AS (
         period_end,
         prev_period_start,
         prev_period_end
-    FROM {{ ref('stg_hub__ref_calendar') }}
+    FROM {{ ref('hub_utils_stg__ref_calendar') }}
     WHERE period = '7d'
 ),
 
@@ -23,8 +23,8 @@ fact_with_duration AS (
         fp.album_id,
         date(fp.played_at, 'Europe/Paris') AS play_date,
         coalesce(t.duration_ms, 0) AS duration_ms
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
     CROSS JOIN period_bounds AS pb
     WHERE
         date(fp.played_at, 'Europe/Paris') >= pb.prev_period_start
@@ -39,7 +39,7 @@ artist_plays AS (
         fw.duration_ms,
         bta.artist_id
     FROM fact_with_duration AS fw
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+    INNER JOIN {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
         ON fw.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
@@ -105,7 +105,7 @@ artists_top5 AS (
         abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM artist_current_ranked AS c
     LEFT JOIN artist_prev_ranked AS p ON c.artist_id = p.artist_id
-    LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON c.artist_id = a.artist_id
     WHERE c.rank <= 5
 ),
 
@@ -154,8 +154,8 @@ album_primary_artist AS (
     SELECT
         baa.album_id,
         a.artist_name
-    FROM {{ ref('svc_hub__bridge_album_artist') }} AS baa
-    INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a ON baa.artist_id = a.artist_id
+    FROM {{ ref('hub_music_svc__bridge_album_artist') }} AS baa
+    INNER JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON baa.artist_id = a.artist_id
     WHERE baa.artist_position = 0
 ),
 
@@ -182,7 +182,7 @@ albums_top5 AS (
         abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM album_current_ranked AS c
     LEFT JOIN album_prev_ranked AS p ON c.album_id = p.album_id
-    LEFT JOIN {{ ref('svc_hub__ref_album') }} AS alb ON c.album_id = alb.album_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_album') }} AS alb ON c.album_id = alb.album_id
     LEFT JOIN album_primary_artist AS pa ON c.album_id = pa.album_id
     WHERE c.rank <= 5
 ),
@@ -234,8 +234,8 @@ track_primary_artist AS (
     SELECT
         bta.track_id,
         a.artist_name
-    FROM {{ ref('svc_hub__bridge_track_artist') }} AS bta
-    INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a ON bta.artist_id = a.artist_id
+    FROM {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
+    INNER JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON bta.artist_id = a.artist_id
     WHERE bta.artist_position = 0
 ),
 
@@ -262,8 +262,8 @@ tracks_top5 AS (
         abs(coalesce(p.rank_prev - c.rank, 0)) AS rank_change_places
     FROM track_current_ranked AS c
     LEFT JOIN track_prev_ranked AS p ON c.track_id = p.track_id
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON c.track_id = t.track_id
-    LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON c.album_id = al.album_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON c.track_id = t.track_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_album') }} AS al ON c.album_id = al.album_id
     LEFT JOIN track_primary_artist AS pa ON c.track_id = pa.track_id
     WHERE c.rank <= 5
 )

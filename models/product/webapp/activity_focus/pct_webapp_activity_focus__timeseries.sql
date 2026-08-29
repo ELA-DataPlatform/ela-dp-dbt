@@ -55,7 +55,7 @@ SELECT
 
     CAST(ROUND(COALESCE(ts.corrected_elevation_m, ts.elevation_m)) AS INT64) AS elevation_m
 
-FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
 CROSS JOIN UNNEST(hub.timeseries) AS ts
 
 {% if is_incremental() %}

@@ -7,7 +7,7 @@
 
 WITH activities AS (
     SELECT activity_id
-    FROM {{ ref('svc_hub__master_running_activities') }}
+    FROM {{ ref('hub_activities_svc__master_running_activities') }}
 ),
 
 music AS (

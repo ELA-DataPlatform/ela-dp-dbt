@@ -1,9 +1,9 @@
 version: 2
 
 models:
-  - name: svc_hub__fact_played
+  - name: hub_music_svc__fact_played
     description: >
-      Incremental service table for play events. Merges new data from stg_hub__fact_played,
+      Incremental service table for play events. Merges new data from hub_music_stg__fact_played,
       ensuring uniqueness on (played_at, track_id). Partitioned by month on played_at.
       This is the authoritative fact table for downstream music analytics.
     columns:
@@ -16,7 +16,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_track')
+              to: ref('hub_music_svc__ref_track')
               field: track_id
       - name: album_id
         description: Spotify unique album identifier.
@@ -30,7 +30,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: ['played_at', 'track_id']
 
-  - name: svc_hub__ref_track
+  - name: hub_music_svc__ref_track
     description: >
       Incremental service table for track reference data. One row per track_id.
       Updated with latest metadata on each run.
@@ -60,14 +60,14 @@ models:
         description: Spotify unique album identifier this track belongs to.
         tests:
           - relationships:
-              to: ref('svc_hub__ref_album')
+              to: ref('hub_music_svc__ref_album')
               field: album_id
       - name: is_local
         description: Whether the track is a local file.
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this track.
 
-  - name: svc_hub__ref_album
+  - name: hub_music_svc__ref_album
     description: >
       Incremental service table for album reference data. One row per album_id.
       Enriched with genres, label, and popularity from album_detail when available.
@@ -101,7 +101,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this album.
 
-  - name: svc_hub__ref_artist
+  - name: hub_music_svc__ref_artist
     description: >
       Incremental service table for artist reference data. One row per artist_id.
       Consolidates artists from artist_detail, top_artists (primary), and recently played
@@ -128,7 +128,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this artist.
 
-  - name: svc_hub__ref_playlist
+  - name: hub_music_svc__ref_playlist
     description: >
       Incremental service table for playlist reference data. One row per playlist_id.
       Updated with latest metadata on each run.
@@ -154,7 +154,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this playlist.
 
-  - name: svc_hub__bridge_track_artist
+  - name: hub_music_svc__bridge_track_artist
     description: >
       Incremental service bridge table mapping tracks to their artists.
       Handles multi-artist tracks. One row per (track_id, artist_id) pair.
@@ -164,14 +164,14 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_track')
+              to: ref('hub_music_svc__ref_track')
               field: track_id
       - name: artist_id
         description: Spotify unique artist identifier.
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_artist')
+              to: ref('hub_music_svc__ref_artist')
               field: artist_id
       - name: artist_position
         description: 0-based position of the artist in the track's artist list.
@@ -181,7 +181,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: ['track_id', 'artist_id']
 
-  - name: svc_hub__bridge_album_artist
+  - name: hub_music_svc__bridge_album_artist
     description: >
       Incremental service bridge table mapping albums to their artists.
       Handles multi-artist albums. One row per (album_id, artist_id) pair.
@@ -191,14 +191,14 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_album')
+              to: ref('hub_music_svc__ref_album')
               field: album_id
       - name: artist_id
         description: Spotify unique artist identifier.
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_artist')
+              to: ref('hub_music_svc__ref_artist')
               field: artist_id
       - name: artist_position
         description: 0-based position of the artist in the album's artist list.

@@ -30,7 +30,7 @@ sleep_data AS (
             sleep_body_battery[ordinal(array_length(sleep_body_battery))].value,
             NULL
         ) AS body_battery_at_wake
-    FROM {{ ref('svc_garmin__sleep') }}
+    FROM {{ ref('dlk_garmin_svc__sleep') }}
     WHERE date >= date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)
 ),
 

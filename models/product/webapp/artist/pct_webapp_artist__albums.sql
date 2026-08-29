@@ -17,8 +17,8 @@ WITH album_plays AS (
         COUNT(*) AS plays,
         {{ milliseconds_to_minutes('SUM(COALESCE(t.duration_ms, 0))') }} AS listening_time_min,
         COUNT(DISTINCT fp.track_id) AS listened_tracks
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE fp.album_id IS NOT NULL
     GROUP BY fp.album_id
 ),
@@ -31,8 +31,8 @@ artist_albums AS (
         al.album_image_url,
         al.total_tracks,
         al.release_date
-    FROM {{ ref('svc_hub__bridge_album_artist') }} AS baa
-    INNER JOIN {{ ref('svc_hub__ref_album') }} AS al ON baa.album_id = al.album_id
+    FROM {{ ref('hub_music_svc__bridge_album_artist') }} AS baa
+    INNER JOIN {{ ref('hub_music_svc__ref_album') }} AS al ON baa.album_id = al.album_id
     WHERE
         baa.artist_position = 0
         AND al.album_type = 'album'

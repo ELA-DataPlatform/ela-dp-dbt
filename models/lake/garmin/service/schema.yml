@@ -3,7 +3,7 @@ version: 2
 models:
   # ── GROUP 1: Simple tables ──────────────────────────────────────────────
 
-  - name: svc_garmin__activities
+  - name: dlk_garmin_svc__activities
     description: >
       Service table for Garmin activities. Incrementally merges new data
       from staging, ensuring uniqueness on activityId.
@@ -13,7 +13,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__activity_details
+  - name: dlk_garmin_svc__activity_details
     description: >
       Service table for Garmin activity details. Incrementally merges from staging,
       ensuring uniqueness on activityId. JSON fields are stored as parsed STRUCTs
@@ -50,7 +50,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__body_composition
+  - name: dlk_garmin_svc__body_composition
     description: >
       Service table for body composition measurements.
       Incrementally merges from staging, ensuring uniqueness on date + samplePk.
@@ -62,7 +62,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__race_predictions
+  - name: dlk_garmin_svc__race_predictions
     description: >
       Service table for race predictions.
       Incrementally merges from staging, ensuring uniqueness on userId + calendarDate.
@@ -74,7 +74,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__steps
+  - name: dlk_garmin_svc__steps
     description: >
       Service table for step count data.
       Incrementally merges from staging, ensuring uniqueness on date + startGMT.
@@ -86,7 +86,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__all_day_events
+  - name: dlk_garmin_svc__all_day_events
     description: >
       Service table for all-day activity events.
       Incrementally merges from staging, ensuring uniqueness on deviceId + date + startTimestampGMT.
@@ -100,7 +100,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__weight
+  - name: dlk_garmin_svc__weight
     description: >
       Service table for weight measurements.
       Incrementally merges from staging, ensuring uniqueness on date + timestampGMT.
@@ -112,7 +112,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__training_readiness
+  - name: dlk_garmin_svc__training_readiness
     description: >
       Service table for training readiness scores.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -126,7 +126,7 @@ models:
 
   # ── GROUP 2: Timeseries tables ──────────────────────────────────────────
 
-  - name: svc_garmin__heart_rate
+  - name: dlk_garmin_svc__heart_rate
     description: >
       Service table for daily heart rate data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -138,7 +138,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__stress
+  - name: dlk_garmin_svc__stress
     description: >
       Service table for daily stress data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -150,7 +150,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__respiration
+  - name: dlk_garmin_svc__respiration
     description: >
       Service table for daily respiration data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -162,7 +162,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__spo2
+  - name: dlk_garmin_svc__spo2
     description: >
       Service table for daily SpO2 data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -174,7 +174,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__intensity_minutes
+  - name: dlk_garmin_svc__intensity_minutes
     description: >
       Service table for daily intensity minutes.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
@@ -186,7 +186,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__floors
+  - name: dlk_garmin_svc__floors
     description: >
       Service table for daily floors data.
       Incrementally merges from staging, ensuring uniqueness on date.
@@ -196,7 +196,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__body_battery
+  - name: dlk_garmin_svc__body_battery
     description: >
       Service table for daily body battery data with parsed feedback events.
       Incrementally merges from staging, ensuring uniqueness on date.
@@ -208,7 +208,7 @@ models:
 
   # ── GROUP 3: JSON object tables ─────────────────────────────────────────
 
-  - name: svc_garmin__sleep
+  - name: dlk_garmin_svc__sleep
     description: >
       Service table for comprehensive sleep data with parsed sleep summary
       and SpO2 summary. Incrementally merges from staging on date.
@@ -218,7 +218,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__hrv
+  - name: dlk_garmin_svc__hrv
     description: >
       Service table for HRV data with parsed summary metrics.
       Incrementally merges from staging on userProfilePk + date.
@@ -230,7 +230,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__max_metrics
+  - name: dlk_garmin_svc__max_metrics
     description: >
       Service table for max metrics with parsed VO2 max and acclimation data.
       Incrementally merges from staging on userId + date.
@@ -242,7 +242,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__training_status
+  - name: dlk_garmin_svc__training_status
     description: >
       Service table for training status with parsed VO2 max fields.
       Incrementally merges from staging on userId + date.
@@ -254,7 +254,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__endurance_score
+  - name: dlk_garmin_svc__endurance_score
     description: >
       Service table for endurance score with parsed score and classification.
       Incrementally merges from staging on userProfilePK + startDate.
@@ -266,7 +266,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__hill_score
+  - name: dlk_garmin_svc__hill_score
     description: >
       Service table for hill score data.
       Incrementally merges from staging on userProfilePK + startDate.
@@ -278,7 +278,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__rhr_daily
+  - name: dlk_garmin_svc__rhr_daily
     description: >
       Service table for daily resting heart rate. Incrementally merges from
       staging on userProfileId + date.
@@ -302,7 +302,7 @@ models:
 
   # ── GROUP 4: Activity sub-tables ────────────────────────────────────────
 
-  - name: svc_garmin__activity_exercise_sets
+  - name: dlk_garmin_svc__activity_exercise_sets
     description: >
       Service table for exercise sets data.
       Incrementally merges from staging, ensuring uniqueness on activityId.
@@ -312,7 +312,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__activity_hr_zones
+  - name: dlk_garmin_svc__activity_hr_zones
     description: >
       Service table for activity HR zone distribution.
       Incrementally merges from staging, ensuring uniqueness on activityId.
@@ -322,7 +322,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__activity_splits
+  - name: dlk_garmin_svc__activity_splits
     description: >
       Service table for activity split/lap data.
       Incrementally merges from staging, ensuring uniqueness on activityId.
@@ -332,7 +332,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__activity_weather
+  - name: dlk_garmin_svc__activity_weather
     description: >
       Service table for activity weather with parsed weather fields.
       Incrementally merges from staging, ensuring uniqueness on activityId.
@@ -344,7 +344,7 @@ models:
 
   # ── GROUP 5: Large scalar tables ────────────────────────────────────────
 
-  - name: svc_garmin__stats_and_body
+  - name: dlk_garmin_svc__stats_and_body
     description: >
       Service table for comprehensive daily wellness summary (~154 fields).
       Incrementally merges from staging on userProfileId + date.
@@ -356,7 +356,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__user_summary
+  - name: dlk_garmin_svc__user_summary
     description: >
       Service table for daily user wellness summary (~152 fields).
       Incrementally merges from staging on userProfileId + date.
@@ -368,7 +368,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: svc_garmin__device_info
+  - name: dlk_garmin_svc__device_info
     description: >
       Service table for device metadata and capabilities (~386 fields).
       Incrementally merges from staging, ensuring uniqueness on deviceId.

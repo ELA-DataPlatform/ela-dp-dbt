@@ -20,5 +20,5 @@ SELECT
     acwrfactorpercent AS acwr_factor_pct,
     acuteload AS acute_load,
     _ingested_at
-FROM {{ ref('svc_garmin__training_readiness') }}
+FROM {{ ref('dlk_garmin_svc__training_readiness') }}
 WHERE calendardate IS NOT NULL AND calendardate >= '2025-01-01'

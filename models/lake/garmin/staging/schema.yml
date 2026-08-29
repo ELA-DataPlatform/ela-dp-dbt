@@ -3,7 +3,7 @@ version: 2
 models:
   # ── GROUP 1: Simple tables (no JSON parsing) ────────────────────────────
 
-  - name: stg_garmin__activities
+  - name: dlk_garmin_stg__activities
     description: >
       Deduplicated view of raw Garmin activity data. Contains scalar fields covering
       distance, duration, calories, heart rate, elevation, power, and cadence.
@@ -33,7 +33,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__activity_details
+  - name: dlk_garmin_stg__activity_details
     description: >
       Deduplicated view of Garmin activity details data. JSON fields are fully
       parsed into typed STRUCTs and ARRAYs. heartRateDTOs and pendingData are
@@ -75,7 +75,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__body_composition
+  - name: dlk_garmin_stg__body_composition
     description: >
       Deduplicated view of body composition measurements (weight, body fat, BMI,
       muscle mass, bone mass, body water, visceral fat).
@@ -87,7 +87,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__race_predictions
+  - name: dlk_garmin_stg__race_predictions
     description: >
       Deduplicated view of predicted race times for 5K, 10K, half marathon, and marathon.
     columns:
@@ -98,7 +98,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__steps
+  - name: dlk_garmin_stg__steps
     description: >
       Deduplicated view of step count data. Handles two formats from the Garmin API:
       intraday rows (startGMT populated, steps per time window) and daily summary rows
@@ -132,7 +132,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__all_day_events
+  - name: dlk_garmin_stg__all_day_events
     description: >
       Deduplicated view of all-day activity events (vigorous/moderate intensity minutes blocks).
     columns:
@@ -145,7 +145,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__weight
+  - name: dlk_garmin_stg__weight
     description: >
       Deduplicated view of weight and body composition measurements from the scale.
     columns:
@@ -156,7 +156,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__training_readiness
+  - name: dlk_garmin_stg__training_readiness
     description: >
       Deduplicated view of training readiness scores with contributing factors
       (sleep, HRV, stress history, recovery time).
@@ -170,7 +170,7 @@ models:
 
   # ── GROUP 2: Timeseries tables (arrays kept as-is) ──────────────────────
 
-  - name: stg_garmin__heart_rate
+  - name: dlk_garmin_stg__heart_rate
     description: >
       Deduplicated view of daily heart rate data. Scalar summary fields
       (resting/max/min HR) are directly accessible. Timeseries arrays kept as JSON strings.
@@ -182,7 +182,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__stress
+  - name: dlk_garmin_stg__stress
     description: >
       Deduplicated view of daily stress data. Scalar fields (avg/max stress level)
       directly accessible. Timeseries arrays kept as JSON strings.
@@ -194,7 +194,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__respiration
+  - name: dlk_garmin_stg__respiration
     description: >
       Deduplicated view of daily respiration data. Scalar fields (avg sleep/waking respiration)
       directly accessible. Timeseries arrays kept as JSON strings.
@@ -206,7 +206,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__spo2
+  - name: dlk_garmin_stg__spo2
     description: >
       Deduplicated view of daily SpO2 data. Scalar fields (avg/latest/lowest SpO2)
       directly accessible. Two mutually exclusive timeseries columns depending on data source:
@@ -230,7 +230,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__intensity_minutes
+  - name: dlk_garmin_stg__intensity_minutes
     description: >
       Deduplicated view of daily intensity minutes. Scalar fields (weekly goal/total,
       moderate/vigorous minutes) directly accessible.
@@ -242,7 +242,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__floors
+  - name: dlk_garmin_stg__floors
     description: >
       Deduplicated view of daily floors data. Floor values timeseries kept as JSON string.
     columns:
@@ -251,7 +251,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__body_battery
+  - name: dlk_garmin_stg__body_battery
     description: >
       Deduplicated view of daily body battery data. Timeseries arrays kept as JSON strings.
       Dynamic feedback events parsed into flat columns.
@@ -275,7 +275,7 @@ models:
 
   # ── GROUP 3: JSON object tables (parsed into typed columns) ─────────────
 
-  - name: stg_garmin__sleep
+  - name: dlk_garmin_stg__sleep
     description: >
       Deduplicated view of comprehensive sleep data. dailySleepDTO and
       wellnessSpO2SleepSummaryDTO parsed into typed columns. Timeseries arrays
@@ -312,7 +312,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__hrv
+  - name: dlk_garmin_stg__hrv
     description: >
       Deduplicated view of HRV data. hrvSummary parsed into typed columns
       (weekly avg, last night avg, baseline, status). hrvReadings kept as JSON string.
@@ -336,7 +336,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__max_metrics
+  - name: dlk_garmin_stg__max_metrics
     description: >
       Deduplicated view of max metrics. generic and heatAltitudeAcclimation
       JSON objects parsed into typed columns (VO2 max, acclimation data).
@@ -356,7 +356,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__training_status
+  - name: dlk_garmin_stg__training_status
     description: >
       Deduplicated view of training status data. latestTrainingStatusData parsed
       by extracting the single device key dynamically, then flattening all fields
@@ -405,7 +405,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__endurance_score
+  - name: dlk_garmin_stg__endurance_score
     description: >
       Deduplicated view of endurance score data. enduranceScoreDTO parsed into
       typed columns (score, classification, gauge limits). groupMap kept as JSON string.
@@ -423,7 +423,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__hill_score
+  - name: dlk_garmin_stg__hill_score
     description: >
       Deduplicated view of hill score data. hillScoreDTOList kept as JSON array
       (contains multiple entries per row, parsing would change cardinality).
@@ -435,7 +435,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__rhr_daily
+  - name: dlk_garmin_stg__rhr_daily
     description: >
       Deduplicated view of daily resting heart rate data. The resting HR value
       and calendar date are extracted from the allMetrics JSON field.
@@ -459,7 +459,7 @@ models:
 
   # ── GROUP 4: Activity sub-tables ────────────────────────────────────────
 
-  - name: stg_garmin__activity_exercise_sets
+  - name: dlk_garmin_stg__activity_exercise_sets
     description: >
       Deduplicated view of exercise sets data for strength/workout activities.
       Exercise sets data kept as JSON string.
@@ -469,7 +469,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__activity_hr_zones
+  - name: dlk_garmin_stg__activity_hr_zones
     description: >
       Deduplicated view of heart rate zone distribution for activities.
       HR zones data kept as JSON array.
@@ -479,7 +479,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__activity_splits
+  - name: dlk_garmin_stg__activity_splits
     description: >
       Deduplicated view of activity split/lap data. Split summaries,
       typed splits, and detailed laps kept as JSON strings.
@@ -489,7 +489,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__activity_weather
+  - name: dlk_garmin_stg__activity_weather
     description: >
       Deduplicated view of weather conditions during activities. weather_data
       JSON object parsed into typed columns (temp, humidity, wind, station).
@@ -515,7 +515,7 @@ models:
 
   # ── GROUP 5: Large scalar tables ────────────────────────────────────────
 
-  - name: stg_garmin__stats_and_body
+  - name: dlk_garmin_stg__stats_and_body
     description: >
       Deduplicated view of the comprehensive daily wellness summary. Scalar fields
       cover steps, distance, calories, heart rate, stress, body battery, respiration,
@@ -551,7 +551,7 @@ models:
       - name: eod_feedback_long_type
         description: Long feedback type key for the end-of-day feedback event.
 
-  - name: stg_garmin__user_summary
+  - name: dlk_garmin_stg__user_summary
     description: >
       Deduplicated view of the daily user wellness summary (~152 scalar fields).
       JSON fields (bodyBatteryActivityEventList, bodyBatteryDynamicFeedbackEvent,
@@ -590,7 +590,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested.
 
-  - name: stg_garmin__device_info
+  - name: dlk_garmin_stg__device_info
     description: >
       Deduplicated view of device metadata and capability flags (~386 fields).
     columns:

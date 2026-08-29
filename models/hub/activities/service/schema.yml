@@ -1,13 +1,13 @@
 version: 2
 
 models:
-  - name: svc_hub__master_running_activities
+  - name: hub_activities_svc__master_running_activities
     description: >
       Master incremental service table for running activities. One row per activity,
       partitioned by activity_date (monthly) and clustered by activity_type.
       This is the hub reference table for all running activity consumption (dashboards, APIs).
       Contains every field from every lake source, fully denormalized and structured.
-      See stg_hub__master_running_activities for the full column documentation.
+      See hub_activities_stg__master_running_activities for the full column documentation.
     columns:
       - name: activity_id
         description: Garmin unique activity identifier. Primary key.

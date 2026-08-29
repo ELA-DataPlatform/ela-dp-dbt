@@ -13,4 +13,4 @@ SELECT
     CAST(NULL AS STRING) AS warnings_json,
     CAST(NULL AS STRING) AS recommendations_json,
     CAST(NULL AS TIMESTAMP) AS generated_at
-FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub

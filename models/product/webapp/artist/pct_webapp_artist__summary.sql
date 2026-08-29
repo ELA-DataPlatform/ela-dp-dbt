@@ -18,10 +18,10 @@ WITH track_plays AS (
         fp.track_id,
         fp.played_at,
         COALESCE(t.duration_ms, 0) AS duration_ms
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    INNER JOIN {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
 ),
 
 artist_totals AS (
@@ -41,7 +41,7 @@ album_listened AS (
     SELECT
         album_id,
         COUNT(DISTINCT track_id) AS listened_tracks
-    FROM {{ ref('svc_hub__fact_played') }}
+    FROM {{ ref('hub_music_svc__fact_played') }}
     WHERE album_id IS NOT NULL
     GROUP BY album_id
 ),
@@ -56,8 +56,8 @@ artist_albums AS (
             COALESCE(albl.listened_tracks, 0) >= al.total_tracks AND al.total_tracks > 0,
             FALSE
         ) AS is_complete
-    FROM {{ ref('svc_hub__bridge_album_artist') }} AS baa
-    INNER JOIN {{ ref('svc_hub__ref_album') }} AS al ON baa.album_id = al.album_id
+    FROM {{ ref('hub_music_svc__bridge_album_artist') }} AS baa
+    INNER JOIN {{ ref('hub_music_svc__ref_album') }} AS al ON baa.album_id = al.album_id
     LEFT JOIN album_listened AS albl ON al.album_id = albl.album_id
     WHERE baa.artist_position = 0
 ),
@@ -171,4 +171,4 @@ SELECT
         ORDER BY c.total_listening_time_min DESC, c.total_plays DESC, c.artist_id ASC
     ) AS all_time_rank
 FROM combined AS c
-LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
+LEFT JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON c.artist_id = a.artist_id

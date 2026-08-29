@@ -18,7 +18,7 @@ WITH base AS (
         hub.performance.avg_hr_bpm,
         hub.performance.training_load,
         hub._ingested_at
-    FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+    FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
 ),
 
 with_previous AS (

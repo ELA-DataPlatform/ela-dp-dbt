@@ -40,7 +40,7 @@ WITH segments_raw AS (
             ORDER BY lap.lap_index
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) AS active_rank
-    FROM {{ ref('svc_hub__master_running_activities') }} AS hub
+    FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
     CROSS JOIN UNNEST(hub.laps) AS lap
     WHERE
         lap.intensity_type IS NOT NULL
@@ -112,5 +112,5 @@ SELECT
     sr._ingested_at
 
 FROM segments_raw AS sr
-INNER JOIN {{ ref('svc_hub__master_running_activities') }} AS hub
+INNER JOIN {{ ref('hub_activities_svc__master_running_activities') }} AS hub
     ON sr.activity_id = hub.activity_id
