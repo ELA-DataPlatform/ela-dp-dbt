@@ -17,7 +17,7 @@ WITH last_activity AS (
         performance.avg_hr_bpm,
         performance.elevation_gain_m,
         timeseries
-    FROM {{ ref('svc_hub__master_running_activities') }}
+    FROM {{ ref('hub_activities_svc__master_running_activities') }}
     ORDER BY activity_date DESC, start_time_local DESC
     LIMIT 1
 )

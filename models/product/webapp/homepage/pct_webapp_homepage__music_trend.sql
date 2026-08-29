@@ -18,8 +18,8 @@ streams_raw AS (
     SELECT
         date(fp.played_at, 'Europe/Paris') AS stream_date,
         coalesce(t.duration_ms, 0) AS duration_ms
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE date(fp.played_at, 'Europe/Paris') >= date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)
 ),
 
@@ -33,8 +33,8 @@ streams_current AS (
 
 streams_prev AS (
     SELECT {{ milliseconds_to_minutes('sum(t.duration_ms)') }} AS total_minutes_prev_10d
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
     WHERE
         date(fp.played_at, 'Europe/Paris') >= date_sub(current_date('Europe/Paris'), INTERVAL 19 DAY)
         AND date(fp.played_at, 'Europe/Paris') < date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)

@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_hub__fact_played
+  - name: hub_music_stg__fact_played
     description: >
       Deduplicated view of play events from the Spotify recently played service table.
       One row per (played_at, track_id). Flattens context and album_id for downstream use.
@@ -19,7 +19,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch from the source normalized table.
 
-  - name: stg_hub__ref_track
+  - name: hub_music_stg__ref_track
     description: >
       Deduplicated view of track metadata. Consolidates top tracks (preferred for popularity
       and ISRC), album tracks, and recently played tracks. One row per track_id.
@@ -49,7 +49,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this track.
 
-  - name: stg_hub__ref_album
+  - name: hub_music_stg__ref_album
     description: >
       Deduplicated view of album metadata. Consolidates data from album detail (primary,
       richer) and recently played (fallback). One row per album_id.
@@ -79,7 +79,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this album.
 
-  - name: stg_hub__ref_artist
+  - name: hub_music_stg__ref_artist
     description: >
       Deduplicated view of artist metadata. Consolidates data from artist detail and top
       artists (primary, richer) and recently played (fallback). One row per artist_id.
@@ -101,7 +101,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this artist.
 
-  - name: stg_hub__ref_playlist
+  - name: hub_music_stg__ref_playlist
     description: >
       View of playlist metadata from the Spotify playlists service table.
       One row per playlist_id.
@@ -127,7 +127,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_hub__bridge_track_artist
+  - name: hub_music_stg__bridge_track_artist
     description: >
       Bridge view mapping tracks to their artists. Consolidates data from album tracks,
       top tracks, and recently played. One row per (track_id, artist_id) pair.
@@ -141,7 +141,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this pair.
 
-  - name: stg_hub__all_album_ids
+  - name: hub_music_stg__all_album_ids
     description: >
       Union distinct of all album IDs across all Spotify sources (recently played, saved tracks, saved albums).
       Used as a reference list of known albums for downstream enrichment.
@@ -149,7 +149,7 @@ models:
       - name: album_id
         description: Spotify unique album identifier.
 
-  - name: stg_hub__all_artist_ids
+  - name: hub_music_stg__all_artist_ids
     description: >
       Union distinct of all artist IDs across all Spotify sources (recently played, saved tracks, saved albums).
       Covers both track artists and album artists from each source.
@@ -158,7 +158,7 @@ models:
       - name: artist_id
         description: Spotify unique artist identifier.
 
-  - name: stg_hub__bridge_album_artist
+  - name: hub_music_stg__bridge_album_artist
     description: >
       Bridge view mapping albums to their artists. Consolidates data from album detail
       and recently played. One row per (album_id, artist_id) pair.
@@ -172,10 +172,10 @@ models:
       - name: _ingested_at
         description: Timestamp of the most recent ingestion batch for this pair.
 
-  - name: stg_hub__albums_pending_detail
+  - name: hub_music_stg__albums_pending_detail
     description: >
       Worklist of albums that are known (seen in any Spotify source) but not yet present in
-      svc_spotify__album_detail. Consumed by the album-detail ingestion job so it fetches
+      dlk_spotify_svc__album_detail. Consumed by the album-detail ingestion job so it fetches
       only missing albums in small batches instead of the whole catalogue (bounds job memory,
       avoids the OOM that froze detail enrichment from 2026-06-23). Ordered by most recent
       play so albums visible in the /music rankings are enriched first. Row count capped by
@@ -186,10 +186,10 @@ models:
       - name: last_played_at
         description: Most recent play timestamp for this album, or NULL if only saved (sorts last).
 
-  - name: stg_hub__artists_pending_detail
+  - name: hub_music_stg__artists_pending_detail
     description: >
-      Worklist of artists known but not yet present in svc_spotify__artist_detail. Counterpart
-      of stg_hub__albums_pending_detail, consumed by the artist-detail ingestion job. Ordered
+      Worklist of artists known but not yet present in dlk_spotify_svc__artist_detail. Counterpart
+      of hub_music_stg__albums_pending_detail, consumed by the artist-detail ingestion job. Ordered
       by most recent play (via the track-artist bridge); artists only ever seen as album artists
       have NULL last_played_at and sort last. Row count capped by artist_detail_batch_size (default 50).
     columns:

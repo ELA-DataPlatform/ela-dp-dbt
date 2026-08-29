@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_spotify_legacy__recently_played
+  - name: dlk_spotify_legacy_stg__recently_played
     description: Deduplicated view of legacy recently played tracks. Each row is a unique play event identified by played_at + track.id.
     columns:
       - name: played_at
@@ -13,7 +13,7 @@ models:
       - name: _ingested_at
         description: Timestamp when the record was ingested into the normalized table.
 
-  - name: stg_spotify_legacy__saved_tracks
+  - name: dlk_spotify_legacy_stg__saved_tracks
     description: Deduplicated view of legacy saved tracks. Each row is a unique track in the user's Spotify library.
     columns:
       - name: added_at
@@ -23,7 +23,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__saved_albums
+  - name: dlk_spotify_legacy_stg__saved_albums
     description: Deduplicated view of legacy saved albums. Each row is a unique album in the user's Spotify library.
     columns:
       - name: added_at
@@ -33,7 +33,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__top_artists
+  - name: dlk_spotify_legacy_stg__top_artists
     description: Deduplicated view of legacy top artists. Each row is a unique artist from the user's Spotify top artists.
     columns:
       - name: id
@@ -53,7 +53,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__top_tracks
+  - name: dlk_spotify_legacy_stg__top_tracks
     description: Deduplicated view of legacy top tracks. Each row is a unique track from the user's Spotify top tracks.
     columns:
       - name: id
@@ -73,7 +73,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__playlists
+  - name: dlk_spotify_legacy_stg__playlists
     description: Deduplicated view of legacy playlists. Each row is a unique playlist from the user's Spotify library.
     columns:
       - name: id
@@ -89,7 +89,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__album_detail
+  - name: dlk_spotify_legacy_stg__album_detail
     description: Deduplicated view of legacy album details. Each row is a unique album with full metadata.
     columns:
       - name: id
@@ -107,7 +107,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__album_tracks
+  - name: dlk_spotify_legacy_stg__album_tracks
     description: Deduplicated view of legacy album tracks. Each row is a unique track within an album.
     columns:
       - name: id
@@ -125,7 +125,7 @@ models:
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
 
-  - name: stg_spotify_legacy__artist_detail
+  - name: dlk_spotify_legacy_stg__artist_detail
     description: Deduplicated view of legacy artist details. Each row is a unique artist with full metadata.
     columns:
       - name: id

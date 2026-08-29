@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: svc_spotify__recently_played
+  - name: dlk_spotify_svc__recently_played
     description: >
       Service table for Spotify recently played tracks. Incrementally merges new data
       from the staging view, ensuring uniqueness on played_at + track_id.
@@ -21,7 +21,7 @@ models:
           in which the track was played (e.g., playlist, album, artist).
       - name: _ingested_at
         description: Timestamp when the record was ingested into the normalized table.
-  - name: svc_spotify__saved_tracks
+  - name: dlk_spotify_svc__saved_tracks
     description: >
       Service table for Spotify saved tracks. Incrementally merges new data
       from the staging view, ensuring uniqueness on track_id.
@@ -37,7 +37,7 @@ models:
         description: Timestamp when the track was saved to the user's library.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
-  - name: svc_spotify__saved_albums
+  - name: dlk_spotify_svc__saved_albums
     description: >
       Service table for Spotify saved albums. Incrementally merges new data
       from the staging view, ensuring uniqueness on album_id.

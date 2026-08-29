@@ -35,5 +35,5 @@ SELECT
     sleep_start_timestamp_local AS sleep_start_local,
     sleep_end_timestamp_local AS sleep_end_local,
     _ingested_at
-FROM {{ ref('svc_garmin__sleep') }}
+FROM {{ ref('dlk_garmin_svc__sleep') }}
 WHERE date IS NOT NULL AND date >= '2025-01-01'

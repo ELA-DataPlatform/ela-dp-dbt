@@ -72,8 +72,8 @@ SELECT  -- noqa: ST06
     lap.end_longitude,
 
     s._ingested_at
-FROM {{ ref('svc_garmin__activity_splits') }} AS s
-LEFT JOIN {{ ref('svc_garmin__activities') }} AS a
+FROM {{ ref('dlk_garmin_svc__activity_splits') }} AS s
+LEFT JOIN {{ ref('dlk_garmin_svc__activities') }} AS a
     ON s.activityid = a.activityid
 CROSS JOIN UNNEST(s.laps) AS lap
 WHERE DATE(a.starttimelocal) >= '2025-01-01'

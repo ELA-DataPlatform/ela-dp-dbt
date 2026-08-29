@@ -13,9 +13,9 @@ WITH current_agg AS (
         COUNT(*) AS play_count,
         {{ milliseconds_to_minutes('SUM(t.duration_ms)') }} AS listening_time_min,
         MAX(fp.played_at) AS last_played_at
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
+    CROSS JOIN {{ ref('hub_utils_stg__ref_calendar') }} AS cp
     WHERE
         (cp.period_start IS NULL OR DATE(fp.played_at, 'Europe/Paris') >= cp.period_start)
         AND DATE(fp.played_at, 'Europe/Paris') <= cp.period_end
@@ -28,9 +28,9 @@ prev_agg AS (
         cp.period,
         {{ milliseconds_to_minutes('SUM(t.duration_ms)') }} AS listening_time_min,
         MAX(fp.played_at) AS last_played_at
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
+    CROSS JOIN {{ ref('hub_utils_stg__ref_calendar') }} AS cp
     WHERE
         cp.prev_period_start IS NOT NULL
         AND DATE(fp.played_at, 'Europe/Paris') >= cp.prev_period_start
@@ -63,8 +63,8 @@ primary_artist AS (
     SELECT
         bta.track_id,
         a.artist_name
-    FROM {{ ref('svc_hub__bridge_track_artist') }} AS bta
-    INNER JOIN {{ ref('svc_hub__ref_artist') }} AS a ON bta.artist_id = a.artist_id
+    FROM {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
+    INNER JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON bta.artist_id = a.artist_id
     WHERE bta.artist_position = 0
 )
 
@@ -94,8 +94,8 @@ SELECT
 FROM current_ranked AS c
 LEFT JOIN prev_ranked AS pr
     ON c.track_id = pr.track_id AND c.period = pr.period
-LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON c.track_id = t.track_id
-LEFT JOIN {{ ref('svc_hub__ref_album') }} AS al ON c.album_id = al.album_id
+LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON c.track_id = t.track_id
+LEFT JOIN {{ ref('hub_music_svc__ref_album') }} AS al ON c.album_id = al.album_id
 LEFT JOIN primary_artist AS pa ON c.track_id = pa.track_id
 WHERE c.rank <= 20
 ORDER BY c.period, c.rank

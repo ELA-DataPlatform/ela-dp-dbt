@@ -29,7 +29,7 @@ models:
 
       Business rules:
         * Timezone: all calendar logic uses Europe/Paris.
-        * A "play" is one row of svc_hub__fact_played (sourced from Spotify
+        * A "play" is one row of hub_music_svc__fact_played (sourced from Spotify
           recently-played). The source has NO per-stream ms_played, so the 30s
           Spotify threshold (var play_min_ms in the original spec) is not
           applicable: every recorded play is counted.
@@ -40,7 +40,7 @@ models:
           consistent with the existing ranking marts.
         * A studio album is album_type = 'album'.
         * studio_albums_total counts the artist's KNOWN studio discography, i.e.
-          albums present in svc_hub__ref_album for which the artist is the primary
+          albums present in hub_music_svc__ref_album for which the artist is the primary
           album artist. The source only contains albums already encountered
           through listening/saves, so it is not the exhaustive Spotify
           discography.
@@ -55,7 +55,7 @@ models:
           - unique
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_artist')
+              to: ref('hub_music_svc__ref_artist')
               field: artist_id
               config:
                 severity: warn
@@ -66,7 +66,7 @@ models:
       - name: genres
         description: >
           Array of genres associated with the artist (ARRAY<STRING>), parsed from
-          the JSON-encoded genres of svc_hub__ref_artist. Empty when unknown.
+          the JSON-encoded genres of hub_music_svc__ref_artist. Empty when unknown.
       - name: first_listened_at
         description: Timestamp (UTC) of the first ever play credited to the artist.
         tests:
@@ -137,7 +137,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_artist')
+              to: ref('hub_music_svc__ref_artist')
               field: artist_id
               config:
                 severity: warn
@@ -146,7 +146,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_album')
+              to: ref('hub_music_svc__ref_album')
               field: album_id
       - name: album_name
         description: Album display name.
@@ -212,7 +212,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_artist')
+              to: ref('hub_music_svc__ref_artist')
               field: artist_id
               config:
                 severity: warn
@@ -221,7 +221,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('svc_hub__ref_track')
+              to: ref('hub_music_svc__ref_track')
               field: track_id
               config:
                 severity: warn

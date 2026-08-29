@@ -7,8 +7,10 @@
 
 WITH latest_ts AS (
     SELECT *
-    FROM {{ ref('svc_garmin__training_status') }}
-    QUALIFY row_number() OVER (ORDER BY date DESC) = 1
+    FROM {{ ref('dlk_garmin_svc__training_status') }}
+    QUALIFY row_number() OVER (
+        ORDER BY date DESC
+    ) = 1
 ),
 
 latest_mm AS (
@@ -16,16 +18,20 @@ latest_mm AS (
         calendar_date,
         vo2_max,
         vo2_max_precise
-    FROM {{ ref('svc_garmin__max_metrics') }}
-    QUALIFY row_number() OVER (ORDER BY calendar_date DESC) = 1
+    FROM {{ ref('dlk_garmin_svc__max_metrics') }}
+    QUALIFY row_number() OVER (
+        ORDER BY calendar_date DESC
+    ) = 1
 ),
 
 prev_mm AS (
     SELECT
         vo2_max,
         vo2_max_precise
-    FROM {{ ref('svc_garmin__max_metrics') }}
-    QUALIFY row_number() OVER (ORDER BY calendar_date DESC) = 2
+    FROM {{ ref('dlk_garmin_svc__max_metrics') }}
+    QUALIFY row_number() OVER (
+        ORDER BY calendar_date DESC
+    ) = 2
 )
 
 SELECT

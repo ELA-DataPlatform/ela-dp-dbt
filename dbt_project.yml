@@ -26,34 +26,51 @@ models:
       spotify:
         +schema: "dp_lake_spotify_{{ target.name }}"
         +tags: ["spotify"]
+        staging:
+          +schema: "lake_spotify_stg"
+        service:
+          +schema: "lake_spotify_svc"
       spotify_legacy:
         +schema: "dp_lake_spotify_{{ target.name }}"
         +tags: ["spotify"]
+        staging:
+          +schema: "lake_spotify_legacy_stg"
+        service:
+          +schema: "lake_spotify_legacy_svc"
       garmin:
         +schema: "dp_lake_garmin_{{ target.name }}"
         +tags: ["garmin"]
+        staging:
+          +schema: "lake_garmin_stg"
+          +materialized: view
+        service:
+          +schema: "lake_garmin_svc"
+          +materialized: table
     hub:
-      +schema: "dp_hub_{{ target.name }}"
       utils:
+        +schema: "hub_utils_stg"
         +materialized: view
       music:
         staging:
+          +schema: "hub_music_stg"
           +materialized: view
         service:
+          +schema: "hub_music_svc"
           +materialized: incremental
       activities:
         staging:
+          +schema: "hub_activities_stg"
           +materialized: view
         service:
+          +schema: "hub_activities_svc"
           +materialized: incremental
     product:
-      +schema: "dp_product_{{ target.name }}"
       webapp:
-        +schema: "dp_product_webapp_{{ target.name }}"
+        +schema: "product_webapp"
         +tags: ["webapp"]
         activity_focus:
           +materialized: table
       data4agent:
-        +schema: "dp_product_data4agent_{{ target.name }}"
+        +schema: "product_data4agent"
         +materialized: table
         +tags: ["garmin", "data4agent"]

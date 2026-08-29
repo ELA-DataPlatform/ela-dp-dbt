@@ -494,7 +494,7 @@ models:
       - name: album_image_url
         description: >
           URL of the album cover image (640x640) from the Spotify CDN.
-          Extracted from svc_spotify__album_detail. NULL if not available.
+          Extracted from dlk_spotify_svc__album_detail. NULL if not available.
       - name: duration_seconds
         description: Track duration in seconds.
       - name: km_start

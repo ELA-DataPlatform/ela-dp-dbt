@@ -12,9 +12,9 @@ WITH fact_with_artist AS (
         t.duration_ms,
         bta.artist_id,
         DATE(fp.played_at, 'Europe/Paris') AS play_date
-    FROM {{ ref('svc_hub__fact_played') }} AS fp
-    LEFT JOIN {{ ref('svc_hub__ref_track') }} AS t ON fp.track_id = t.track_id
-    INNER JOIN {{ ref('svc_hub__bridge_track_artist') }} AS bta
+    FROM {{ ref('hub_music_svc__fact_played') }} AS fp
+    LEFT JOIN {{ ref('hub_music_svc__ref_track') }} AS t ON fp.track_id = t.track_id
+    INNER JOIN {{ ref('hub_music_svc__bridge_track_artist') }} AS bta
         ON fp.track_id = bta.track_id AND bta.artist_position = 0
 ),
 
@@ -27,7 +27,7 @@ current_agg AS (
         COUNT(DISTINCT fa.track_id) AS unique_tracks,
         MAX(fa.played_at) AS last_played_at
     FROM fact_with_artist AS fa
-    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
+    CROSS JOIN {{ ref('hub_utils_stg__ref_calendar') }} AS cp
     WHERE
         (cp.period_start IS NULL OR fa.play_date >= cp.period_start)
         AND fa.play_date <= cp.period_end
@@ -40,7 +40,7 @@ prev_agg AS (
         cp.period,
         {{ milliseconds_to_minutes('SUM(fa.duration_ms)') }} AS listening_time_min
     FROM fact_with_artist AS fa
-    CROSS JOIN {{ ref('stg_hub__ref_calendar') }} AS cp
+    CROSS JOIN {{ ref('hub_utils_stg__ref_calendar') }} AS cp
     WHERE
         cp.prev_period_start IS NOT NULL
         AND fa.play_date >= cp.prev_period_start
@@ -92,6 +92,6 @@ SELECT
 FROM current_ranked AS c
 LEFT JOIN prev_ranked AS pr
     ON c.artist_id = pr.artist_id AND c.period = pr.period
-LEFT JOIN {{ ref('svc_hub__ref_artist') }} AS a ON c.artist_id = a.artist_id
+LEFT JOIN {{ ref('hub_music_svc__ref_artist') }} AS a ON c.artist_id = a.artist_id
 WHERE c.rank <= 20
 ORDER BY c.period, c.rank

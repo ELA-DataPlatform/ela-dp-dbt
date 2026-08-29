@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_hub__master_running_activities
+  - name: hub_activities_stg__master_running_activities
     description: >
       Master view for running activities. One row per activity (running, trail_running,
       treadmill_running). Fully denormalized: every field from every lake service table
@@ -103,7 +103,7 @@ models:
           power_w, accumulated_power_w, air_temp_celsius, stamina_available, stamina_potential.
       - name: route
         description: >
-          STRUCT sourced from svc_garmin__activity_details.geo_polyline. Contains the GPS
+          STRUCT sourced from dlk_garmin_svc__activity_details.geo_polyline. Contains the GPS
           bounding box (min_lat, max_lat, min_lon, max_lon), explicit start_point and
           end_point structs (lat, lon, altitude, time, speed, cumulative_ascent/descent,
           distance fields), and a full polyline ARRAY<STRUCT> with one entry per GPS point
