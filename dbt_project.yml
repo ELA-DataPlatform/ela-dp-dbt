@@ -57,6 +57,14 @@ models:
         service:
           +schema: "hub_music_svc"
           +materialized: incremental
+      health:
+        +tags: ["garmin", "health"]
+        staging:
+          +schema: "hub_health_stg"
+          +materialized: view
+        service:
+          +schema: "hub_health_svc"
+          +materialized: table
       activities:
         staging:
           +schema: "hub_activities_stg"

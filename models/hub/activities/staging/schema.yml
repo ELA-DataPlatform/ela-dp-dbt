@@ -125,4 +125,7 @@ models:
           activity: training readiness (score, level, feedback, and all contributing factor
           percentages), acute training load, recovery time, HRV weekly average, most recent
           VO2max, most recent body composition (weight kg, body fat %, BMI, muscle mass,
-          bone mass), and raw Garmin training status JSON.
+          bone mass), and the numeric Garmin training status code.
+
+      - name: athletic_context.training_status_code
+        description: Numeric Garmin training status code (INT64), explicitly selected from the source column.

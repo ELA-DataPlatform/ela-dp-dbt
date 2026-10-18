@@ -1,38 +1,6 @@
 {{
     config(
-        materialized='incremental',
-        unique_key='activity_id',
-        merge_update_columns=[
-            'activity_uuid',
-            'activity_name',
-            'activity_description',
-            'location_name',
-            'start_time_local',
-            'start_time_gmt',
-            'end_time_gmt',
-            'activity_date',
-            'activity_type',
-            'device_id',
-            'manufacturer',
-            'is_pr',
-            'is_favorite',
-            'is_manual',
-            'is_elevation_corrected',
-            'event_type',
-            'performance',
-            'fastest_splits',
-            'gps',
-            'hr_zones',
-            'power_zones',
-            'laps',
-            'typed_splits',
-            'split_summaries',
-            'timeseries',
-            'weather',
-            'sleep',
-            'athletic_context',
-            '_ingested_at'
-        ],
+        materialized='table',
         partition_by={
             'field': 'activity_date',
             'data_type': 'date',
@@ -43,9 +11,7 @@
     )
 }}
 
+-- Recompute all dependencies, including historical context changes and late details.
+-- A table rebuild also migrates nested field types and refreshes the GPS route.
 SELECT *
 FROM {{ ref('hub_activities_stg__master_running_activities') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
-{% endif %}

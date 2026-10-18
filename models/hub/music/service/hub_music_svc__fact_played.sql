@@ -12,9 +12,6 @@
     )
 }}
 
+-- Merge the complete deduplicated source: late and equal-timestamp corrections are replayed.
 SELECT *
 FROM {{ ref('hub_music_stg__fact_played') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

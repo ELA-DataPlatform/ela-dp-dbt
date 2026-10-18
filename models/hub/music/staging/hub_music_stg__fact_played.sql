@@ -12,7 +12,8 @@ WITH from_recently_played AS (
         JSON_VALUE(track, '$.album.id') AS album_id,
         JSON_VALUE(context, '$.type') AS context_type,
         JSON_VALUE(context, '$.uri') AS context_uri,
-        _ingested_at
+        _ingested_at,
+        0 AS _source_priority
     FROM {{ ref('dlk_spotify_svc__recently_played') }}
 ),
 
@@ -23,7 +24,8 @@ from_legacy_recently_played AS (
         track.album.id AS album_id,
         context.type AS context_type,
         context.uri AS context_uri,
-        _ingested_at
+        _ingested_at,
+        1 AS _source_priority
     FROM {{ ref('dlk_spotify_legacy_svc__recently_played') }}
 ),
 
@@ -38,11 +40,11 @@ deduplicated AS (
         *,
         ROW_NUMBER() OVER (
             PARTITION BY played_at, track_id
-            ORDER BY _ingested_at DESC
+            ORDER BY _ingested_at DESC, _source_priority ASC, TO_JSON_STRING(c) ASC
         ) AS _row_number
-    FROM combined
+    FROM combined AS c
 )
 
-SELECT * EXCEPT (_row_number)
+SELECT * EXCEPT (_row_number, _source_priority)
 FROM deduplicated
 WHERE _row_number = 1
