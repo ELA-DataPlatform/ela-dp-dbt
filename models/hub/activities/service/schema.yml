@@ -3,10 +3,11 @@ version: 2
 models:
   - name: hub_activities_svc__master_running_activities
     description: >
-      Master incremental service table for running activities. One row per activity,
+      Current service table for running activities, fully rebuilt on each run. One row per activity,
       partitioned by activity_date (monthly) and clustered by activity_type.
       This is the hub reference table for all running activity consumption (dashboards, APIs).
-      Contains every field from every lake source, fully denormalized and structured.
+      Recomputes late details, GPS routes and historical context without a source watermark. The rebuild migrates nested schema
+      changes, including the numeric training status code.
       See hub_activities_stg__master_running_activities for the full column documentation.
     columns:
       - name: activity_id

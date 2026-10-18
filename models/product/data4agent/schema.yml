@@ -28,7 +28,7 @@ models:
   - name: pct_data4agent__hrv_daily
     description: >
       Daily HRV (heart rate variability) summary, one row per calendar date.
-      Flat columns only — derived directly from dlk_garmin_svc__hrv. The lake-side
+      Flat columns only — qualified by hub_health_svc__hrv_daily. The lake-side
       timeseries arrays (hrv_readings) are intentionally excluded so an agent
       can query without unnesting.
     columns:
@@ -38,7 +38,7 @@ models:
   - name: pct_data4agent__rhr_daily
     description: >
       Daily resting heart rate, one row per calendar date.
-      Derived from dlk_garmin_svc__rhr_daily (timeseries arrays excluded).
+      Derived from hub_health_svc__rhr_daily (timeseries arrays excluded).
     columns:
       - name: rhr_date
         description: Calendar date of the resting heart rate measurement.
@@ -57,8 +57,8 @@ models:
     description: >
       Daily Garmin training status, one row per calendar date. Includes a
       decoded status_label for the numeric status_code, plus the acute /
-      chronic training load context. Sourced from dlk_garmin_svc__training_status
-      (which already extracts the primary device payload).
+      chronic training load context. Sourced from hub_health_svc__training_status_daily
+      (the lake already selects the primary device payload).
     columns:
       - name: status_date
         description: Calendar date of the training status record.
@@ -67,7 +67,7 @@ models:
     description: >
       Daily Garmin training readiness, one row per calendar date. Score 0–100
       with the contributing factors (sleep, HRV, stress history, recovery time,
-      ACWR). Sourced from dlk_garmin_svc__training_readiness.
+      ACWR). Sourced from hub_health_svc__training_readiness_daily. Recovery time is converted from minutes to hours.
     columns:
       - name: readiness_date
         description: Calendar date of the readiness score.

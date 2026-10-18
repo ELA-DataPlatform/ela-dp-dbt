@@ -6,22 +6,11 @@
     )
 }}
 
-SELECT  -- noqa: ST06
-    date AS status_date,
-    calendar_date,
-    training_status_data.training_status AS status_code,
-    CASE training_status_data.training_status
-        WHEN 0 THEN 'NO_STATUS'
-        WHEN 1 THEN 'DETRAINING'
-        WHEN 2 THEN 'RECOVERY'
-        WHEN 3 THEN 'MAINTAINING'
-        WHEN 4 THEN 'PRODUCTIVE'
-        WHEN 5 THEN 'PEAKING'
-        WHEN 6 THEN 'OVERREACHING'
-        WHEN 7 THEN 'UNPRODUCTIVE'
-        WHEN 8 THEN 'STRAINED'
-    END AS status_label,
-    training_status_feedback_phrase AS feedback_phrase,
+SELECT
+    health_date AS status_date,
+    status_code,
+    status_label,
+    feedback_phrase,
     training_paused,
     sport,
     sub_sport,
@@ -30,13 +19,14 @@ SELECT  -- noqa: ST06
     acwr_status,
     acwr_status_feedback,
     acwr_percent,
-    daily_acute_chronic_workload_ratio AS acwr_ratio,
-    daily_training_load_acute AS acute_load,
-    daily_training_load_chronic AS chronic_load,
-    min_training_load_chronic AS chronic_load_lower_bound,
-    max_training_load_chronic AS chronic_load_upper_bound,
-    since_date,
+    acwr_ratio,
+    acute_load,
+    chronic_load,
+    chronic_load_lower_bound,
+    chronic_load_upper_bound,
     device_id,
-    _ingested_at
-FROM {{ ref('dlk_garmin_svc__training_status') }} AS training_status_data
-WHERE date IS NOT NULL AND date >= '2025-01-01'
+    _ingested_at,
+    CAST(calendar_date AS STRING) AS calendar_date,
+    CAST(since_date AS STRING) AS since_date
+FROM {{ ref('hub_health_svc__training_status_daily') }}
+WHERE health_date IS NOT NULL AND health_date >= '2025-01-01'

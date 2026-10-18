@@ -1,15 +1,5 @@
-{{
-    config(
-        materialized='incremental',
-        unique_key=['album_id', 'artist_id'],
-        merge_update_columns=['artist_position', '_ingested_at'],
-        tags=['spotify']
-    )
-}}
+{{ config(materialized='table', tags=['spotify']) }}
 
+-- Rebuild current state to propagate corrections and remove obsolete relationships.
 SELECT *
 FROM {{ ref('hub_music_stg__bridge_album_artist') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

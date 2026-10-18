@@ -1,0 +1,570 @@
+version: 2
+
+models:
+  - name: hub_health_stg__heart_rate_samples
+    description: >
+      Internal qualified source points for heart_rate. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__stress_samples
+    description: >
+      Internal qualified source points for stress. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__body_battery_samples
+    description: >
+      Internal qualified source points for body_battery. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__respiration_samples
+    description: >
+      Internal qualified source points for respiration. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__spo2_samples
+    description: >
+      Internal qualified source points for spo2. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: reading_confidence
+        description: >
+          Native Garmin SpO2 reading confidence (INT64), preserved without normalization or filtering.
+          NULL for hourly averages and other metrics that do not supply confidence. No probability scale is assumed.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__hrv_samples
+    description: >
+      Internal qualified source points for hrv. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_stg__sleep_samples
+    description: >
+      Internal qualified source points for sleep. One row per parent, source array, metric and offset.
+      Used to construct the public daily timeseries repeated field; this view is not a second materialized copy.
+    columns:
+      - name: health_date
+        description: >
+          Source local day or wake-up date, unchanged across midnight UTC.
+      - name: source_user_id
+        description: >
+          Original Garmin profile identifier as STRING; NULL for account-level sleep and battery sources.
+      - name: identity_scope
+        description: >
+          Source identity namespace, profile or account.
+      - name: source_table
+        description: >
+          Original Garmin lake service.
+      - name: source_record_key
+        description: >
+          Source parent key represented as JSON, including source date and identity.
+      - name: _ingested_at
+        description: >
+          Ingestion timestamp of the source parent record.
+      - name: sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: reading_confidence
+        description: >
+          Native Garmin SpO2 reading confidence (INT64), preserved without normalization or filtering.
+          NULL for hourly averages and other metrics that do not supply confidence. No probability scale is assumed.
+      - name: source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
