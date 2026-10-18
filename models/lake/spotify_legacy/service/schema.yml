@@ -2,7 +2,9 @@ version: 2
 
 models:
   - name: dlk_spotify_legacy_svc__recently_played
-    description: Service table for legacy Spotify recently played tracks. Incrementally merges from staging, unique on played_at + track_id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify recently played tracks. Incrementally merges from staging, unique on played_at + track_id.
     columns:
       - name: played_at
         description: Timestamp indicating when the track was played.
@@ -16,7 +18,9 @@ models:
         description: Timestamp when the record was ingested into the normalized table.
 
   - name: dlk_spotify_legacy_svc__saved_tracks
-    description: Service table for legacy Spotify saved tracks. Incrementally merges from staging, unique on track_id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify saved tracks. Incrementally merges from staging, unique on track_id.
     columns:
       - name: track_id
         description: Spotify unique track identifier, extracted from the track RECORD.
@@ -28,7 +32,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__saved_albums
-    description: Service table for legacy Spotify saved albums. Incrementally merges from staging, unique on album_id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify saved albums. Incrementally merges from staging, unique on album_id.
     columns:
       - name: album_id
         description: Spotify unique album identifier, extracted from the album RECORD.
@@ -40,7 +46,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__top_artists
-    description: Service table for legacy Spotify top artists. Incrementally merges from staging, unique on id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify top artists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique artist identifier.
@@ -60,7 +68,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__top_tracks
-    description: Service table for legacy Spotify top tracks. Incrementally merges from staging, unique on id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify top tracks. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique track identifier.
@@ -80,7 +90,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__playlists
-    description: Service table for legacy Spotify playlists. Incrementally merges from staging, unique on id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify playlists. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique playlist identifier.
@@ -96,7 +108,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__album_detail
-    description: Service table for legacy Spotify album details. Incrementally merges from staging, unique on id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify album details. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique album identifier.
@@ -114,7 +128,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__album_tracks
-    description: Service table for legacy Spotify album tracks. Incrementally merges from staging, unique on album_id + id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify album tracks. Incrementally merges from staging, unique on album_id + id.
     columns:
       - name: id
         description: Spotify unique track identifier.
@@ -132,7 +148,9 @@ models:
         description: Timestamp of the ingestion batch.
 
   - name: dlk_spotify_legacy_svc__artist_detail
-    description: Service table for legacy Spotify artist details. Incrementally merges from staging, unique on id.
+    description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
+      Service table for legacy Spotify artist details. Incrementally merges from staging, unique on id.
     columns:
       - name: id
         description: Spotify unique artist identifier.

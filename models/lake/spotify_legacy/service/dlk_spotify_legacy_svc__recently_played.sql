@@ -16,6 +16,7 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT
     played_at,
     track.id AS track_id,
@@ -23,7 +24,3 @@ SELECT
     context,
     _ingested_at
 FROM {{ ref('dlk_spotify_legacy_stg__recently_played') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

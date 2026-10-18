@@ -11,13 +11,10 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT
     album.id AS album_id,
     album,
     added_at,
     _ingested_at
 FROM {{ ref('dlk_spotify_legacy_stg__saved_albums') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

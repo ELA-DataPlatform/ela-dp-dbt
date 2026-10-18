@@ -3,6 +3,7 @@ version: 2
 models:
   - name: dlk_spotify_svc__recently_played
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for Spotify recently played tracks. Incrementally merges new data
       from the staging view, ensuring uniqueness on played_at + track_id.
       This is the authoritative table for downstream consumption in the hub layer.
@@ -23,6 +24,7 @@ models:
         description: Timestamp when the record was ingested into the normalized table.
   - name: dlk_spotify_svc__saved_tracks
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for Spotify saved tracks. Incrementally merges new data
       from the staging view, ensuring uniqueness on track_id.
       This is the authoritative table for downstream consumption in the hub layer.
@@ -39,6 +41,7 @@ models:
         description: Timestamp of the ingestion batch.
   - name: dlk_spotify_svc__saved_albums
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for Spotify saved albums. Incrementally merges new data
       from the staging view, ensuring uniqueness on album_id.
       This is the authoritative table for downstream consumption in the hub layer.
@@ -53,3 +56,71 @@ models:
         description: Timestamp when the album was saved to the user's library.
       - name: _ingested_at
         description: Timestamp of the ingestion batch.
+
+  - name: dlk_spotify_svc__album_tracks
+    description: >
+      Canonical Spotify service record, one row per album_id + track_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: album_id
+        description: Component of the canonical service key.
+      - name: track_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.
+
+  - name: dlk_spotify_svc__album_detail
+    description: >
+      Canonical Spotify service record, one row per album_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: album_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.
+
+  - name: dlk_spotify_svc__artist_detail
+    description: >
+      Canonical Spotify service record, one row per artist_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: artist_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.
+
+  - name: dlk_spotify_svc__top_artists
+    description: >
+      Canonical Spotify service record, one row per artist_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: artist_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.
+
+  - name: dlk_spotify_svc__top_tracks
+    description: >
+      Canonical Spotify service record, one row per track_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: track_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.
+
+  - name: dlk_spotify_svc__playlists
+    description: >
+      Canonical Spotify service record, one row per playlist_id.
+      Reconciles all staging rows without a global ingestion watermark, including late corrections.
+      Keys absent from the current staging snapshot remain in the observed service history.
+    columns:
+      - name: playlist_id
+        description: Component of the canonical service key.
+      - name: _ingested_at
+        description: Source ingestion timestamp; not a watermark for other keys.

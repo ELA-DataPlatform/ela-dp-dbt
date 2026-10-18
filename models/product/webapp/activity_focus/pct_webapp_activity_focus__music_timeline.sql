@@ -1,12 +1,11 @@
 {{
     config(
-        materialized='incremental',
-        unique_key=['activity_id', 'played_at'],
-        incremental_strategy='merge',
+        materialized='table',
         tags=['garmin', 'webapp', 'spotify']
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 WITH activities AS (
     SELECT
         act.activity_id,
@@ -113,9 +112,5 @@ SELECT
     pda._ingested_at,
     {{ milliseconds_to_seconds('pda.duration_ms') }} AS duration_seconds
 FROM played_during_activity AS pda
-
-{% if is_incremental() %}
-    WHERE pda._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}
 
 ORDER BY pda.activity_id, pda.played_at

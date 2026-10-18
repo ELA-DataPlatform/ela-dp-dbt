@@ -1,7 +1,6 @@
 {{
     config(
-        materialized='incremental',
-        incremental_strategy='insert_overwrite',
+        materialized='table',
         partition_by={
             'field': 'activity_date',
             'data_type': 'date',
@@ -12,6 +11,7 @@
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 WITH segments_raw AS (
     SELECT
         hub.activity_id,
@@ -46,9 +46,6 @@ WITH segments_raw AS (
         lap.intensity_type IS NOT NULL
         AND lap.average_speed > 0
 
-        {% if is_incremental() %}
-            AND hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-        {% endif %}
 )
 
 SELECT
