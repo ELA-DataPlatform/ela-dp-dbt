@@ -98,8 +98,23 @@ jobs:
           fi
           for JOB in $JOBS; do
             echo "Updating $JOB -> $IMAGE"
+            # Les sélecteurs doivent suivre les noms des modèles de cette image.
+            # Mettre à jour image et arguments dans la même révision du job.
+            ARGS=()
+            case "$JOB" in
+              ela-dp-dbt-hot-spotify)
+                ARGS=(--args="run,--target,${{ steps.env.outputs.tag }},--select,dlk_spotify_stg__recently_played+")
+                ;;
+              ela-dp-dbt-spotify)
+                SELECTORS="run,--target,${{ steps.env.outputs.tag }},--select,tag:spotify,path:models/hub/music,--exclude"
+                SELECTORS+=",dlk_spotify_stg__recently_played,dlk_spotify_svc__recently_played"
+                SELECTORS+=",dlk_spotify_legacy_stg__recently_played,dlk_spotify_legacy_svc__recently_played"
+                ARGS=(--args="$SELECTORS")
+                ;;
+            esac
             gcloud run jobs update "$JOB" \
               --image "$IMAGE" \
+              "${ARGS[@]}" \
               --project "$PROJECT" \
               --region ${{ env.CR_REGION }}
           done
