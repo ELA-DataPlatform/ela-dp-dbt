@@ -1,154 +1,47 @@
-{{
-    config(
-        materialized='view',
-        tags=['spotify']
-    )
-}}
+{{ config(materialized='view', tags=['spotify']) }}
 
-WITH from_artist_detail AS (
-    SELECT
-        artist_id,
-        name AS artist_name,
-        uri AS artist_uri,
-        genres,
-        CAST(JSON_VALUE(followers, '$.total') AS INT64) AS followers_total,
-        popularity,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__artist_detail') }}
-),
-
-from_top_artists AS (
-    SELECT
-        artist_id,
-        name AS artist_name,
-        uri AS artist_uri,
-        genres,
-        CAST(JSON_VALUE(followers, '$.total') AS INT64) AS followers_total,
-        popularity,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS artist_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__top_artists') }}
-),
-
-from_recently_played_track AS (
-    SELECT
-        JSON_VALUE(artist, '$.id') AS artist_id,
-        JSON_VALUE(artist, '$.name') AS artist_name,
-        JSON_VALUE(artist, '$.uri') AS artist_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS INT64) AS followers_total,
-        CAST(NULL AS INT64) AS popularity,
-        CAST(NULL AS STRING) AS artist_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__recently_played') }},
-        UNNEST(JSON_QUERY_ARRAY(track, '$.artists')) AS artist
-),
-
-from_recently_played_album AS (
-    SELECT
-        JSON_VALUE(artist, '$.id') AS artist_id,
-        JSON_VALUE(artist, '$.name') AS artist_name,
-        JSON_VALUE(artist, '$.uri') AS artist_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS INT64) AS followers_total,
-        CAST(NULL AS INT64) AS popularity,
-        CAST(NULL AS STRING) AS artist_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__recently_played') }},
-        UNNEST(JSON_QUERY_ARRAY(track, '$.album.artists')) AS artist
-),
-
-from_legacy_artist_detail AS (
-    SELECT
-        id AS artist_id,
-        name AS artist_name,
-        uri AS artist_uri,
-        TO_JSON_STRING(genres) AS genres,
-        followers.total AS followers_total,
-        popularity,
-        JSON_VALUE(TO_JSON_STRING(images), '$[0].url') AS artist_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__artist_detail') }}
-),
-
-from_legacy_top_artists AS (
-    SELECT
-        id AS artist_id,
-        name AS artist_name,
-        uri AS artist_uri,
-        TO_JSON_STRING(genres) AS genres,
-        followers.total AS followers_total,
-        popularity,
-        JSON_VALUE(TO_JSON_STRING(images), '$[0].url') AS artist_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__top_artists') }}
-),
-
-from_legacy_recently_played_track AS (
-    SELECT
-        artist.id AS artist_id,
-        artist.name AS artist_name,
-        artist.uri AS artist_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS INT64) AS followers_total,
-        CAST(NULL AS INT64) AS popularity,
-        CAST(NULL AS STRING) AS artist_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__recently_played') }},
-        UNNEST(track.artists) AS artist
-),
-
-from_legacy_recently_played_album AS (
-    SELECT
-        artist.id AS artist_id,
-        artist.name AS artist_name,
-        artist.uri AS artist_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS INT64) AS followers_total,
-        CAST(NULL AS INT64) AS popularity,
-        CAST(NULL AS STRING) AS artist_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__recently_played') }},
-        UNNEST(track.album.artists) AS artist
-),
-
-combined AS (
-    SELECT * FROM from_artist_detail
-    UNION ALL
-    SELECT * FROM from_top_artists
-    UNION ALL
-    SELECT * FROM from_recently_played_track
-    UNION ALL
-    SELECT * FROM from_recently_played_album
-    UNION ALL
-    SELECT * FROM from_legacy_artist_detail
-    UNION ALL
-    SELECT * FROM from_legacy_top_artists
-    UNION ALL
-    SELECT * FROM from_legacy_recently_played_track
-    UNION ALL
-    SELECT * FROM from_legacy_recently_played_album
-),
-
-deduplicated AS (
+-- Current canonical metadata; timestamp covers every contributing observation.
+WITH observations AS (
     SELECT
         *,
-        ROW_NUMBER() OVER (
-            PARTITION BY artist_id
-            ORDER BY _source_priority ASC, _ingested_at DESC
-        ) AS _row_number
-    FROM combined
+        MAX(_ingested_at) OVER (PARTITION BY artist_id) AS _last_observed_at,
+        CASE
+            WHEN COUNTIF(_is_detail AND artist_name IS NOT NULL) OVER (PARTITION BY artist_id) > 0 THEN 'complete'
+            WHEN COUNTIF(_is_detail) OVER (PARTITION BY artist_id) > 0 THEN 'unavailable'
+            ELSE 'pending'
+        END AS enrichment_status
+    FROM {{ ref('hub_music_stg__artist_observations') }}
 )
 
-SELECT * EXCEPT (_row_number, _source_priority)
-FROM deduplicated
-WHERE _row_number = 1
+SELECT
+    artist_id,
+    artist_name,
+    artist_uri,
+    _source_name AS metadata_source,
+    enrichment_status,
+    _last_observed_at AS _ingested_at,
+    FIRST_VALUE(genres IGNORE NULLS) OVER entity_window AS genres,
+    FIRST_VALUE(followers_total IGNORE NULLS) OVER entity_window AS followers_total,
+    FIRST_VALUE(popularity IGNORE NULLS) OVER entity_window AS popularity,
+    FIRST_VALUE(artist_image_url IGNORE NULLS) OVER entity_window AS artist_image_url
+FROM observations AS o
+QUALIFY
+    ROW_NUMBER() OVER (
+        PARTITION BY artist_id
+        ORDER BY
+            IF(artist_name IS NULL, 1, 0) ASC,
+            _source_priority ASC,
+            _ingested_at DESC,
+            _source_name ASC,
+            TO_JSON_STRING(o) ASC
+    ) = 1
+WINDOW entity_window AS (
+    PARTITION BY artist_id
+    ORDER BY
+        IF(artist_name IS NULL, 1, 0) ASC,
+        _source_priority ASC,
+        _ingested_at DESC,
+        _source_name ASC,
+        TO_JSON_STRING(o) ASC
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)

@@ -1,102 +1,51 @@
-{{
-    config(
-        materialized='view',
-        tags=['spotify']
-    )
-}}
+{{ config(materialized='view', tags=['spotify']) }}
 
-WITH from_album_detail AS (
-    SELECT
-        album_id,
-        name AS album_name,
-        album_type,
-        total_tracks,
-        release_date,
-        release_date_precision,
-        uri AS album_uri,
-        genres,
-        label,
-        popularity,
-        JSON_VALUE(JSON_QUERY(images, '$[0]'), '$.url') AS album_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__album_detail') }}
-),
-
-from_recently_played AS (
-    SELECT
-        JSON_VALUE(track, '$.album.id') AS album_id,
-        JSON_VALUE(track, '$.album.name') AS album_name,
-        JSON_VALUE(track, '$.album.album_type') AS album_type,
-        CAST(JSON_VALUE(track, '$.album.total_tracks') AS INT64) AS total_tracks,
-        JSON_VALUE(track, '$.album.release_date') AS release_date,
-        JSON_VALUE(track, '$.album.release_date_precision') AS release_date_precision,
-        JSON_VALUE(track, '$.album.uri') AS album_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS STRING) AS label,
-        CAST(NULL AS INT64) AS popularity,
-        JSON_VALUE(JSON_QUERY(track, '$.album.images[0]'), '$.url') AS album_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_svc__recently_played') }}
-),
-
-from_legacy_album_detail AS (
-    SELECT
-        id AS album_id,
-        name AS album_name,
-        album_type,
-        total_tracks,
-        release_date,
-        release_date_precision,
-        uri AS album_uri,
-        TO_JSON_STRING(genres) AS genres,
-        label,
-        popularity,
-        JSON_VALUE(TO_JSON_STRING(images), '$[0].url') AS album_image_url,
-        _ingested_at,
-        0 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__album_detail') }}
-),
-
-from_legacy_recently_played AS (
-    SELECT
-        track.album.id AS album_id,
-        track.album.name AS album_name,
-        track.album.album_type,
-        track.album.total_tracks,
-        CAST(track.album.release_date AS STRING) AS release_date,
-        track.album.release_date_precision,
-        track.album.uri AS album_uri,
-        CAST(NULL AS STRING) AS genres,
-        CAST(NULL AS STRING) AS label,
-        CAST(NULL AS INT64) AS popularity,
-        JSON_VALUE(TO_JSON_STRING(track.album.images), '$[0].url') AS album_image_url,
-        _ingested_at,
-        1 AS _source_priority
-    FROM {{ ref('dlk_spotify_legacy_svc__recently_played') }}
-),
-
-combined AS (
-    SELECT * FROM from_album_detail
-    UNION ALL
-    SELECT * FROM from_recently_played
-    UNION ALL
-    SELECT * FROM from_legacy_album_detail
-    UNION ALL
-    SELECT * FROM from_legacy_recently_played
-),
-
-deduplicated AS (
+-- Current canonical metadata; timestamp covers every contributing observation.
+WITH observations AS (
     SELECT
         *,
-        ROW_NUMBER() OVER (
-            PARTITION BY album_id
-            ORDER BY _source_priority ASC, _ingested_at DESC
-        ) AS _row_number
-    FROM combined
+        MAX(_ingested_at) OVER (PARTITION BY album_id) AS _last_observed_at,
+        CASE
+            WHEN COUNTIF(_is_detail AND album_name IS NOT NULL) OVER (PARTITION BY album_id) > 0 THEN 'complete'
+            WHEN COUNTIF(_is_detail) OVER (PARTITION BY album_id) > 0 THEN 'unavailable'
+            ELSE 'pending'
+        END AS enrichment_status
+    FROM {{ ref('hub_music_stg__album_observations') }}
 )
 
-SELECT * EXCEPT (_row_number, _source_priority)
-FROM deduplicated
-WHERE _row_number = 1
+SELECT
+    album_id,
+    album_name,
+    album_type,
+    total_tracks,
+    release_date,
+    release_date_precision,
+    album_uri,
+    _source_name AS metadata_source,
+    enrichment_status,
+    _last_observed_at AS _ingested_at,
+    FIRST_VALUE(genres IGNORE NULLS) OVER entity_window AS genres,
+    FIRST_VALUE(label IGNORE NULLS) OVER entity_window AS label,
+    FIRST_VALUE(popularity IGNORE NULLS) OVER entity_window AS popularity,
+    FIRST_VALUE(album_image_url IGNORE NULLS) OVER entity_window AS album_image_url
+FROM observations AS o
+QUALIFY
+    ROW_NUMBER() OVER (
+        PARTITION BY album_id
+        ORDER BY
+            IF(album_name IS NULL, 1, 0) ASC,
+            _source_priority ASC,
+            _ingested_at DESC,
+            _source_name ASC,
+            TO_JSON_STRING(o) ASC
+    ) = 1
+WINDOW entity_window AS (
+    PARTITION BY album_id
+    ORDER BY
+        IF(album_name IS NULL, 1, 0) ASC,
+        _source_priority ASC,
+        _ingested_at DESC,
+        _source_name ASC,
+        TO_JSON_STRING(o) ASC
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)

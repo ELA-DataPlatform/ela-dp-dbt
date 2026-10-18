@@ -13,6 +13,10 @@ profiles_dir = ./
 profile = ela_dp
 target = dev
 
+[sqlfluff:templater:jinja]
+# Expand the shared Health SQL during the CI lint that uses the Jinja templater.
+load_macros_from_path = macros/garmin_health_timestamp.sql,macros/garmin_health_qualify_samples.sql
+
 [sqlfluff:indentation]
 indent_unit = space
 tab_space_size = 4

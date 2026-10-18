@@ -1,0 +1,1568 @@
+version: 2
+
+models:
+  - name: hub_health_svc__sleep_daily
+    description: >
+      One Garmin account-level night per wake-up date. Date D represents the night D-1 to D; no identity is invented
+      when the source lacks a profile ID. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: sleep_calendar_date
+        description: >
+          Normalized sleep calendar date.
+      - name: sleep_score
+        description: >
+          Normalized sleep score. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: score_qualifier
+        description: >
+          Normalized score qualifier.
+      - name: quality_key
+        description: >
+          Normalized quality key.
+      - name: score_feedback
+        description: >
+          Normalized score feedback.
+      - name: total_sleep_s
+        description: >
+          Normalized total sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: deep_sleep_s
+        description: >
+          Normalized deep sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: light_sleep_s
+        description: >
+          Normalized light sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: rem_sleep_s
+        description: >
+          Normalized rem sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: awake_sleep_s
+        description: >
+          Normalized awake sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: unmeasurable_sleep_s
+        description: >
+          Normalized unmeasurable sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: nap_s
+        description: >
+          Normalized nap s. Seconds. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: avg_overnight_hrv_ms
+        description: >
+          Normalized avg overnight hrv ms. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: hrv_status
+        description: >
+          Normalized hrv status.
+      - name: resting_hr_bpm
+        description: >
+          Normalized resting hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: body_battery_change
+        description: >
+          Normalized body battery change.
+      - name: avg_spo2_pct
+        description: >
+          Normalized avg spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: lowest_spo2_pct
+        description: >
+          Normalized lowest spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: avg_respiration_rpm
+        description: >
+          Normalized avg respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: lowest_respiration_rpm
+        description: >
+          Normalized lowest respiration rpm. Breaths per minute. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: highest_respiration_rpm
+        description: >
+          Normalized highest respiration rpm. Breaths per minute. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: restless_moments
+        description: >
+          Normalized restless moments. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: sleep_start_at_utc
+        description: >
+          Normalized sleep start at utc. TIMESTAMP representing a UTC instant.
+      - name: sleep_end_at_utc
+        description: >
+          Normalized sleep end at utc. TIMESTAMP representing a UTC instant.
+      - name: sleep_start_at_local
+        description: >
+          Normalized sleep start at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: sleep_end_at_local
+        description: >
+          Normalized sleep end at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: body_battery_at_sleep
+        description: >
+          Normalized body battery at sleep. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: body_battery_at_wake
+        description: >
+          Normalized body battery at wake. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.reading_confidence
+        description: >
+          Native Garmin SpO2 reading confidence (INT64), preserved without normalization or filtering.
+          NULL for hourly averages and other metrics that do not supply confidence. No probability scale is assumed.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__hrv_daily
+    description: >
+      One HRV summary per Garmin source profile and local date. All HRV measurements use milliseconds. Public silver
+      table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: hrv_calendar_date
+        description: >
+          Normalized hrv calendar date.
+      - name: hrv_status
+        description: >
+          Normalized hrv status.
+      - name: hrv_feedback_phrase
+        description: >
+          Normalized hrv feedback phrase.
+      - name: hrv_last_night_avg
+        description: >
+          Normalized hrv last night avg. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: hrv_last_night_5min_high
+        description: >
+          Normalized hrv last night 5min high. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: hrv_weekly_avg
+        description: >
+          Normalized hrv weekly avg. Milliseconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: hrv_baseline_low_upper
+        description: >
+          Normalized hrv baseline low upper. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: hrv_baseline_balanced_low
+        description: >
+          Normalized hrv baseline balanced low. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: hrv_baseline_balanced_upper
+        description: >
+          Normalized hrv baseline balanced upper. Milliseconds. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: hrv_baseline_marker_value
+        description: >
+          Normalized hrv baseline marker value. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__rhr_daily
+    description: >
+      One resting heart rate summary per Garmin source profile and local date, in beats per minute. Public silver table
+      rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: rhr_calendar_date
+        description: >
+          Normalized rhr calendar date.
+      - name: resting_hr_bpm
+        description: >
+          Normalized resting hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+  - name: hub_health_svc__stress_daily
+    description: >
+      One daily stress summary per Garmin source profile. Negative no-data sentinels are exposed in source_values and
+      removed from qualified scores. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: avg_stress_level
+        description: >
+          Normalized avg stress level. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: max_stress_level
+        description: >
+          Normalized max stress level. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: start_at_utc
+        description: >
+          Normalized start at utc. TIMESTAMP representing a UTC instant.
+      - name: end_at_utc
+        description: >
+          Normalized end at utc. TIMESTAMP representing a UTC instant.
+      - name: start_at_local
+        description: >
+          Normalized start at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: end_at_local
+        description: >
+          Normalized end at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__training_readiness_daily
+    description: >
+      One latest available daily readiness snapshot per Garmin source profile. The bronze already collapses intraday
+      snapshots; this model cannot recover them. Recovery time is minutes, with an explicit hours conversion and
+      REACHED_ZERO handling. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: observed_at_utc
+        description: >
+          Normalized observed at utc. TIMESTAMP representing a UTC instant.
+      - name: observed_at_local
+        description: >
+          Normalized observed at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: device_id
+        description: >
+          Normalized device id.
+      - name: readiness_score
+        description: >
+          Normalized readiness score. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: readiness_level
+        description: >
+          Normalized readiness level.
+      - name: feedback_short
+        description: >
+          Normalized feedback short.
+      - name: input_context
+        description: >
+          Normalized input context.
+      - name: recovery_time_change_phrase
+        description: >
+          Normalized recovery time change phrase.
+      - name: source_recovery_time_min
+        description: >
+          Normalized source recovery time min. Minutes. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: recovery_time_min
+        description: >
+          Normalized recovery time min. Minutes. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: recovery_time_hours
+        description: >
+          Normalized recovery time hours. Hours, converted from source minutes. Values outside the declared domain
+          become NULL and remain visible in source_values and quality_issues.
+      - name: sleep_factor_pct
+        description: >
+          Normalized sleep factor pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: hrv_factor_pct
+        description: >
+          Normalized hrv factor pct. Milliseconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: stress_history_factor_pct
+        description: >
+          Normalized stress history factor pct. Percentage points, not a fraction. Values outside the declared domain
+          become NULL and remain visible in source_values and quality_issues.
+      - name: recovery_time_factor_pct
+        description: >
+          Normalized recovery time factor pct. Percentage points, not a fraction. Values outside the declared domain
+          become NULL and remain visible in source_values and quality_issues.
+      - name: acwr_factor_pct
+        description: >
+          Normalized acwr factor pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: hrv_weekly_average_ms
+        description: >
+          Normalized hrv weekly average ms. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: acute_load
+        description: >
+          Normalized acute load. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+  - name: hub_health_svc__training_status_daily
+    description: >
+      One training status per Garmin source user and date, using the source device selection. Numeric code is preserved;
+      unknown codes have no invented label. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: status_code
+        description: >
+          Normalized status code.
+      - name: status_label
+        description: >
+          Normalized status label.
+      - name: feedback_phrase
+        description: >
+          Normalized feedback phrase.
+      - name: training_paused
+        description: >
+          Normalized training paused.
+      - name: sport
+        description: >
+          Normalized sport.
+      - name: sub_sport
+        description: >
+          Normalized sub sport.
+      - name: fitness_trend_sport
+        description: >
+          Normalized fitness trend sport.
+      - name: fitness_trend
+        description: >
+          Normalized fitness trend.
+      - name: acwr_status
+        description: >
+          Normalized acwr status.
+      - name: acwr_status_feedback
+        description: >
+          Normalized acwr status feedback.
+      - name: acwr_percent
+        description: >
+          Normalized acwr percent. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: acwr_ratio
+        description: >
+          Normalized acwr ratio. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: acute_load
+        description: >
+          Normalized acute load. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: chronic_load
+        description: >
+          Normalized chronic load. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: chronic_load_lower_bound
+        description: >
+          Normalized chronic load lower bound. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: chronic_load_upper_bound
+        description: >
+          Normalized chronic load upper bound. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: since_date
+        description: >
+          Normalized since date.
+      - name: device_id
+        description: >
+          Normalized device id.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+  - name: hub_health_svc__vo2max_daily
+    description: >
+      One generic VO2max observation per Garmin source user and date, in ml/kg/min. No forward-fill, and cycling payload
+      is deliberately excluded. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: vo2_max
+        description: >
+          Normalized vo2 max. Millilitres per kilogram per minute. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: vo2_max_precise
+        description: >
+          Normalized vo2 max precise. Millilitres per kilogram per minute. Values outside the declared domain become
+          NULL and remain visible in source_values and quality_issues.
+      - name: measurement_date
+        description: >
+          Normalized measurement date.
+      - name: max_met_category
+        description: >
+          Normalized max met category.
+      - name: heat_acclimation_pct
+        description: >
+          Normalized heat acclimation pct. Percentage points, not a fraction. Values outside the declared domain become
+          NULL and remain visible in source_values and quality_issues.
+      - name: altitude_acclimation_source_value
+        description: >
+          Normalized altitude acclimation source value.
+      - name: current_altitude_source_value
+        description: >
+          Normalized current altitude source value.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+  - name: hub_health_svc__heart_rate_daily
+    description: >
+      One heart rate summary per Garmin source profile and date. Summary values are reported source metrics; no sample-
+      weighted average is invented. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: resting_hr_bpm
+        description: >
+          Normalized resting hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: min_hr_bpm
+        description: >
+          Normalized min hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: max_hr_bpm
+        description: >
+          Normalized max hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: resting_hr_7d_avg_bpm
+        description: >
+          Normalized resting hr 7d avg bpm. Beats per minute. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: start_at_utc
+        description: >
+          Normalized start at utc. TIMESTAMP representing a UTC instant.
+      - name: end_at_utc
+        description: >
+          Normalized end at utc. TIMESTAMP representing a UTC instant.
+      - name: sample_count
+        description: >
+          Normalized sample count. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__respiration_daily
+    description: >
+      One respiration summary per Garmin source profile and local date, in breaths per minute. Tomorrow-night fields are
+      excluded to avoid mixing future context. Public silver table rebuilt completely on every run; no product date
+      cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: avg_awake_respiration_rpm
+        description: >
+          Normalized avg awake respiration rpm. Breaths per minute. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: avg_sleep_respiration_rpm
+        description: >
+          Normalized avg sleep respiration rpm. Breaths per minute. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: min_respiration_rpm
+        description: >
+          Normalized min respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: max_respiration_rpm
+        description: >
+          Normalized max respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain
+          visible in source_values and quality_issues.
+      - name: sleep_start_at_utc
+        description: >
+          Normalized sleep start at utc. TIMESTAMP representing a UTC instant.
+      - name: sleep_end_at_utc
+        description: >
+          Normalized sleep end at utc. TIMESTAMP representing a UTC instant.
+      - name: sample_count
+        description: >
+          Normalized sample count. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__spo2_daily
+    description: >
+      One oxygen saturation summary per Garmin source profile and date. Percentages are in (0,100]; absent or invalid
+      observations stay missing, never zero-filled. Tomorrow-night values are excluded. Public silver table rebuilt
+      completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: avg_spo2_pct
+        description: >
+          Normalized avg spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: lowest_spo2_pct
+        description: >
+          Normalized lowest spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: avg_sleep_spo2_pct
+        description: >
+          Normalized avg sleep spo2 pct. Percentage points, not a fraction. Values outside the declared domain become
+          NULL and remain visible in source_values and quality_issues.
+      - name: latest_spo2_pct
+        description: >
+          Normalized latest spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: latest_reading_at_utc
+        description: >
+          Normalized latest reading at utc. TIMESTAMP representing a UTC instant.
+      - name: device_id
+        description: >
+          Normalized device id.
+      - name: sample_count
+        description: >
+          Normalized sample count. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.reading_confidence
+        description: >
+          Native Garmin SpO2 reading confidence (INT64), preserved without normalization or filtering.
+          NULL for hourly averages and other metrics that do not supply confidence. No probability scale is assumed.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__body_battery_daily
+    description: >
+      One account-level daily Body Battery record, with extrema and endpoints derived from its sample series. Old epoch-
+      millisecond and new timestamp formats are normalized. Public silver table rebuilt completely on every run; no
+      product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: charged
+        description: >
+          Normalized charged. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: drained
+        description: >
+          Normalized drained. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: start_at_utc
+        description: >
+          Normalized start at utc. TIMESTAMP representing a UTC instant.
+      - name: end_at_utc
+        description: >
+          Normalized end at utc. TIMESTAMP representing a UTC instant.
+      - name: min_level
+        description: >
+          Normalized min level. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: max_level
+        description: >
+          Normalized max level. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: first_level
+        description: >
+          Normalized first level. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: last_level
+        description: >
+          Normalized last level. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: sample_count
+        description: >
+          Normalized sample count. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: invalid_sample_count
+        description: >
+          Normalized invalid sample count. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+      - name: missing_sample_count
+        description: Number of source samples without a value; these cause partial qualification, not a fabricated zero.
+
+      - name: timeseries
+        description: >
+          Typed ARRAY of source readings and explicit intervals for this daily record. Empty when the source
+          provides no points. Ordered by UTC timestamp with invalid timestamps last, then metric, array and offset.
+      - name: timeseries.sample_key
+        description: >
+          Deterministic key for source parent, array, metric and original offset; not based on timestamp alone.
+      - name: timeseries.sample_index
+        description: >
+          Zero-based position in the original source array. Order may change when the source revises the complete
+          series.
+      - name: timeseries.source_array
+        description: >
+          Original lake array name, preserving the distinction between raw readings and aggregate series.
+      - name: timeseries.metric_name
+        description: >
+          Metric identifier within this family. Several metrics can share an observation timestamp.
+      - name: timeseries.metric_unit
+        description: >
+          Explicit unit, such as bpm, ms, percent, breaths_per_minute or score. Unmapped source activity codes remain
+          garmin_activity_level.
+      - name: timeseries.observed_at_utc
+        description: >
+          UTC TIMESTAMP of the source point; NULL is retained and marked invalid when parsing fails.
+      - name: timeseries.observed_at_local
+        description: >
+          Source local DATETIME only when explicitly supplied, otherwise NULL. No timezone is inferred.
+      - name: timeseries.end_at_utc
+        description: >
+          Explicit UTC end of a source interval; NULL for points and summary windows without a source start/end pair.
+      - name: timeseries.timestamp_role
+        description: >
+          instant for readings; start for explicit intervals; end for sleep respiration summaries timestamped at their
+          window end.
+      - name: timeseries.measurement_value
+        description: >
+          Qualified FLOAT64 value. Missing and out-of-domain values are NULL; points are retained as visible gaps.
+      - name: timeseries.source_value
+        description: >
+          Numeric source value before domain masking.
+      - name: timeseries.source_timestamp
+        description: >
+          Unmodified source timestamp represented as STRING for traceability.
+      - name: timeseries.source_end_timestamp
+        description: >
+          Unmodified interval end represented as STRING when supplied.
+      - name: timeseries.source_local_timestamp
+        description: >
+          Unmodified local timestamp represented as STRING when supplied.
+      - name: timeseries.source_sample
+        description: >
+          Original source sample serialized to JSON, including confidence, algorithm status or epoch duration when
+          supplied.
+      - name: timeseries.quality_status
+        description: >
+          Point qualification independent of daily quality_status: valid, partial for a missing value, or invalid for
+          key/time/domain issues.
+      - name: timeseries.quality_issues
+        description: >
+          Point-level qualification reasons. Missing measurements remain explicit and are not interpolated.
+
+  - name: hub_health_svc__wellness_daily
+    description: >
+      One daily movement and energy summary per Garmin source profile, from user_summary only. Intensity minutes are not
+      summed or weighted across endpoints. Public silver table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: >
+          Normalized calendar date.
+      - name: includes_wellness_data
+        description: >
+          Normalized includes wellness data.
+      - name: steps
+        description: >
+          Normalized steps. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: step_goal
+        description: >
+          Normalized step goal. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: distance_m
+        description: >
+          Normalized distance m. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: total_kcal
+        description: >
+          Normalized total kcal. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: active_kcal
+        description: >
+          Normalized active kcal. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: bmr_kcal
+        description: >
+          Normalized bmr kcal. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: floors_ascended
+        description: >
+          Normalized floors ascended. Values outside the declared domain become NULL and remain visible in source_values
+          and quality_issues.
+      - name: floors_descended
+        description: >
+          Normalized floors descended. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: moderate_intensity_min
+        description: >
+          Normalized moderate intensity min. Minutes. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: vigorous_intensity_min
+        description: >
+          Normalized vigorous intensity min. Minutes. Values outside the declared domain become NULL and remain visible
+          in source_values and quality_issues.
+      - name: active_s
+        description: >
+          Normalized active s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: sedentary_s
+        description: >
+          Normalized sedentary s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: sleep_s
+        description: >
+          Normalized sleep s. Seconds. Values outside the declared domain become NULL and remain visible in
+          source_values and quality_issues.
+      - name: start_at_utc
+        description: >
+          Normalized start at utc. TIMESTAMP representing a UTC instant.
+      - name: end_at_utc
+        description: >
+          Normalized end at utc. TIMESTAMP representing a UTC instant.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.
+
+  - name: hub_health_svc__body_measurement
+    description: >
+      One account-level body measurement per sample ID, falling back to measurement timestamp and date when no sample ID
+      exists. Reconciles weight and body_composition; richer composition values can fill nullable fields. Public silver
+      table rebuilt completely on every run; no product date cutoff.
+    columns:
+      - name: health_date
+        description: >
+          Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity
+          mapping.
+      - name: identity_scope
+        description: >
+          Identity namespace: profile, user or account. Account means the source provides no user identifier.
+      - name: source_system
+        description: >
+          Source system, always garmin.
+      - name: source_table
+        description: >
+          Lake source contributing the canonical base record. Body measurements can also use fields from the other
+          endpoint.
+      - name: source_record_key
+        description: >
+          JSON representation of source key fields for traceability, not a global person identity.
+      - name: sample_id
+        description: >
+          Normalized sample id.
+      - name: measured_at_utc
+        description: >
+          Normalized measured at utc. TIMESTAMP representing a UTC instant.
+      - name: measurement_source_type
+        description: >
+          Normalized measurement source type.
+      - name: weight_kg
+        description: >
+          Normalized weight kg. Kilograms, converted from source grams. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: body_fat_pct
+        description: >
+          Normalized body fat pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in source_values and quality_issues.
+      - name: body_water_pct
+        description: >
+          Normalized body water pct. Percentage points, not a fraction. Values outside the declared domain become NULL
+          and remain visible in source_values and quality_issues.
+      - name: bmi
+        description: >
+          Normalized bmi. Values outside the declared domain become NULL and remain visible in source_values and
+          quality_issues.
+      - name: muscle_mass_kg
+        description: >
+          Normalized muscle mass kg. Kilograms, converted from source grams. Values outside the declared domain become
+          NULL and remain visible in source_values and quality_issues.
+      - name: bone_mass_kg
+        description: >
+          Normalized bone mass kg. Kilograms, converted from source grams. Values outside the declared domain become
+          NULL and remain visible in source_values and quality_issues.
+      - name: metabolic_age_source_value
+        description: >
+          Normalized metabolic age source value.
+      - name: visceral_fat_source_value
+        description: >
+          Normalized visceral fat source value.
+      - name: measurement_key
+        description: >
+          Sample ID shared across endpoints; fallback uses source epoch-millisecond timestamp.
+      - name: source_values
+        description: >
+          Typed normalized values before domain masking, plus original timestamp strings where relevant. Preserves
+          invalid measurements for diagnosis.
+      - name: quality_status
+        description: >
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid
+          otherwise. Optional missing fields are allowed.
+      - name: quality_issues
+        description: >
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a
+          medical interpretation.
+      - name: _ingested_at
+        description: >
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _silver_processed_at
+        description: >
+          Service rebuild timestamp in UTC; not an observation time and not a value available before an activity.

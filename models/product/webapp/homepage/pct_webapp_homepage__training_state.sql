@@ -7,20 +7,20 @@
 
 WITH latest_ts AS (
     SELECT *
-    FROM {{ ref('dlk_garmin_svc__training_status') }}
+    FROM {{ ref('hub_health_svc__training_status_daily') }}
     QUALIFY row_number() OVER (
-        ORDER BY date DESC
+        ORDER BY health_date DESC
     ) = 1
 ),
 
 latest_mm AS (
     SELECT
-        calendar_date,
+        health_date,
         vo2_max,
         vo2_max_precise
-    FROM {{ ref('dlk_garmin_svc__max_metrics') }}
+    FROM {{ ref('hub_health_svc__vo2max_daily') }}
     QUALIFY row_number() OVER (
-        ORDER BY calendar_date DESC
+        ORDER BY health_date DESC
     ) = 1
 ),
 
@@ -28,34 +28,34 @@ prev_mm AS (
     SELECT
         vo2_max,
         vo2_max_precise
-    FROM {{ ref('dlk_garmin_svc__max_metrics') }}
+    FROM {{ ref('hub_health_svc__vo2max_daily') }}
     QUALIFY row_number() OVER (
-        ORDER BY calendar_date DESC
+        ORDER BY health_date DESC
     ) = 2
 )
 
 SELECT
-    ts.date AS snapshot_date,
-    ts.daily_training_load_acute AS training_load_7d,
-    cast(ts.min_training_load_chronic AS int64) AS training_load_target_low,
-    cast(ts.max_training_load_chronic AS int64) AS training_load_target_high,
+    ts.health_date AS snapshot_date,
+    ts.acute_load AS training_load_7d,
+    cast(ts.chronic_load_lower_bound AS int64) AS training_load_target_low,
+    cast(ts.chronic_load_upper_bound AS int64) AS training_load_target_high,
     cast(NULL AS string) AS active_goal_name,
     cast(NULL AS date) AS active_goal_date,
     cast(NULL AS int64) AS active_goal_days_left,
     CASE
         WHEN
-            ts.training_status_feedback_phrase LIKE 'PRODUCTIVE%'
-            OR ts.training_status_feedback_phrase LIKE 'PEAKING%' THEN 'productive'
+            ts.feedback_phrase LIKE 'PRODUCTIVE%'
+            OR ts.feedback_phrase LIKE 'PEAKING%' THEN 'productive'
         WHEN
-            ts.training_status_feedback_phrase LIKE 'RECOVERY%'
-            OR ts.training_status_feedback_phrase LIKE 'RECOVERING%' THEN 'recovery'
-        WHEN ts.training_status_feedback_phrase LIKE 'DETRAINING%' THEN 'detraining'
+            ts.feedback_phrase LIKE 'RECOVERY%'
+            OR ts.feedback_phrase LIKE 'RECOVERING%' THEN 'recovery'
+        WHEN ts.feedback_phrase LIKE 'DETRAINING%' THEN 'detraining'
         WHEN
-            ts.training_status_feedback_phrase LIKE 'MAINTAINING%'
-            OR ts.training_status_feedback_phrase LIKE 'UNPRODUCTIVE%' THEN 'maintaining'
+            ts.feedback_phrase LIKE 'MAINTAINING%'
+            OR ts.feedback_phrase LIKE 'UNPRODUCTIVE%' THEN 'maintaining'
         WHEN
-            ts.training_status_feedback_phrase LIKE 'OVERREACHING%'
-            OR ts.training_status_feedback_phrase LIKE 'OVERTRAINING%' THEN 'overreaching'
+            ts.feedback_phrase LIKE 'OVERREACHING%'
+            OR ts.feedback_phrase LIKE 'OVERTRAINING%' THEN 'overreaching'
         ELSE 'maintaining'
     END AS training_state,
     round(coalesce(mm.vo2_max_precise, mm.vo2_max), 1) AS vo2_max,

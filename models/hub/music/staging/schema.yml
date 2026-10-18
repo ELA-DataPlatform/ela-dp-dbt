@@ -3,8 +3,9 @@ version: 2
 models:
   - name: hub_music_stg__fact_played
     description: >
-      Deduplicated view of play events from the Spotify recently played service table.
-      One row per (played_at, track_id). Flattens context and album_id for downstream use.
+      One row per (played_at, track_id), consolidated from modern and legacy Spotify plays. Latest ingestion wins, followed by
+      modern source and a deterministic payload tie-break. The service merges the entire deduplicated source on every run,
+      including equal-timestamp and historical corrections.
     columns:
       - name: played_at
         description: Timestamp when the track was played.
@@ -21,8 +22,9 @@ models:
 
   - name: hub_music_stg__ref_track
     description: >
-      Deduplicated view of track metadata. Consolidates top tracks (preferred for popularity
-      and ISRC), album tracks, and recently played tracks. One row per track_id.
+      Current track reference, one row per non-empty track_id. Consolidates modern and legacy top tracks, album tracks, plays and
+      saved tracks. Selects a named source record deterministically; nullable duration, popularity and ISRC use the best available
+      observation. Rebuilt completely on every service run.
     columns:
       - name: track_id
         description: Spotify unique track identifier.
@@ -46,13 +48,16 @@ models:
         description: Spotify unique album identifier this track belongs to.
       - name: is_local
         description: Whether the track is a local file.
+      - name: metadata_source
+        description: Source observation chosen for the canonical base record; nullable enrichment may use another observation.
       - name: _ingested_at
-        description: Timestamp of the most recent ingestion batch for this track.
+        description: Latest ingestion timestamp across all contributing track observations, independent of source priority.
 
   - name: hub_music_stg__ref_album
     description: >
-      Deduplicated view of album metadata. Consolidates data from album detail (primary,
-      richer) and recently played (fallback). One row per album_id.
+      Current album reference, one row per non-empty album_id. Covers album details, saved albums and every album ID observed in
+      tracks, including minimal references without metadata. Prefers usable detail records; nullable enrichment uses the best
+      available observation. Rebuilt completely on every service run.
     columns:
       - name: album_id
         description: Spotify unique album identifier.
@@ -76,13 +81,21 @@ models:
         description: Album popularity score (0–100). Populated from album_detail only.
       - name: album_image_url
         description: URL of the preferred album cover image from Spotify, when available.
+      - name: metadata_source
+        description: Source observation chosen for the canonical base record; nullable enrichment may use another observation.
+      - name: enrichment_status
+        description: >
+          Detail availability, independent of nullable optional fields. Complete means at least one detail
+          observation has a usable name; unavailable means detail observations exist but none has a usable
+          name; pending means no detail observation exists. A fallback name may still be available.
       - name: _ingested_at
-        description: Timestamp of the most recent ingestion batch for this album.
+        description: Latest ingestion timestamp across all contributing album observations, independent of source priority.
 
   - name: hub_music_stg__ref_artist
     description: >
-      Deduplicated view of artist metadata. Consolidates data from artist detail and top
-      artists (primary, richer) and recently played (fallback). One row per artist_id.
+      Current artist reference, one row per non-empty artist_id observed in details, top artists, track artist lists or album
+      artist lists. Includes artists of unplayed catalogue tracks. Prefers usable rich records and preserves nullable enrichment
+      from other observations. Rebuilt completely on every service run.
     columns:
       - name: artist_id
         description: Spotify unique artist identifier.
@@ -98,8 +111,15 @@ models:
         description: Artist popularity score (0–100). Populated from artist_detail and top_artists only.
       - name: artist_image_url
         description: URL of the preferred artist profile image from Spotify, when available.
+      - name: metadata_source
+        description: Source observation chosen for the canonical base record; nullable enrichment may use another observation.
+      - name: enrichment_status
+        description: >
+          Detail availability, independent of nullable optional fields. Complete means at least one detail
+          observation has a usable name; unavailable means detail observations exist but none has a usable
+          name; pending means no detail observation exists. A fallback name may still be available.
       - name: _ingested_at
-        description: Timestamp of the most recent ingestion batch for this artist.
+        description: Latest ingestion timestamp across all contributing artist observations, independent of source priority.
 
   - name: hub_music_stg__ref_playlist
     description: >
@@ -129,8 +149,10 @@ models:
 
   - name: hub_music_stg__bridge_track_artist
     description: >
-      Bridge view mapping tracks to their artists. Consolidates data from album tracks,
-      top tracks, and recently played. One row per (track_id, artist_id) pair.
+      Current track-to-artist associations, one row per (track_id, artist_id). Selects one complete non-empty artist list per
+      track before expansion; priority is top tracks, album tracks, plays, saved tracks, then latest ingestion, source name and
+      payload. Repeated artist IDs are collapsed and positions reindexed from zero. Full service rebuild removes obsolete
+      associations.
     columns:
       - name: track_id
         description: Spotify unique track identifier.
@@ -139,29 +161,30 @@ models:
       - name: artist_position
         description: 0-based position of the artist in the track's artist list.
       - name: _ingested_at
-        description: Timestamp of the most recent ingestion batch for this pair.
+        description: Ingestion timestamp of the canonical artist list selected for the entity.
 
   - name: hub_music_stg__all_album_ids
     description: >
-      Union distinct of all album IDs across all Spotify sources (recently played, saved tracks, saved albums).
-      Used as a reference list of known albums for downstream enrichment.
+      All non-empty album IDs from the album observation universe, including details, saved albums and every track source. Shared
+      scope for album references and ingestion enrichment worklists.
     columns:
       - name: album_id
         description: Spotify unique album identifier.
 
   - name: hub_music_stg__all_artist_ids
     description: >
-      Union distinct of all artist IDs across all Spotify sources (recently played, saved tracks, saved albums).
-      Covers both track artists and album artists from each source.
-      Used as a reference list of known artists for downstream enrichment.
+      All non-empty artist IDs from details, top artists and all track/album artist lists. Shared scope for artist references and
+      ingestion enrichment worklists.
     columns:
       - name: artist_id
         description: Spotify unique artist identifier.
 
   - name: hub_music_stg__bridge_album_artist
     description: >
-      Bridge view mapping albums to their artists. Consolidates data from album detail
-      and recently played. One row per (album_id, artist_id) pair.
+      Current album-to-artist associations, one row per (album_id, artist_id). Selects one complete non-empty artist list per
+      album before expansion; priority is details, saved albums, track observations, then latest ingestion, source name and
+      payload. Repeated artist IDs are collapsed and positions reindexed from zero. Full service rebuild removes obsolete
+      associations.
     columns:
       - name: album_id
         description: Spotify unique album identifier.
@@ -170,7 +193,7 @@ models:
       - name: artist_position
         description: 0-based position of the artist in the album's artist list.
       - name: _ingested_at
-        description: Timestamp of the most recent ingestion batch for this pair.
+        description: Ingestion timestamp of the canonical artist list selected for the entity.
 
   - name: hub_music_stg__albums_pending_detail
     description: >
@@ -197,3 +220,62 @@ models:
         description: Spotify unique artist identifier awaiting detail enrichment.
       - name: last_played_at
         description: Most recent play timestamp for a track by this artist, or NULL (sorts last).
+
+  - name: hub_music_stg__track_observations
+    description: >
+      Internal view with one row per available track source observation, not one row per entity.
+      Normalizes modern JSON and legacy RECORD sources for references, bridges and worklists.
+      Duplicate entity keys are expected. Nullable scalar parsing uses SAFE_CAST.
+    columns:
+      - name: track_id
+        description: >
+          Observed Spotify track identifier; may be null for a local track. Such tracks are excluded from the public reference and
+          bridge.
+      - name: album_id
+        description: Album identifier, including album_tracks parent keys when the album payload is absent.
+      - name: album
+        description: JSON-encoded album object when supplied by the track source.
+      - name: artists
+        description: JSON-encoded complete artist list from this source observation.
+      - name: _source_priority
+        description: Ascending canonical preference within this entity family.
+      - name: _source_name
+        description: Stable source name, with a legacy prefix for historical RECORD data.
+      - name: _ingested_at
+        description: Original lake ingestion timestamp of this observation.
+
+  - name: hub_music_stg__album_observations
+    description: >
+      Internal view with one row per available album source observation, not one row per entity.
+      Normalizes modern JSON and legacy RECORD sources for references, bridges and worklists.
+      Duplicate entity keys are expected. Nullable scalar parsing uses SAFE_CAST.
+    columns:
+      - name: album_id
+        description: Non-empty Spotify album identifier, including minimal ID-only observations.
+      - name: artists
+        description: JSON-encoded complete album artist list from this source observation.
+      - name: _is_detail
+        description: Whether this observation comes from the album-detail source.
+      - name: _source_priority
+        description: Ascending canonical preference within this entity family.
+      - name: _source_name
+        description: Stable source name, with a legacy prefix for historical RECORD data.
+      - name: _ingested_at
+        description: Original lake ingestion timestamp of this observation.
+
+  - name: hub_music_stg__artist_observations
+    description: >
+      Internal view with one row per available artist source observation, not one row per entity.
+      Normalizes modern JSON and legacy RECORD sources for references, bridges and worklists.
+      Duplicate entity keys are expected. Nullable scalar parsing uses SAFE_CAST.
+    columns:
+      - name: artist_id
+        description: Non-empty Spotify artist identifier from any catalogue source.
+      - name: _is_detail
+        description: Whether this observation comes from the artist-detail source.
+      - name: _source_priority
+        description: Ascending canonical preference within this entity family.
+      - name: _source_name
+        description: Stable source name, with a legacy prefix for historical RECORD data.
+      - name: _ingested_at
+        description: Original lake ingestion timestamp of this observation.

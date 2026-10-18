@@ -16,22 +16,14 @@ WITH date_spine AS (
 
 sleep_data AS (
     SELECT
-        date AS activity_date,
-        sleep_overall_score AS sleep_score,
-        cast({{ seconds_to_minutes('sleep_time_seconds', 0) }} AS int64) AS sleep_duration_minutes,
-        cast(round(avgovernighthrv) AS int64) AS hrv_morning_ms,
-        if(
-            array_length(sleep_body_battery) > 0,
-            sleep_body_battery[offset(0)].value,
-            NULL
-        ) AS body_battery_at_sleep,
-        if(
-            array_length(sleep_body_battery) > 0,
-            sleep_body_battery[ordinal(array_length(sleep_body_battery))].value,
-            NULL
-        ) AS body_battery_at_wake
-    FROM {{ ref('dlk_garmin_svc__sleep') }}
-    WHERE date >= date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)
+        health_date AS activity_date,
+        sleep_score,
+        cast({{ seconds_to_minutes('total_sleep_s', 0) }} AS INT64) AS sleep_duration_minutes,
+        cast(round(avg_overnight_hrv_ms) AS INT64) AS hrv_morning_ms,
+        body_battery_at_sleep,
+        body_battery_at_wake
+    FROM {{ ref('hub_health_svc__sleep_daily') }}
+    WHERE health_date >= date_sub(current_date('Europe/Paris'), INTERVAL 9 DAY)
 ),
 
 joined AS (
@@ -70,7 +62,7 @@ deltas AS (
         j.sleep_duration_minutes AS latest_sleep_duration_minutes,
         j.hrv_morning_ms AS latest_hrv_ms,
         j.body_battery_at_wake AS latest_body_battery_wake,
-        cast(j.sleep_duration_minutes - a.avg_sleep_duration_minutes AS int64) AS delta_sleep_minutes,
+        cast(j.sleep_duration_minutes - a.avg_sleep_duration_minutes AS INT64) AS delta_sleep_minutes,
         round(j.sleep_score - a.avg_sleep_score, 1) AS delta_sleep_score,
         round(j.hrv_morning_ms - a.avg_hrv_ms, 1) AS delta_hrv_ms,
         round(j.body_battery_at_wake - a.avg_body_battery_wake, 1) AS delta_body_battery

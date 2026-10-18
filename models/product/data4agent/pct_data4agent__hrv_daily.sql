@@ -7,7 +7,7 @@
 }}
 
 SELECT
-    hrv_date,
+    health_date AS hrv_date,
     hrv_calendar_date,
     hrv_status,
     hrv_feedback_phrase,
@@ -19,5 +19,5 @@ SELECT
     hrv_baseline_balanced_upper,
     hrv_baseline_marker_value,
     _ingested_at
-FROM {{ ref('dlk_garmin_svc__hrv') }}
-WHERE hrv_date IS NOT NULL AND hrv_date >= '2025-01-01'
+FROM {{ ref('hub_health_svc__hrv_daily') }}
+WHERE health_date IS NOT NULL AND health_date >= '2025-01-01'
