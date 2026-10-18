@@ -1,12 +1,11 @@
 {{
     config(
-        materialized='incremental',
-        unique_key='activity_id',
-        incremental_strategy='merge',
+        materialized='table',
         tags=['garmin', 'webapp']
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 WITH base AS (
     SELECT
         hub.activity_id,
@@ -61,7 +60,3 @@ SELECT
     ROUND(SAFE_DIVIDE(wp.training_load - wp.prev_training_load, wp.prev_training_load) * 100, 1)
         AS delta_training_load_pct
 FROM with_previous AS wp
-
-{% if is_incremental() %}
-    WHERE wp._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

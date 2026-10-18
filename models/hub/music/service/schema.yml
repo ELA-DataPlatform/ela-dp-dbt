@@ -146,6 +146,7 @@ models:
 
   - name: hub_music_svc__ref_playlist
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Incremental service table for playlist reference data. One row per playlist_id.
       Updated with latest metadata on each run.
     columns:

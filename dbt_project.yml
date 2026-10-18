@@ -23,6 +23,8 @@ vars:
 models:
   ela_dp:
     lake:
+      +meta:
+        reconcile_canonical_rows: true
       spotify:
         +schema: "dp_lake_spotify_{{ target.name }}"
         +tags: ["spotify"]

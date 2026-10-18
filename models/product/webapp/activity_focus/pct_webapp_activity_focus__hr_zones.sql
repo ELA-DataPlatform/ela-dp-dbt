@@ -1,7 +1,6 @@
 {{
     config(
-        materialized='incremental',
-        incremental_strategy='insert_overwrite',
+        materialized='table',
         partition_by={
             'field': 'activity_date',
             'data_type': 'date',
@@ -12,6 +11,7 @@
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 SELECT
     hub.activity_id,
     hub.activity_date,
@@ -48,7 +48,3 @@ CROSS JOIN UNNEST(hub.hr_zones) AS hz
 
 WHERE
     hz.zone_number IS NOT NULL
-
-    {% if is_incremental() %}
-        AND hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-    {% endif %}

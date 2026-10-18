@@ -1,12 +1,11 @@
 {{
     config(
-        materialized='incremental',
-        unique_key=['reference_activity_id', 'recent_activity_id'],
-        incremental_strategy='merge',
+        materialized='table',
         tags=['garmin', 'webapp']
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 WITH base AS (
     SELECT
         hub.activity_id,
@@ -76,7 +75,3 @@ SELECT
 FROM ranked
 WHERE
     ranked.recency_rank <= 5
-
-    {% if is_incremental() %}
-        AND ranked._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-    {% endif %}

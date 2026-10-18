@@ -11,9 +11,6 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT *
 FROM {{ ref('dlk_garmin_stg__floors') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
-{% endif %}
