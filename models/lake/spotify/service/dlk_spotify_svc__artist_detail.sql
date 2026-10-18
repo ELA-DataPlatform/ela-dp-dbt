@@ -18,6 +18,7 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT
     id AS artist_id,
     name,
@@ -31,7 +32,3 @@ SELECT
     popularity,
     _ingested_at
 FROM {{ ref('dlk_spotify_stg__artist_detail') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
-{% endif %}

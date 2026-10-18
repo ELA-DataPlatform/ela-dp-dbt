@@ -1,7 +1,6 @@
 {{
     config(
-        materialized='incremental',
-        incremental_strategy='insert_overwrite',
+        materialized='table',
         partition_by={
             'field': 'activity_date',
             'data_type': 'date',
@@ -12,6 +11,7 @@
     )
 }}
 
+-- Rebuild dependent history: source ingestion time does not track all hub corrections.
 SELECT
     hub.activity_id,
     hub.activity_date,
@@ -58,13 +58,6 @@ SELECT
 FROM {{ ref('hub_activities_svc__master_running_activities') }} AS hub
 CROSS JOIN UNNEST(hub.timeseries) AS ts
 
-{% if is_incremental() %}
-    WHERE
-        hub._ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-        AND ts.timestamp_gmt > TIMESTAMP('1971-01-01')
-        AND ts.speed_m_per_s > 0
-{% else %}
-    WHERE
-        ts.timestamp_gmt > TIMESTAMP('1971-01-01')
-        AND ts.speed_m_per_s > 0
-{% endif %}
+WHERE
+    ts.timestamp_gmt > TIMESTAMP('1971-01-01')
+    AND ts.speed_m_per_s > 0

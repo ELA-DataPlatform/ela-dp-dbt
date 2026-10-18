@@ -23,6 +23,7 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT
     id,
     collaborative,
@@ -41,7 +42,3 @@ SELECT
     description,
     _ingested_at
 FROM {{ ref('dlk_spotify_legacy_stg__playlists') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT MAX(_ingested_at) FROM {{ this }})
-{% endif %}

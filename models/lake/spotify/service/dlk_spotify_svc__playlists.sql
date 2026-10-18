@@ -24,6 +24,7 @@
     )
 }}
 
+-- Reconcile every canonical staging row, including late records and corrections.
 SELECT
     id AS playlist_id,
     name,
@@ -42,7 +43,3 @@ SELECT
     uri,
     _ingested_at
 FROM {{ ref('dlk_spotify_stg__playlists') }}
-
-{% if is_incremental() %}
-    WHERE _ingested_at > (SELECT max(_ingested_at) FROM {{ this }})
-{% endif %}

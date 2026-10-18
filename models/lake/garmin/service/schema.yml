@@ -5,6 +5,7 @@ models:
 
   - name: dlk_garmin_svc__activities
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for Garmin activities. Incrementally merges new data
       from staging, ensuring uniqueness on activityId.
     columns:
@@ -15,6 +16,7 @@ models:
 
   - name: dlk_garmin_svc__activity_details
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for Garmin activity details. Incrementally merges from staging,
       ensuring uniqueness on activityId. JSON fields are stored as parsed STRUCTs
       and ARRAYs.
@@ -52,6 +54,7 @@ models:
 
   - name: dlk_garmin_svc__body_composition
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for body composition measurements.
       Incrementally merges from staging, ensuring uniqueness on date + samplePk.
     columns:
@@ -64,6 +67,7 @@ models:
 
   - name: dlk_garmin_svc__race_predictions
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for race predictions.
       Incrementally merges from staging, ensuring uniqueness on userId + calendarDate.
     columns:
@@ -76,6 +80,7 @@ models:
 
   - name: dlk_garmin_svc__steps
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for step count data.
       Incrementally merges from staging, ensuring uniqueness on date + startGMT.
     columns:
@@ -88,6 +93,7 @@ models:
 
   - name: dlk_garmin_svc__all_day_events
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for all-day activity events.
       Incrementally merges from staging, ensuring uniqueness on deviceId + date + startTimestampGMT.
     columns:
@@ -102,6 +108,7 @@ models:
 
   - name: dlk_garmin_svc__weight
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for weight measurements.
       Incrementally merges from staging, ensuring uniqueness on date + timestampGMT.
     columns:
@@ -114,6 +121,7 @@ models:
 
   - name: dlk_garmin_svc__training_readiness
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for training readiness scores.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -128,6 +136,7 @@ models:
 
   - name: dlk_garmin_svc__heart_rate
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily heart rate data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -140,6 +149,7 @@ models:
 
   - name: dlk_garmin_svc__stress
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily stress data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -152,6 +162,7 @@ models:
 
   - name: dlk_garmin_svc__respiration
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily respiration data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -164,6 +175,7 @@ models:
 
   - name: dlk_garmin_svc__spo2
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily SpO2 data.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -176,6 +188,7 @@ models:
 
   - name: dlk_garmin_svc__intensity_minutes
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily intensity minutes.
       Incrementally merges from staging, ensuring uniqueness on userProfilePK + date.
     columns:
@@ -188,6 +201,7 @@ models:
 
   - name: dlk_garmin_svc__floors
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily floors data.
       Incrementally merges from staging, ensuring uniqueness on date.
     columns:
@@ -198,6 +212,7 @@ models:
 
   - name: dlk_garmin_svc__body_battery
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily body battery data with parsed feedback events.
       Incrementally merges from staging, ensuring uniqueness on date.
     columns:
@@ -210,6 +225,7 @@ models:
 
   - name: dlk_garmin_svc__sleep
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for comprehensive sleep data with parsed sleep summary
       and SpO2 summary. Incrementally merges from staging on date.
     columns:
@@ -220,6 +236,7 @@ models:
 
   - name: dlk_garmin_svc__hrv
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for HRV data with parsed summary metrics.
       Incrementally merges from staging on userProfilePk + date.
     columns:
@@ -232,6 +249,7 @@ models:
 
   - name: dlk_garmin_svc__max_metrics
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for max metrics with parsed VO2 max and acclimation data.
       Incrementally merges from staging on userId + date.
     columns:
@@ -244,6 +262,7 @@ models:
 
   - name: dlk_garmin_svc__training_status
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for training status with parsed VO2 max fields.
       Incrementally merges from staging on userId + date.
     columns:
@@ -256,6 +275,7 @@ models:
 
   - name: dlk_garmin_svc__endurance_score
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for endurance score with parsed score and classification.
       Incrementally merges from staging on userProfilePK + startDate.
     columns:
@@ -268,6 +288,7 @@ models:
 
   - name: dlk_garmin_svc__hill_score
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for hill score data.
       Incrementally merges from staging on userProfilePK + startDate.
     columns:
@@ -280,6 +301,7 @@ models:
 
   - name: dlk_garmin_svc__rhr_daily
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily resting heart rate. Incrementally merges from
       staging on userProfileId + date.
     columns:
@@ -304,6 +326,7 @@ models:
 
   - name: dlk_garmin_svc__activity_exercise_sets
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for exercise sets data.
       Incrementally merges from staging, ensuring uniqueness on activityId.
     columns:
@@ -314,6 +337,7 @@ models:
 
   - name: dlk_garmin_svc__activity_hr_zones
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for activity HR zone distribution.
       Incrementally merges from staging, ensuring uniqueness on activityId.
     columns:
@@ -324,6 +348,7 @@ models:
 
   - name: dlk_garmin_svc__activity_splits
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for activity split/lap data.
       Incrementally merges from staging, ensuring uniqueness on activityId.
     columns:
@@ -334,6 +359,7 @@ models:
 
   - name: dlk_garmin_svc__activity_weather
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for activity weather with parsed weather fields.
       Incrementally merges from staging, ensuring uniqueness on activityId.
     columns:
@@ -346,6 +372,7 @@ models:
 
   - name: dlk_garmin_svc__stats_and_body
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for comprehensive daily wellness summary (~154 fields).
       Incrementally merges from staging on userProfileId + date.
     columns:
@@ -358,6 +385,7 @@ models:
 
   - name: dlk_garmin_svc__user_summary
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for daily user wellness summary (~152 fields).
       Incrementally merges from staging on userProfileId + date.
     columns:
@@ -370,6 +398,7 @@ models:
 
   - name: dlk_garmin_svc__device_info
     description: >
+      Reconciles all canonical staging rows without a global ingestion watermark; late and equal-timestamp corrections are included.
       Service table for device metadata and capabilities (~386 fields).
       Incrementally merges from staging, ensuring uniqueness on deviceId.
     columns:

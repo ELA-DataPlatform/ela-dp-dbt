@@ -5,6 +5,7 @@ models:
   # ── Vue liste ───────────────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__activity_list
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per running activity (running, trail_running, treadmill_running),
       ordered by start time descending. Provides the essential metrics needed
       to render the activity list on the Activity Focus page.
@@ -48,6 +49,7 @@ models:
   # ── Vue détail ──────────────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__activity_detail
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per running activity with all flat metrics needed to render the
       Activity Focus detail page: header, weather conditions, KPI hero panel,
       GPS route, and context (sleep, training readiness, athletic context).
@@ -177,6 +179,7 @@ models:
   # ── Graphique temporel ──────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__timeseries
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per ~1-second measurement point per activity.
       Provides the data for all time-based charts on the Activity Focus page
       (pace, GAP, heart rate, cadence, elevation) plotted against cumulative
@@ -238,6 +241,7 @@ models:
   # ── Splits par kilomètre ────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__splits
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per lap (kilometre split) per activity. Provides the data
       for the splits table on the Activity Focus page.
     columns:
@@ -293,6 +297,7 @@ models:
   # ── Segments structurés ─────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__segments
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per structured workout segment per activity, sourced from laps with a non-null
       intensity_type (WARMUP, INTERVAL, RECOVERY, COOLDOWN, etc.).
       Only populated for planned structured workouts — free runs produce no rows.
@@ -364,6 +369,7 @@ models:
   # ── Zones cardiaques ────────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__hr_zones
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per heart rate zone per activity (5 zones total when data is available).
       Zone boundaries come from the athlete's Garmin profile settings.
       Provides data for the HR zones panel on the Activity Focus page.
@@ -406,6 +412,7 @@ models:
   # ── Séances similaires ──────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__similar_activities
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       For each running activity, the 5 most recent comparable past sessions
       of the same activity type with a similar distance (within ±30%).
       Provides data for the "recent similar sessions" panel.
@@ -463,6 +470,7 @@ models:
 
   - name: pct_webapp_activity_focus__music_timeline
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per Spotify track played during a running activity.
       The starting kilometre is estimated from the nearest timeseries point
       preceding the played_at timestamp. Provides data for the music timeline panel.
@@ -542,6 +550,7 @@ models:
   # ── Deltas vs séance précédente ─────────────────────────────────────────────
   - name: pct_webapp_activity_focus__deltas
     description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per running activity with delta metrics compared to the immediately
       preceding activity of the same type. Provides data for the "vs previous session"
       comparison panel.
