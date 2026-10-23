@@ -106,7 +106,7 @@ jobs:
                 ARGS=(--args="run,--target,${{ steps.env.outputs.tag }},--select,dlk_spotify_stg__recently_played+")
                 ;;
               ela-dp-dbt-spotify)
-                SELECTORS="run,--target,${{ steps.env.outputs.tag }},--select,tag:spotify,path:models/hub/music,--exclude"
+                SELECTORS="run,--target,${{ steps.env.outputs.tag }},--select,tag:spotify,path:models/hub/music+,--exclude"
                 SELECTORS+=",dlk_spotify_stg__recently_played,dlk_spotify_svc__recently_played"
                 SELECTORS+=",dlk_spotify_legacy_stg__recently_played,dlk_spotify_legacy_svc__recently_played"
                 ARGS=(--args="$SELECTORS")
