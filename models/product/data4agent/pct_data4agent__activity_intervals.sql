@@ -7,63 +7,63 @@
 }}
 
 SELECT  -- noqa: ST06
-    s.activityid AS activity_id,
-    a.activityname AS activity_name,
-    a.activity_type.type_key AS activity_type,
-    DATE(a.starttimelocal) AS activity_date,
+    s.activity_id,
+    a.identity.activity_name,
+    a.sport.type_key AS activity_type,
+    a.activity_date,
     lap.lap_index,
     lap.message_index,
     lap.intensity_type,
 
     -- Time
-    lap.start_time_gmt,
-    lap.duration AS duration_s,
-    lap.moving_duration AS moving_duration_s,
-    lap.elapsed_duration AS elapsed_duration_s,
+    CAST(lap.start_at_utc AS STRING) AS start_time_gmt,
+    lap.duration_s,
+    lap.moving_duration_s,
+    lap.elapsed_duration_s,
 
     -- Distance & speed
-    lap.distance AS distance_m,
-    SAFE_DIVIDE(lap.distance, 1000.0) AS distance_km,
-    lap.average_speed AS avg_speed_m_per_s,
-    lap.average_moving_speed AS avg_moving_speed_m_per_s,
-    lap.max_speed AS max_speed_m_per_s,
-    {{ speed_mps_to_pace_min_per_km('lap.average_speed') }} AS avg_pace_min_per_km,
-    lap.avg_grade_adjusted_speed AS avg_grade_adjusted_speed_m_per_s,
+    lap.distance_m,
+    SAFE_DIVIDE(lap.distance_m, 1000.0) AS distance_km,
+    lap.avg_speed_m_per_s,
+    lap.avg_moving_speed_m_per_s,
+    lap.max_speed_m_per_s,
+    {{ speed_mps_to_pace_min_per_km('lap.avg_speed_m_per_s') }} AS avg_pace_min_per_km,
+    lap.avg_grade_adjusted_speed_m_per_s,
 
     -- Elevation
-    lap.elevation_gain AS elevation_gain_m,
-    lap.elevation_loss AS elevation_loss_m,
-    lap.min_elevation AS min_elevation_m,
-    lap.max_elevation AS max_elevation_m,
-    lap.max_vertical_speed AS max_vertical_speed_m_per_s,
+    lap.elevation_gain_m,
+    lap.elevation_loss_m,
+    lap.min_elevation_m,
+    lap.max_elevation_m,
+    lap.max_vertical_speed_m_per_s,
 
     -- Heart rate
-    lap.average_hr AS avg_hr_bpm,
-    lap.max_hr AS max_hr_bpm,
+    lap.avg_hr_bpm,
+    lap.max_hr_bpm,
 
     -- Cadence
-    lap.average_run_cadence AS avg_cadence_spm,
-    lap.max_run_cadence AS max_cadence_spm,
+    lap.avg_run_cadence_spm AS avg_cadence_spm,
+    lap.max_run_cadence_spm AS max_cadence_spm,
 
     -- Power
-    lap.average_power AS avg_power_w,
-    lap.max_power AS max_power_w,
-    lap.min_power AS min_power_w,
-    lap.normalized_power AS norm_power_w,
-    lap.total_work AS total_work_kj,
+    lap.avg_power_w,
+    lap.max_power_w,
+    lap.min_power_w,
+    lap.norm_power_w,
+    lap.total_work_kj,
 
     -- Running dynamics
-    lap.stride_length AS avg_stride_length_m,
-    lap.ground_contact_time AS avg_ground_contact_ms,
-    lap.vertical_oscillation AS avg_vertical_oscillation_mm,
-    lap.vertical_ratio AS avg_vertical_ratio,
+    lap.stride_length_m AS avg_stride_length_m,
+    lap.ground_contact_ms AS avg_ground_contact_ms,
+    lap.vertical_oscillation_mm AS avg_vertical_oscillation_mm,
+    lap.vertical_ratio_pct AS avg_vertical_ratio,
 
     -- Calories & temperature
     lap.calories,
     lap.bmr_calories,
-    lap.average_temperature AS avg_temp_celsius,
-    lap.min_temperature AS min_temp_celsius,
-    lap.max_temperature AS max_temp_celsius,
+    lap.avg_temp_celsius,
+    lap.min_temp_celsius,
+    lap.max_temp_celsius,
 
     -- GPS
     lap.start_latitude,
@@ -72,8 +72,8 @@ SELECT  -- noqa: ST06
     lap.end_longitude,
 
     s._ingested_at
-FROM {{ ref('dlk_garmin_svc__activity_splits') }} AS s
-LEFT JOIN {{ ref('dlk_garmin_svc__activities') }} AS a
-    ON s.activityid = a.activityid
+FROM {{ ref('hub_activities_svc__activity_splits') }} AS s
+LEFT JOIN {{ ref('hub_activities_svc__fact_activity') }} AS a
+    ON s.activity_id = a.activity_id
 CROSS JOIN UNNEST(s.laps) AS lap
-WHERE DATE(a.starttimelocal) >= '2025-01-01'
+WHERE a.activity_date >= '2025-01-01'

@@ -85,9 +85,12 @@ models:
   - name: pct_data4agent__activity_intervals
     description: >
       Activity intervals (laps), one row per lap of every activity. Built by
-      UNNESTing the laps ARRAY from dlk_garmin_svc__activity_splits and joining
+      UNNESTing the qualified laps ARRAY from hub_activities_svc__activity_splits and joining
       activity metadata so the agent can filter by activity_date or
       activity_type without an extra join.
+      start_time_gmt keeps the historical STRING contract; durations are seconds,
+      stride length is metres and vertical oscillation is millimetres.
+      total_work_kj remains NULL until the source work unit is explicitly declared.
     columns:
       - name: activity_id
         description: Garmin unique activity identifier.
