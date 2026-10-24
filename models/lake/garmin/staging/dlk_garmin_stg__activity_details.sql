@@ -43,6 +43,23 @@ WITH source AS (
             FROM UNNEST(JSON_QUERY_ARRAY(activitydetailmetrics)) AS item
         ) AS activity_detail_metrics,
 
+        -- Preserve every source slot, including JSON nulls, and every sample offset.
+        -- BigQuery arrays cannot persist NULL elements; the slot STRUCT can.
+        ARRAY(
+            SELECT AS STRUCT
+                sample_index,
+                ARRAY(
+                    SELECT AS STRUCT
+                        metric_index,
+                        v AS source_text,
+                        SAFE_CAST(JSON_VALUE(v) AS FLOAT64) AS metric_value
+                    FROM UNNEST(JSON_QUERY_ARRAY(item, '$.metrics')) AS v WITH OFFSET AS metric_index
+                    ORDER BY metric_index
+                ) AS metric_values
+            FROM UNNEST(JSON_QUERY_ARRAY(activitydetailmetrics)) AS item WITH OFFSET AS sample_index
+            ORDER BY sample_index
+        ) AS indexed_metric_samples,
+
         -- Parse geoPolylineDTO → STRUCT
         IF(
             geopolylinedto IS NULL,
@@ -115,7 +132,7 @@ deduplicated AS (
         *,
         ROW_NUMBER() OVER (
             PARTITION BY activityid
-            ORDER BY _ingested_at DESC
+            ORDER BY _ingested_at DESC, TO_JSON_STRING(source) ASC
         ) AS _row_number
     FROM source
 )

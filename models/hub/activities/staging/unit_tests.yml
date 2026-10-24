@@ -1,0 +1,38 @@
+version: 2
+unit_tests:
+  - name: activity_samples_preserve_sparse_slots_and_equal_timestamps
+    model: hub_activities_stg__activity_samples
+    given:
+      - input: ref('dlk_garmin_svc__activity_details')
+        format: sql
+        fixture: activities_sparse_recording
+    expect:
+      rows:
+        - activity_id: 42
+          sample_index: 0
+          speed_m_per_s: null
+          heart_rate_bpm: 125.0
+          stride_length_m: 1.1
+          vertical_oscillation_mm: 85.0
+          quality_status: valid
+        - activity_id: 42
+          sample_index: 1
+          speed_m_per_s: 0.0
+          heart_rate_bpm: 130.0
+          stride_length_m: 1.2
+          vertical_oscillation_mm: 90.0
+          quality_status: valid
+  - name: activity_samples_mask_unexpected_units
+    model: hub_activities_stg__activity_samples
+    given:
+      - input: ref('dlk_garmin_svc__activity_details')
+        format: sql
+        fixture: activities_unexpected_unit
+    expect:
+      rows:
+        - activity_id: 43
+          sample_index: 0
+          speed_m_per_s: null
+          quality_status: invalid
+          quality_issues:
+            - unexpected_unit_speed_m_per_s

@@ -50,6 +50,7 @@ COPY models/ models/
 COPY snapshots/ snapshots/
 COPY seeds/ seeds/
 COPY analyses/ analyses/
+COPY tests/ tests/
 
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
