@@ -68,6 +68,7 @@ models:
           +schema: "hub_health_svc"
           +materialized: table
       activities:
+        +tags: ["garmin", "activities"]
         staging:
           +schema: "hub_activities_stg"
           +materialized: view

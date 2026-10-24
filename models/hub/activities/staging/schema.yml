@@ -1,16 +1,8 @@
 version: 2
-
 models:
   - name: hub_activities_stg__master_running_activities
-    description: >
-      Master view for running activities. One row per activity (running, trail_running,
-      treadmill_running). Fully denormalized: every field from every lake service table
-      is consolidated here — no external joins needed for downstream consumption.
-      Nested structures: performance (STRUCT), fastest_splits (STRUCT), gps (STRUCT),
-      route (STRUCT — GPS bounding box + full polyline), weather (STRUCT), sleep (STRUCT),
-      athletic_context (STRUCT), hr_zones (ARRAY), power_zones (ARRAY), laps (ARRAY),
-      typed_splits (ARRAY), split_summaries (ARRAY), timeseries (ARRAY — one entry per
-      ~1s sensor sample with up to 29 dynamic metrics depending on device/activity).
+    description: Compatibility view assembled exclusively from master_activities for running/trail_running/treadmill_running.
+      Column paths remain stable; physical units and sparse sample decoding are corrected.
     columns:
       - name: activity_id
         description: Garmin unique activity identifier.
@@ -49,83 +41,386 @@ models:
       - name: _ingested_at
         description: Timestamp when the source activity record was last loaded into the lake.
       - name: performance
-        description: >
-          STRUCT grouping all activity performance metrics: distance, duration (total /
-          moving / elapsed), pace, speed (avg, max, grade-adjusted), elevation stats,
-          vertical speed, calories, heart rate, cadence, power (avg / max / normalized),
-          running dynamics (stride length, ground contact, vertical oscillation/ratio),
-          respiration (avg / min / max), temperature range during effort, training effect
-          (aerobic + anaerobic + label), training load, VO2max during activity, body
-          battery delta, step count, lap count, and intensity minutes.
-      - name: fastest_splits
-        description: >
-          STRUCT with the fastest recorded split time (in seconds) for each standard
-          distance: 1 km, 1 mile (1.609 km), 5 km, 10 km, half-marathon (21.098 km),
-          and marathon (42.195 km).
-      - name: gps
-        description: >
-          STRUCT with GPS coordinates for the start and end points of the activity.
-      - name: hr_zones
-        description: >
-          ARRAY<STRUCT> of heart rate zones for the activity. One entry per zone (1-5).
-          Each entry: zone_number, secs_in_zone, zone_low_boundary (bpm threshold).
-      - name: power_zones
-        description: >
-          ARRAY<STRUCT> of power zones for the activity. One entry per zone (1-5).
-          Each entry: zone_number, secs_in_zone (seconds spent in that power zone).
-      - name: laps
-        description: >
-          ARRAY<STRUCT> of individual laps (typically 1 per km or per manual lap press).
-          Each entry contains: lap_index, intensity_type, start/end GPS, distance, duration,
-          elevation gain/loss, speed, calories, HR, cadence, power (avg/max/normalized),
-          running dynamics (ground contact, stride length, vertical oscillation/ratio),
-          grade-adjusted speed, and temperature range.
-      - name: typed_splits
-        description: >
-          ARRAY<STRUCT> of splits grouped by movement type (RWD_RUN, RWD_WALK, RWD_STAND).
-          Each entry: intensity_type, start/end GPS and time, distance, duration, speed,
-          HR, cadence, power, normalized power, elevation gain/loss, and grade-adjusted speed.
-      - name: split_summaries
-        description: >
-          ARRAY<STRUCT> of split category summaries (e.g. INTERVAL_ACTIVE, REST, RWD_RUN).
-          Each entry: split_type, no_of_splits, aggregated distance/duration/speed/elevation/
-          power/HR/cadence/temperature.
-      - name: timeseries
-        description: >
-          ARRAY<STRUCT> of ~1-second Garmin sensor samples ordered by timestamp_gmt.
-          Metrics are resolved dynamically from metric_descriptors (order varies per activity);
-          absent metrics on a given device/activity are NULL. Available fields: timestamp_gmt,
-          elapsed_s, duration_s, moving_duration_s, cum_distance_m, speed_m_per_s,
-          grade_adj_speed_m_per_s, heart_rate_bpm, body_battery, respiration_rpm,
-          performance_condition, cadence_spm, fractional_cadence, run_cadence_spm,
-          ground_contact_ms, stride_length_m, vertical_oscillation_mm, vertical_ratio,
-          vertical_speed_m_per_s, latitude, longitude, elevation_m, corrected_elevation_m,
-          power_w, accumulated_power_w, air_temp_celsius, stamina_available, stamina_potential.
-      - name: route
-        description: >
-          STRUCT sourced from dlk_garmin_svc__activity_details.geo_polyline. Contains the GPS
-          bounding box (min_lat, max_lat, min_lon, max_lon), explicit start_point and
-          end_point structs (lat, lon, altitude, time, speed, cumulative_ascent/descent,
-          distance fields), and a full polyline ARRAY<STRUCT> with one entry per GPS point
-          recorded during the activity (~1s cadence, same resolution as timeseries).
-      - name: weather
-        description: >
-          STRUCT with weather conditions at the start of the activity: temperature,
-          apparent temperature, dew point, humidity, wind speed/direction, weather type,
-          GPS coords of the weather station, and station name.
-      - name: sleep
-        description: >
-          STRUCT with sleep metrics from the night preceding the activity. The Garmin sleep
-          record for date D covers the night D-1 → D, so sleep.date = activity_date.
-          Includes overall score, quality qualifier, phase durations (deep/light/REM/awake),
-          HRV, resting HR, body battery change, SpO2, respiration, and score feedback.
-      - name: athletic_context
-        description: >
-          STRUCT grouping all contextual fitness indicators available on the day of the
-          activity: training readiness (score, level, feedback, and all contributing factor
-          percentages), acute training load, recovery time, HRV weekly average, most recent
-          VO2max, most recent body composition (weight kg, body fat %, BMI, muscle mass,
-          bone mass), and the numeric Garmin training status code.
+        description: 'STRUCT grouping all activity performance metrics: distance, duration (total / moving / elapsed),
+          pace, speed (avg, max, grade-adjusted), elevation stats, vertical speed, calories, heart rate, cadence,
+          power (avg / max / normalized), running dynamics (stride length, ground contact, vertical oscillation/ratio),
+          respiration (avg / min / max), temperature range during effort, training effect (aerobic + anaerobic +
+          label), training load, VO2max during activity, body battery delta, step count, lap count, and intensity
+          minutes.
 
+          '
+      - name: fastest_splits
+        description: 'STRUCT with the fastest recorded split time (in seconds) for each standard distance: 1 km,
+          1 mile (1.609 km), 5 km, 10 km, half-marathon (21.098 km), and marathon (42.195 km).
+
+          '
+      - name: gps
+        description: 'STRUCT with GPS coordinates for the start and end points of the activity.
+
+          '
+      - name: hr_zones
+        description: 'ARRAY<STRUCT> of heart rate zones for the activity. One entry per zone (1-5). Each entry:
+          zone_number, secs_in_zone, zone_low_boundary (bpm threshold).
+
+          '
+      - name: power_zones
+        description: 'ARRAY<STRUCT> of power zones for the activity. One entry per zone (1-5). Each entry: zone_number,
+          secs_in_zone (seconds spent in that power zone).
+
+          '
+      - name: laps
+        description: 'ARRAY<STRUCT> of individual laps (typically 1 per km or per manual lap press). Each entry
+          contains: lap_index, intensity_type, start/end GPS, distance, duration, elevation gain/loss, speed, calories,
+          HR, cadence, power (avg/max/normalized), running dynamics (ground contact, stride length, vertical oscillation/ratio),
+          grade-adjusted speed, and temperature range.
+
+          '
+      - name: typed_splits
+        description: 'ARRAY<STRUCT> of splits grouped by movement type (RWD_RUN, RWD_WALK, RWD_STAND). Each entry:
+          intensity_type, start/end GPS and time, distance, duration, speed, HR, cadence, power, normalized power,
+          elevation gain/loss, and grade-adjusted speed.
+
+          '
+      - name: split_summaries
+        description: 'ARRAY<STRUCT> of split category summaries (e.g. INTERVAL_ACTIVE, REST, RWD_RUN). Each entry:
+          split_type, no_of_splits, aggregated distance/duration/speed/elevation/ power/HR/cadence/temperature.
+
+          '
+      - name: timeseries
+        description: 'ARRAY<STRUCT> of source-returned Garmin sensor samples ordered by timestamp_gmt. Metrics are
+          resolved dynamically from metric_descriptors (order varies per activity); absent metrics on a given device/activity
+          are NULL. Available fields: timestamp_gmt, elapsed_s, duration_s, moving_duration_s, cum_distance_m, speed_m_per_s,
+          grade_adj_speed_m_per_s, heart_rate_bpm, body_battery, respiration_rpm, performance_condition, cadence_spm,
+          fractional_cadence, run_cadence_spm, ground_contact_ms, stride_length_m, vertical_oscillation_mm, vertical_ratio,
+          vertical_speed_m_per_s, latitude, longitude, elevation_m, corrected_elevation_m, power_w, accumulated_power_w,
+          air_temp_celsius, stamina_available, stamina_potential.
+
+          '
+      - name: route
+        description: 'STRUCT sourced from dlk_garmin_svc__activity_details.geo_polyline. Contains the GPS bounding
+          box (min_lat, max_lat, min_lon, max_lon), explicit start_point and end_point structs (lat, lon, altitude,
+          time, speed, cumulative_ascent/descent, distance fields), and a full polyline ARRAY<STRUCT> with one entry
+          per GPS point recorded during the activity (source-returned resolution; no one-second guarantee).
+
+          '
+      - name: weather
+        description: 'STRUCT with weather conditions at the start of the activity: temperature, apparent temperature,
+          dew point, humidity, wind speed/direction, weather type, GPS coords of the weather station, and station
+          name.
+
+          '
+      - name: sleep
+        description: 'STRUCT with sleep metrics from the night preceding the activity. The Garmin sleep record for
+          date D covers the night D-1 → D, so sleep.date = activity_date. Includes overall score, quality qualifier,
+          phase durations (deep/light/REM/awake), HRV, resting HR, body battery change, SpO2, respiration, and score
+          feedback.
+
+          '
+      - name: athletic_context
+        description: 'STRUCT grouping all contextual fitness indicators available on the day of the activity: training
+          readiness (score, level, feedback, and all contributing factor percentages), acute training load, recovery
+          time, HRV weekly average, most recent VO2max, most recent body composition (weight kg, body fat %, BMI,
+          muscle mass, bone mass), and the numeric Garmin training status code.
+
+          '
       - name: athletic_context.training_status_code
         description: Numeric Garmin training status code (INT64), explicitly selected from the source column.
+  - name: hub_activities_stg__fact_activity
+    description: Preparation view. One canonical Garmin activity, all sports and all available history. Single platform
+      account; source owner ID is preserved.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: activity_key
+        description: 'Stable source-qualified key: garmin:ownerId:activityId. Missing owner is explicitly account-scoped.'
+      - name: identity
+        description: STRUCT of activity UUID, name, description, location, device, manufacturer and source user
+          identity.
+      - name: sport
+        description: STRUCT of classified family, original Garmin type and parent IDs. Unknown types remain visible
+          as other; no guessed mapping.
+      - name: timing
+        description: STRUCT of UTC instants, local DATETIME and original numeric timezone ID. No IANA timezone is
+          inferred.
+      - name: performance
+        description: 'STRUCT of qualified common metrics: metres, seconds, m/s, bpm, watts, rpm, Celsius and source
+          training effects.'
+      - name: running
+        description: 'Nullable STRUCT for running family: pace in min/km, cadence in steps/min, stride in metres,
+          contact in ms, oscillation in mm, ratio in percent and fastest splits in seconds.'
+      - name: cycling
+        description: Nullable STRUCT for cycling family, currently average and normalized power in watts. No cadence
+          is invented from running cadence.
+      - name: strength
+        description: 'Nullable STRUCT for strength family: total repetitions, total sets and active sets.'
+      - name: gps
+        description: STRUCT of qualified start/end latitude [-90,90] and longitude [-180,180], in decimal degrees.
+      - name: flags
+        description: STRUCT of source flags, including multisport-parent status. Parent and child activities are
+          not deduplicated into an invented workout.
+      - name: event_type
+        description: Original typed Garmin event classification.
+      - name: source_values
+        description: Typed original activity row, before qualification. Includes source fields not promoted into
+          the public domain blocks.
+  - name: hub_activities_stg__activity_recording
+    description: Preparation view. One source activity-details response per activity. Curves contain the returned
+      source samples; no one-second completeness guarantee.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: timeseries
+        description: 'Ordered ARRAY<STRUCT> of samples: UTC timestamp, source offset/key, distance in metres, time
+          in seconds, speed in m/s, FC in bpm, power in W, stride in m, oscillation in mm, quality and source slots.
+          Invalid timestamps remain last; duplicate instants retain separate source offsets. No interpolation.'
+      - name: route
+        description: Nullable typed source-compatible geometry STRUCT. Coordinates are qualified; the complete original
+          route remains in source_values.route.
+      - name: metric_descriptors
+        description: Ordered source metric definitions, including unit_key and unit_factor. API values already use
+          unit_key; factor is retained and not blindly applied.
+      - name: source_details_available
+        description: Source response flag; distinct from actual presence of samples.
+      - name: source_total_metrics_count
+        description: Original totalMetricsCount; no interpretation as exact recording frequency.
+      - name: source_metrics_count
+        description: Original metricsCount.
+      - name: source_measurement_count
+        description: Original measurementCount.
+      - name: invalid_sample_count
+        description: Number of returned samples with invalid timestamp, descriptor, numeric value or unit.
+      - name: partial_sample_count
+        description: Number of samples with no non-timestamp measurement.
+      - name: source_values
+        description: STRUCT containing original route, pending response data and residual heart-rate DTOs.
+      - name: invalid_route_point_count
+        description: Number of invalid geometry elements across source start, end and polyline points. A coordinate
+          is masked without discarding its source point.
+  - name: hub_activities_stg__activity_splits
+    description: Preparation view. One activity-splits response per activity. Independent repeated families are
+      assembled without Cartesian products.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: laps
+        description: Ordered ARRAY<STRUCT> of laps, identified by item_key and source_index. Units appear in field
+          names; original lap_index/message_index and complete typed source_values are retained. Stride is in metres;
+          oscillation in millimetres.
+      - name: typed_splits
+        description: Ordered ARRAY<STRUCT> of typed movement intervals. Independent source offsets, UTC timestamps,
+          local DATETIME, units, original values and per-item quality.
+      - name: split_summaries
+        description: Ordered ARRAY<STRUCT> of summary categories. Independent source offsets and per-item quality.
+          Not additive with laps or typed splits.
+  - name: hub_activities_stg__activity_zones
+    description: Preparation view. One activity with source summary or heart-rate-zone response. Zones from different
+      source families are not added together.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: heart_rate
+        description: 'ARRAY<STRUCT> sorted by zone_number/source_index: duration_s, low_boundary_bpm, typed source
+          values and quality. Source offsets retain identity even when zone numbers conflict.'
+      - name: power
+        description: ARRAY<STRUCT> of source zone numbers and durations in seconds. Missing source durations do
+          not become zero-filled zones.
+      - name: heart_rate_response_present
+        description: Whether an endpoint response exists, even when its zone array is empty.
+      - name: heart_rate_ingested_at
+        description: Ingestion timestamp of the actual HR-zone response, excluding the summary fallback.
+      - name: summary_ingested_at
+        description: Ingestion timestamp of the activity summary supplying power zones.
+  - name: hub_activities_stg__activity_exercise_sets
+    description: Preparation view. One exercise-set response per activity; an empty response remains distinguishable
+      from an absent response.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: exercise_sets
+        description: 'Ordered ARRAY<STRUCT>: stable set_key/source set_index, source message_index/type, UTC start,
+          seconds, repetitions, weight_kg, candidate exercise ARRAY with probability [0,1], original values and
+          item quality. Source grams are divided by 1000; bodyweight/absent load stays NULL.'
+  - name: hub_activities_stg__activity_weather
+    description: Preparation view. One canonical weather response per activity, from the source weather station
+      rather than the device temperature curve.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: observed_at_utc
+        description: Parsed source issueDate, UTC. Not replaced by activity start or ingestion time.
+      - name: temp_celsius
+        description: Qualified source station temperature converted to Celsius according to the declared source
+          contract.
+      - name: apparent_temp_celsius
+        description: Apparent station temperature, Celsius.
+      - name: dew_point_celsius
+        description: Station dew point, Celsius.
+      - name: wind_speed_kph
+        description: Wind speed in km/h only when garmin_activity_weather_wind_unit explicitly identifies the source
+          unit. NULL by default; source value retained.
+      - name: humidity_pct
+        description: Relative humidity [0,100], percent.
+      - name: wind_direction_deg
+        description: Wind direction [0,360], degrees.
+      - name: latitude
+        description: Weather-station latitude, decimal degrees.
+      - name: longitude
+        description: Weather-station longitude, decimal degrees.
+      - name: wind_direction_compass
+        description: Source compass label.
+      - name: weather_type
+        description: Source condition description.
+      - name: station_id
+        description: Source weather-station identifier.
+      - name: station_name
+        description: Source station name.
+      - name: source_temperature_unit
+        description: 'Declared source contract: fahrenheit by default to match the existing lake; configurable celsius/unknown.'
+      - name: source_wind_unit
+        description: 'Declared source unit: unknown by default, or km_h/mph/m_s. No heuristic from numeric magnitude.'
+      - name: source_values
+        description: Complete typed weather service response before conversion and qualification.
+  - name: hub_activities_stg__master_activities
+    description: Preparation view. One row per fact activity, all sports. Complete typed assembly for products;
+      optional detail never removes an activity. Summary quality is distinct from component/sample quality.
+    columns:
+      - name: activity_id
+        description: Parent source activity identifier.
+      - name: activity_key
+        description: Source-qualified stable key inherited from fact_activity.
+      - name: identity
+        description: Qualified identity STRUCT from fact_activity.
+      - name: sport
+        description: Original source type and classified sport family.
+      - name: timing
+        description: UTC instants and honest local DATETIME.
+      - name: performance
+        description: Common qualified metrics and explicit units.
+      - name: running
+        description: Running-family extension, NULL for other sports. Includes track_running.
+      - name: cycling
+        description: Cycling-family extension, NULL for other sports.
+      - name: strength
+        description: Strength-family summary extension, NULL for other sports.
+      - name: gps
+        description: Qualified summary start/end coordinates.
+      - name: flags
+        description: Source activity and multisport-parent flags.
+      - name: event_type
+        description: Typed source event classification.
+      - name: recordings
+        description: STRUCT of ordered timeseries ARRAY, route, source metric descriptors, availability/count metadata
+          and recording source values.
+      - name: breakdown
+        description: STRUCT of independent laps, typed_splits and split_summaries ARRAYs; no cross multiplication.
+      - name: zones
+        description: STRUCT of heart_rate and power ARRAYs; missing repeated families are empty arrays.
+      - name: exercise_sets
+        description: Qualified ordered exercise-set ARRAY, including nested candidate exercise ARRAYs.
+      - name: weather
+        description: Nullable qualified station weather STRUCT with source units, original values and component
+          quality.
+      - name: health_context
+        description: STRUCT of descriptive daily sleep, athletic_context and association metadata. Current single
+          platform account only; identity matching and knowledge before start are NOT guaranteed. Weight/VO2max
+          associations may use earlier dates.
+      - name: quality
+        description: STRUCT of status/issues for each component. Optional missing detail does not invalidate the
+          base activity; missing component status is NULL.
+      - name: availability
+        description: STRUCT distinguishing source response presence, populated arrays and invalid/partial sample
+          counts. Does not claim whether an absent response is unsupported or not yet fetched.
+      - name: provenance
+        description: Ordered ARRAY<STRUCT<source_table, source_ingested_at>> for activity source components. Processing
+          time is not source observation time.
+      - name: source_values
+        description: Complete typed original activity summary, preserving all source fields not promoted into public
+          blocks.
+  - name: hub_activities_stg__activity_samples
+    description: One indexed source sample per activity and source offset. Null slots retain descriptor alignment.
+      Duplicate timestamps and invalid samples are retained; known units are checked before conversion.
+    columns:
+      - name: sample_key
+        description: Activity ID plus source sample offset; timestamp is not a key.
+        data_tests:
+          - not_null
+          - unique
+      - name: sample_index
+        description: Original zero-based offset in the returned source sample array.
+      - name: source_values
+        description: Ordered ARRAY of every source metric slot, with original text/value, descriptor index/key and
+          unit metadata. Unknown metrics remain inspectable.
+      - name: timestamp_gmt
+        description: UTC instant decoded from Unix milliseconds; invalid/missing instants stay NULL.
+  - name: hub_activities_stg__activity_health_context
+    description: One activity with the existing descriptive local-day Health enrichment. No resolved cross-API identity
+      or pre-start availability guarantee. Ambiguous daily sleep/readiness/status matches are excluded from the
+      enrichment, never from the base activity.
+    columns:
+      - name: activity_id
+        description: Parent activity.
+        data_tests:
+          - not_null
+          - unique
+      - name: sleep
+        description: Qualified sleep summary associated with the activity local date.
+      - name: athletic_context
+        description: Qualified daily readiness/status and latest date-valid VO2max/body measurements.
+      - name: association
+        description: Explicit temporal and identity limitations and dates of the selected observations.
+  - name: hub_activities_stg__activity_laps
+    description: One source laps item per activity and source offset. Qualified independently before ordered ARRAY
+      assembly.
+    columns:
+      - name: item_key
+        description: Activity ID, source array and source offset.
+        data_tests:
+          - not_null
+          - unique
+      - name: source_index
+        description: Original zero-based position in its source array.
+      - name: source_values
+        description: Complete typed source item, before masking or unit conversion.
+      - name: quality_status
+        description: 'Item qualification: valid, partial or invalid. Unknown work units are partial.'
+      - name: quality_issues
+        description: Structural anomaly codes; missing optional measures remain NULL.
+      - name: total_work_kj
+        description: Work converted to kJ only when garmin_activity_total_work_unit is explicitly j, kj or kcal.
+          Unknown by default; raw work is retained in source_values.total_work.
+      - name: source_work_unit
+        description: Declared source unit; unknown by default. No conversion is inferred from the numeric magnitude.
+  - name: hub_activities_stg__activity_typed_splits
+    description: One source typed_splits item per activity and source offset. Qualified independently before ordered
+      ARRAY assembly.
+    columns:
+      - name: item_key
+        description: Activity ID, source array and source offset.
+        data_tests:
+          - not_null
+          - unique
+      - name: source_index
+        description: Original zero-based position in its source array.
+      - name: source_values
+        description: Complete typed source item, before masking or unit conversion.
+      - name: quality_status
+        description: 'Qualification of this item only: valid or invalid.'
+      - name: quality_issues
+        description: Structural anomaly codes; missing optional measures remain NULL.
+  - name: hub_activities_stg__activity_split_summaries
+    description: One source split_summaries item per activity and source offset. Qualified independently before
+      ordered ARRAY assembly.
+    columns:
+      - name: item_key
+        description: Activity ID, source array and source offset.
+        data_tests:
+          - not_null
+          - unique
+      - name: source_index
+        description: Original zero-based position in its source array.
+      - name: source_values
+        description: Complete typed source item, before masking or unit conversion.
+      - name: quality_status
+        description: 'Qualification of this item only: valid or invalid.'
+      - name: quality_issues
+        description: Structural anomaly codes; missing optional measures remain NULL.

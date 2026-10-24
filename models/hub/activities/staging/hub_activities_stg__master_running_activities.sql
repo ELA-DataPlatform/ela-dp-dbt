@@ -1,552 +1,202 @@
-{{
-    config(
-        materialized='view',
-        tags=['garmin']
-    )
-}}
+{{ config(materialized='view') }}
 
--- Master running activities view.
--- One row per running activity (running / trail_running / treadmill_running).
--- Consolidates all lake service tables into a single fully-denormalized record:
---   • Flat performance metrics   (from dlk_garmin_svc__activities)
---   • Fastest splits / power zones (from dlk_garmin_svc__activities)
---   • HR zones          → ARRAY<STRUCT>  (from dlk_garmin_svc__activity_hr_zones)
---   • Laps              → ARRAY<STRUCT>  (from dlk_garmin_svc__activity_splits)
---   • Typed splits      → ARRAY<STRUCT>  (from dlk_garmin_svc__activity_splits)
---   • Split summaries   → ARRAY<STRUCT>  (from dlk_garmin_svc__activity_splits)
---   • Timeseries (~1s)  → ARRAY<STRUCT>
---     (from dlk_garmin_svc__activity_details — 29 metrics, dynamic index resolution)
---   • Route             → STRUCT
---     (from dlk_garmin_svc__activity_details — geo_polyline, bounding box + polyline)
---   • Weather           → STRUCT         (from dlk_garmin_svc__activity_weather)
---   • Sleep             → STRUCT         (from hub_health_svc__sleep_daily)
---   • Athletic context  → STRUCT         (training readiness / VO2max / weight)
-
-WITH
-
--- ── 1. Base: running activities only ────────────────────────────────────────
-activities AS (
-    SELECT *
-    FROM {{ ref('dlk_garmin_svc__activities') }}
-    WHERE activity_type.type_key IN (
-        'running',
-        'trail_running',
-        'treadmill_running'
-    )
-),
-
--- ── 2. Activity details: timeseries + GPS route ──────────────────────────────
--- metric_descriptors order varies per activity — indices resolved dynamically
-activity_details AS (
-    SELECT
-        activityid,
-        activity_detail_metrics,
-        geo_polyline,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directTimestamp'
-        ) AS idx_timestamp,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'sumElapsedDuration')
-            AS idx_elapsed_s,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'sumDuration'
-        ) AS idx_duration_s,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'sumMovingDuration'
-        ) AS idx_moving_s,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'sumDistance'
-        ) AS idx_distance_m,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'sumAccumulatedPower')
-            AS idx_accumulated_power_w,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directSpeed'
-        ) AS idx_speed,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directGradeAdjustedSpeed')
-            AS idx_grade_adj_speed,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directHeartRate'
-        ) AS idx_hr,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directBodyBattery')
-            AS idx_body_battery,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directRespirationRate')
-            AS idx_respiration,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directPerformanceCondition')
-            AS idx_perf_condition,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directDoubleCadence')
-            AS idx_cadence,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directFractionalCadence')
-            AS idx_frac_cadence,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directRunCadence')
-            AS idx_run_cadence,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directGroundContactTime')
-            AS idx_ground_contact_ms,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directStrideLength')
-            AS idx_stride_length,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directVerticalOscillation')
-            AS idx_vert_oscillation,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directVerticalRatio')
-            AS idx_vert_ratio,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directVerticalSpeed')
-            AS idx_vert_speed,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directLatitude'
-        ) AS idx_lat,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directLongitude'
-        ) AS idx_lon,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directElevation'
-        ) AS idx_elevation,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directCorrectedElevation')
-            AS idx_corrected_elevation,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directPower'
-        ) AS idx_power_w,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directAirTemperature')
-            AS idx_air_temp,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directAvailableStamina')
-            AS idx_stamina_available,
-        (
-            SELECT d.metrics_index FROM UNNEST(metric_descriptors) AS d
-            WHERE d.metric_key = 'directPotentialStamina')
-            AS idx_stamina_potential
-    FROM {{ ref('dlk_garmin_svc__activity_details') }}
-),
-
--- ── 3. HR zones: aggregate into ARRAY per activity ──────────────────────────
-hr_zones_agg AS (
-    SELECT
-        activityid,
-        hr_zones
-    FROM {{ ref('dlk_garmin_svc__activity_hr_zones') }}
-),
-
--- ── 4. Splits: laps + typed_splits + split_summaries (already ARRAY<STRUCT>) ─
-splits_agg AS (
-    SELECT
-        activityid,
-        laps,
-        typed_splits,
-        split_summaries
-    FROM {{ ref('dlk_garmin_svc__activity_splits') }}
-),
-
--- ── 5. Weather ──────────────────────────────────────────────────────────────
-weather AS (
-    SELECT
-        activityid,
-        weather_temp,
-        weather_apparent_temp,
-        weather_dew_point,
-        weather_relative_humidity,
-        weather_wind_speed,
-        weather_wind_direction,
-        weather_wind_direction_compass,
-        weather_type,
-        weather_latitude,
-        weather_longitude,
-        weather_station_name
-    FROM {{ ref('dlk_garmin_svc__activity_weather') }}
-),
-
--- ── 6. Sleep (night before the activity) ────────────────────────────────────
-sleep AS (
-    SELECT
-        health_date,
-        sleep_score AS sleep_overall_score,
-        score_qualifier AS sleep_overall_score_qualifier,
-        quality_key AS sleep_quality_key,
-        total_sleep_s AS sleep_time_seconds,
-        deep_sleep_s AS deep_sleep_seconds,
-        light_sleep_s AS light_sleep_seconds,
-        rem_sleep_s AS rem_sleep_seconds,
-        awake_sleep_s AS awake_sleep_seconds,
-        avg_overnight_hrv_ms AS avgovernighthrv,
-        hrv_status AS hrvstatus,
-        resting_hr_bpm AS restingheartrate,
-        body_battery_change AS bodybatterychange,
-        avg_spo2_pct AS sleep_avg_spo2_value,
-        lowest_spo2_pct AS sleep_lowest_spo2_value,
-        avg_respiration_rpm AS sleep_avg_respiration,
-        score_feedback AS sleep_score_feedback,
-        source_values.sleep_start_source_value AS sleep_start_timestamp_gmt,
-        source_values.sleep_end_source_value AS sleep_end_timestamp_gmt
-    FROM {{ ref('hub_health_svc__sleep_daily') }}
-),
-
--- ── 7. Training readiness ────────────────────────────────────────────────────
-training_readiness AS (
-    SELECT
-        health_date AS calendardate,
-        readiness_score AS score,
-        readiness_level AS level,
-        feedback_short AS feedbackshort,
-        sleep_factor_pct AS sleepscorefactorpercent,
-        hrv_factor_pct AS hrvfactorpercent,
-        stress_history_factor_pct AS stresshistoryfactorpercent,
-        recovery_time_factor_pct AS recoverytimefactorpercent,
-        acwr_factor_pct AS acwrfactorpercent,
-        acute_load AS acuteload,
-        recovery_time_hours,
-        hrv_weekly_average_ms AS hrvweeklyaverage
-    FROM {{ ref('hub_health_svc__training_readiness_daily') }}
-),
-
--- ── 8. VO2max: most recent qualified observation valid on the activity date ────────────
-max_metrics AS (
-    SELECT
-        health_date AS calendar_date,
-        vo2_max,
-        vo2_max_precise,
-        CAST(measurement_date AS STRING) AS vo2_max_calendar_date,
-        LEAD(health_date) OVER (
-            ORDER BY health_date
-        ) AS valid_until
-    FROM {{ ref('hub_health_svc__vo2max_daily') }}
-    WHERE COALESCE(vo2_max_precise, vo2_max) IS NOT NULL
-),
-
--- ── 9. Weight: most recent qualified observation valid on the activity date ────────────
-weight_daily AS (
-    SELECT *
-    FROM {{ ref('hub_health_svc__body_measurement') }}
-    WHERE weight_kg IS NOT NULL AND measured_at_utc IS NOT NULL
-    QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY health_date
-        ORDER BY measured_at_utc DESC, _ingested_at DESC, measurement_key ASC
-    ) = 1
-),
-
-weight_measurements AS (
-    SELECT
-        health_date AS calendardate,
-        weight_kg,
-        body_fat_pct AS bodyfat,
-        bmi,
-        muscle_mass_kg,
-        bone_mass_kg,
-        LEAD(health_date) OVER (
-            ORDER BY health_date
-        ) AS valid_until
-    FROM weight_daily
-),
-
--- ── 10. Training status ──────────────────────────────────────────────────────
-training_status AS (
-    SELECT
-        health_date,
-        status_code AS code,
-        feedback_phrase,
-        fitness_trend,
-        acwr_status,
-        acwr_percent,
-        acute_load AS daily_load_acute,
-        acwr_ratio AS daily_acwr_ratio
-    FROM {{ ref('hub_health_svc__training_status_daily') }}
-)
-
+-- Compatibility interface for existing running products. New consumers use master_activities.
 SELECT
-
-    -- ── Identity ─────────────────────────────────────────────────────────────
-    a.activityid AS activity_id,
-    a.activityuuid AS activity_uuid,
-    a.activityname AS activity_name,
-    a.description AS activity_description,
-    a.locationname AS location_name,
-    a.starttimelocal AS start_time_local,
-    a.starttimegmt AS start_time_gmt,
-    a.endtimegmt AS end_time_gmt,
-    a.deviceid AS device_id,
-    a.manufacturer,
-    a.pr AS is_pr,
-    a.favorite AS is_favorite,
-    a.manualactivity AS is_manual,
-    a.elevationcorrected AS is_elevation_corrected,
-    a.event_type,
-    a._ingested_at,
-    a.activity_type.type_key AS activity_type,
-    ad.geo_polyline AS route,
-
-    -- ── Performance (flat STRUCT) ─────────────────────────────────────────────
-    DATE(a.starttimelocal) AS activity_date,
-
-    -- ── Fastest splits (STRUCT) ───────────────────────────────────────────────
+    m.activity_id,
+    m.identity.activity_uuid,
+    m.identity.activity_name,
+    m.identity.activity_description,
+    m.identity.location_name,
+    m.identity.device_id,
+    m.identity.manufacturer,
+    m.timing.start_at_utc AS start_time_gmt,
+    m.timing.end_at_utc AS end_time_gmt,
+    m.flags.is_pr,
+    m.flags.is_favorite,
+    m.flags.is_manual,
+    m.flags.is_elevation_corrected,
+    m.event_type,
+    m._ingested_at,
+    m.sport.type_key AS activity_type,
+    m.recordings.route,
+    m.activity_date,
+    m.running.fastest_splits,
+    m.gps,
+    m.recordings.timeseries,
+    m.health_context.sleep,
+    m.health_context.athletic_context,
+    TIMESTAMP(m.timing.start_at_local) AS start_time_local,
     STRUCT(
-        -- Distance & time
-        a.distance AS distance_m,
-        a.duration AS duration_s,
-        a.movingduration AS moving_duration_s,
-        a.elapsedduration AS elapsed_duration_s,
-        -- Pace & speed
-        {{ speed_mps_to_pace_min_per_km('a.averagespeed') }} AS avg_pace_min_per_km,
-        a.averagespeed AS avg_speed_m_per_s,
-        a.maxspeed AS max_speed_m_per_s,
-        a.avggradeadjustedspeed AS avg_grade_adjusted_speed_m_per_s,
-        -- Elevation
-        a.elevationgain AS elevation_gain_m,
-        a.elevationloss AS elevation_loss_m,
-        a.avgelevation AS avg_elevation_m,
-        a.minelevation AS min_elevation_m,
-        a.maxelevation AS max_elevation_m,
-        a.avgverticalspeed AS avg_vertical_speed_m_per_s,
-        a.maxverticalspeed AS max_vertical_speed_m_per_s,
-        -- Calories
-        a.calories,
-        a.bmrcalories AS bmr_calories,
-        -- Heart rate
-        a.averagehr AS avg_hr_bpm,
-        a.maxhr AS max_hr_bpm,
-        -- Cadence
-        a.averagerunningcadenceinstepsperminute AS avg_cadence_spm,
-        a.maxrunningcadenceinstepsperminute AS max_cadence_spm,
-        -- Power
-        a.avgpower AS avg_power_w,
-        a.maxpower AS max_power_w,
-        a.normpower AS norm_power_w,
-        -- Running dynamics
-        a.avgstridelength AS avg_stride_length_m,
-        a.avggroundcontacttime AS avg_ground_contact_ms,
-        a.avgverticaloscillation AS avg_vertical_oscillation_mm,
-        a.avgverticalratio AS avg_vertical_ratio,
-        -- Respiration
-        a.avgrespirationrate AS avg_respiration_rpm,
-        a.minrespirationrate AS min_respiration_rpm,
-        a.maxrespirationrate AS max_respiration_rpm,
-        -- Temperature during effort
-        a.mintemperature AS min_temp_celsius,
-        a.maxtemperature AS max_temp_celsius,
-        -- Training effect & load
-        a.aerobictrainingeffect AS aerobic_te,
-        a.aerobictrainingeffectmessage AS aerobic_te_message,
-        a.anaerobictrainingeffect AS anaerobic_te,
-        a.anaerobictrainingeffectmessage AS anaerobic_te_message,
-        a.trainingeffectlabel AS training_effect_label,
-        a.activitytrainingload AS training_load,
-        a.vo2maxvalue AS vo2max_during_activity,
-        -- Body battery
-        a.differencebodybattery AS body_battery_delta,
-        -- Counts
-        a.steps,
-        a.lapcount AS lap_count,
-        a.vigorousintensityminutes AS vigorous_intensity_min,
-        a.moderateintensityminutes AS moderate_intensity_min
+        m.performance.distance_m AS distance_m,
+        m.performance.duration_s AS duration_s,
+        m.performance.moving_duration_s AS moving_duration_s,
+        m.performance.elapsed_duration_s AS elapsed_duration_s,
+        m.running.avg_pace_min_per_km AS avg_pace_min_per_km,
+        m.performance.avg_speed_m_per_s AS avg_speed_m_per_s,
+        m.performance.max_speed_m_per_s AS max_speed_m_per_s,
+        m.performance.avg_grade_adjusted_speed_m_per_s AS avg_grade_adjusted_speed_m_per_s,
+        m.performance.elevation_gain_m AS elevation_gain_m,
+        m.performance.elevation_loss_m AS elevation_loss_m,
+        m.performance.avg_elevation_m AS avg_elevation_m,
+        m.performance.min_elevation_m AS min_elevation_m,
+        m.performance.max_elevation_m AS max_elevation_m,
+        m.performance.avg_vertical_speed_m_per_s AS avg_vertical_speed_m_per_s,
+        m.performance.max_vertical_speed_m_per_s AS max_vertical_speed_m_per_s,
+        m.performance.bmr_calories AS bmr_calories,
+        m.performance.avg_hr_bpm AS avg_hr_bpm,
+        m.performance.max_hr_bpm AS max_hr_bpm,
+        m.running.avg_cadence_spm AS avg_cadence_spm,
+        m.running.max_cadence_spm AS max_cadence_spm,
+        m.performance.avg_power_w AS avg_power_w,
+        m.performance.max_power_w AS max_power_w,
+        m.performance.norm_power_w AS norm_power_w,
+        m.running.avg_stride_length_m AS avg_stride_length_m,
+        m.running.avg_ground_contact_ms AS avg_ground_contact_ms,
+        m.running.avg_vertical_oscillation_mm AS avg_vertical_oscillation_mm,
+        m.running.avg_vertical_ratio AS avg_vertical_ratio,
+        m.performance.avg_respiration_rpm AS avg_respiration_rpm,
+        m.performance.min_respiration_rpm AS min_respiration_rpm,
+        m.performance.max_respiration_rpm AS max_respiration_rpm,
+        m.performance.min_temp_celsius AS min_temp_celsius,
+        m.performance.max_temp_celsius AS max_temp_celsius,
+        m.performance.aerobic_te AS aerobic_te,
+        m.performance.aerobic_te_message AS aerobic_te_message,
+        m.performance.anaerobic_te AS anaerobic_te,
+        m.performance.anaerobic_te_message AS anaerobic_te_message,
+        m.performance.training_effect_label AS training_effect_label,
+        m.performance.training_load AS training_load,
+        m.performance.vo2max_during_activity AS vo2max_during_activity,
+        m.performance.body_battery_delta AS body_battery_delta,
+        m.performance.lap_count AS lap_count,
+        m.performance.vigorous_intensity_min AS vigorous_intensity_min,
+        m.performance.moderate_intensity_min AS moderate_intensity_min,
+        m.performance.calories AS calories,
+        m.performance.steps AS steps
     ) AS performance,
-
-    -- ── GPS bounding box (STRUCT) ─────────────────────────────────────────────
+    ARRAY(
+        SELECT AS STRUCT
+            z.zone_number,
+            z.duration_s AS secs_in_zone,
+            z.low_boundary_bpm AS zone_low_boundary
+        FROM UNNEST(m.zones.heart_rate) AS z
+        ORDER BY z.zone_number, z.source_index
+    ) AS hr_zones,
+    ARRAY(
+        SELECT AS STRUCT
+            z.zone_number,
+            z.duration_s AS secs_in_zone
+        FROM UNNEST(m.zones.power) AS z
+        ORDER BY z.zone_number
+    ) AS power_zones,
+    ARRAY(SELECT STRUCT(
+        CAST(p.start_at_utc AS STRING) AS start_time_gmt,
+        p.start_latitude AS start_latitude,
+        p.start_longitude AS start_longitude,
+        p.end_latitude AS end_latitude,
+        p.end_longitude AS end_longitude,
+        p.distance_m AS distance,
+        p.duration_s AS duration,
+        p.moving_duration_s AS moving_duration,
+        p.elapsed_duration_s AS elapsed_duration,
+        p.elevation_gain_m AS elevation_gain,
+        p.elevation_loss_m AS elevation_loss,
+        p.max_elevation_m AS max_elevation,
+        p.min_elevation_m AS min_elevation,
+        p.avg_speed_m_per_s AS average_speed,
+        p.avg_moving_speed_m_per_s AS average_moving_speed,
+        p.max_speed_m_per_s AS max_speed,
+        p.calories AS calories,
+        p.bmr_calories AS bmr_calories,
+        p.avg_hr_bpm AS average_hr,
+        p.max_hr_bpm AS max_hr,
+        p.avg_run_cadence_spm AS average_run_cadence,
+        p.max_run_cadence_spm AS max_run_cadence,
+        p.avg_power_w AS average_power,
+        p.max_power_w AS max_power,
+        p.min_power_w AS min_power,
+        p.norm_power_w AS normalized_power,
+        p.total_work_kj AS total_work,
+        p.ground_contact_ms AS ground_contact_time,
+        p.stride_length_m AS stride_length,
+        p.vertical_oscillation_mm AS vertical_oscillation,
+        p.vertical_ratio_pct AS vertical_ratio,
+        p.avg_grade_adjusted_speed_m_per_s AS avg_grade_adjusted_speed,
+        p.avg_temp_celsius AS average_temperature,
+        p.max_temp_celsius AS max_temperature,
+        p.min_temp_celsius AS min_temperature,
+        p.intensity_type AS intensity_type,
+        p.lap_index AS lap_index,
+        p.message_index AS message_index,
+        p.max_vertical_speed_m_per_s AS max_vertical_speed,
+        p.direct_workout_compliance_score AS direct_workout_compliance_score
+    ) FROM UNNEST(m.breakdown.laps) AS p
+    ORDER BY p.source_index) AS laps,
+    ARRAY(SELECT STRUCT(
+        CAST(p.start_at_utc AS STRING) AS start_time_gmt,
+        CAST(p.start_at_local AS STRING) AS start_time_local,
+        p.start_latitude AS start_latitude,
+        p.start_longitude AS start_longitude,
+        p.end_latitude AS end_latitude,
+        p.end_longitude AS end_longitude,
+        p.distance_m AS distance,
+        p.duration_s AS duration,
+        p.moving_duration_s AS moving_duration,
+        p.elapsed_duration_s AS elapsed_duration,
+        p.elevation_gain_m AS elevation_gain,
+        p.elevation_loss_m AS elevation_loss,
+        p.avg_speed_m_per_s AS average_speed,
+        p.max_speed_m_per_s AS max_speed,
+        p.calories AS calories,
+        p.avg_hr_bpm AS average_hr,
+        p.max_hr_bpm AS max_hr,
+        p.avg_run_cadence_spm AS average_run_cadence,
+        p.max_run_cadence_spm AS max_run_cadence,
+        p.avg_power_w AS average_power,
+        p.max_power_w AS max_power,
+        p.norm_power_w AS normalized_power,
+        p.intensity_type AS intensity_type,
+        p.message_index AS message_index,
+        p.avg_grade_adjusted_speed_m_per_s AS avg_grade_adjusted_speed,
+        p.avg_temp_celsius AS average_temperature,
+        p.max_temp_celsius AS max_temperature,
+        p.min_temp_celsius AS min_temperature
+    ) FROM UNNEST(m.breakdown.typed_splits) AS p
+    ORDER BY p.source_index) AS typed_splits,
+    ARRAY(SELECT STRUCT(
+        p.split_type AS split_type,
+        p.no_of_splits AS no_of_splits,
+        p.distance_m AS distance,
+        p.duration_s AS duration,
+        p.moving_duration_s AS moving_duration,
+        p.elevation_gain_m AS elevation_gain,
+        p.elevation_loss_m AS elevation_loss,
+        p.avg_speed_m_per_s AS average_speed,
+        p.max_speed_m_per_s AS max_speed,
+        p.calories AS calories,
+        p.avg_hr_bpm AS average_hr,
+        p.max_hr_bpm AS max_hr,
+        p.avg_run_cadence_spm AS average_run_cadence,
+        p.max_run_cadence_spm AS max_run_cadence,
+        p.avg_power_w AS average_power,
+        p.max_power_w AS max_power,
+        p.norm_power_w AS normalized_power,
+        p.avg_grade_adjusted_speed_m_per_s AS avg_grade_adjusted_speed,
+        p.avg_vertical_speed_m_per_s AS avg_vertical_speed,
+        p.avg_step_frequency_source AS avg_step_frequency,
+        p.max_elevation_gain_m AS max_elevation_gain,
+        p.avg_elevation_gain_m AS average_elevation_gain,
+        p.max_distance_m AS max_distance,
+        p.max_distance_with_precision_m AS max_distance_with_precision,
+        p.avg_temp_celsius AS average_temperature,
+        p.max_temp_celsius AS max_temperature,
+        p.min_temp_celsius AS min_temperature
+    ) FROM UNNEST(m.breakdown.split_summaries) AS p
+    ORDER BY p.source_index) AS split_summaries,
     STRUCT(
-        a.fastestsplit_1000 AS dist_1000m_s,
-        a.fastestsplit_1609 AS dist_1609m_s,
-        a.fastestsplit_5000 AS dist_5000m_s,
-        a.fastestsplit_10000 AS dist_10000m_s,
-        a.fastestsplit_21098 AS dist_21098m_s,
-        a.fastestsplit_42195 AS dist_42195m_s
-    ) AS fastest_splits,
-
-    -- ── HR zones (ARRAY<STRUCT>, 1 entry per zone 1-5) ───────────────────────
-    STRUCT(
-        a.startlatitude AS start_latitude,
-        a.startlongitude AS start_longitude,
-        a.endlatitude AS end_latitude,
-        a.endlongitude AS end_longitude
-    ) AS gps,
-
-    -- ── Power zones (ARRAY<STRUCT>, built from flat columns) ─────────────────
-    COALESCE(hrz.hr_zones, []) AS hr_zones,
-
-    -- ── Laps (ARRAY<STRUCT>, 1 entry per km/lap) ──────────────────────────────
-    [
-        STRUCT(1 AS zone_number, a.powertimeinzone_1 AS secs_in_zone),
-        STRUCT(2 AS zone_number, a.powertimeinzone_2 AS secs_in_zone),
-        STRUCT(3 AS zone_number, a.powertimeinzone_3 AS secs_in_zone),
-        STRUCT(4 AS zone_number, a.powertimeinzone_4 AS secs_in_zone),
-        STRUCT(5 AS zone_number, a.powertimeinzone_5 AS secs_in_zone)
-    ] AS power_zones,
-
-    -- ── Typed splits (ARRAY<STRUCT>, by movement type: RWD_RUN/WALK/STAND) ───
-    COALESCE(sp.laps, []) AS laps,
-
-    -- ── Split summaries (ARRAY<STRUCT>, by split category) ───────────────────
-    COALESCE(sp.typed_splits, []) AS typed_splits,
-
-    -- ── Timeseries ~1s (ARRAY<STRUCT>, one entry per second of activity) ─────
-    -- Metrics available vary by activity/device; absent metrics resolve to NULL.
-    COALESCE(sp.split_summaries, []) AS split_summaries,
-
-    -- ── GPS route (STRUCT with bounding box + full polyline) ─────────────────
-    COALESCE(
-        ARRAY(
-            SELECT AS STRUCT
-                TIMESTAMP_MILLIS(CAST(metric_row.metrics[SAFE_OFFSET(ad.idx_timestamp)] AS INT64)) AS timestamp_gmt,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_elapsed_s)] AS elapsed_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_duration_s)] AS duration_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_moving_s)] AS moving_duration_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_distance_m)] AS cum_distance_m,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_speed)] AS speed_m_per_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_grade_adj_speed)] AS grade_adj_speed_m_per_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_hr)] AS heart_rate_bpm,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_body_battery)] AS body_battery,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_respiration)] AS respiration_rpm,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_perf_condition)] AS performance_condition,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_cadence)] AS cadence_spm,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_frac_cadence)] AS fractional_cadence,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_run_cadence)] AS run_cadence_spm,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_ground_contact_ms)] AS ground_contact_ms,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_stride_length)] AS stride_length_m,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_vert_oscillation)] AS vertical_oscillation_mm,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_vert_ratio)] AS vertical_ratio,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_vert_speed)] AS vertical_speed_m_per_s,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_lat)] AS latitude,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_lon)] AS longitude,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_elevation)] AS elevation_m,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_corrected_elevation)] AS corrected_elevation_m,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_power_w)] AS power_w,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_accumulated_power_w)] AS accumulated_power_w,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_air_temp)] AS air_temp_celsius,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_stamina_available)] AS stamina_available,
-                metric_row.metrics[SAFE_OFFSET(ad.idx_stamina_potential)] AS stamina_potential
-            FROM UNNEST(ad.activity_detail_metrics) AS metric_row
-            WHERE metric_row.metrics[SAFE_OFFSET(ad.idx_timestamp)] IS NOT NULL
-            ORDER BY metric_row.metrics[SAFE_OFFSET(ad.idx_timestamp)]
-        ),
-        []
-    ) AS timeseries,
-
-    -- ── Weather conditions at start of activity (STRUCT) ─────────────────────
-    STRUCT(
-        w.weather_temp AS temp_celsius,
-        w.weather_apparent_temp AS apparent_temp_celsius,
-        w.weather_dew_point AS dew_point_celsius,
-        w.weather_relative_humidity AS humidity_pct,
-        w.weather_wind_speed AS wind_speed_kph,
-        w.weather_wind_direction AS wind_direction_deg,
-        w.weather_wind_direction_compass AS wind_direction_compass,
-        w.weather_type,
-        w.weather_latitude AS latitude,
-        w.weather_longitude AS longitude,
-        w.weather_station_name AS station_name
-    ) AS weather,
-
-    -- ── Sleep (night before the activity) (STRUCT) ────────────────────────────
-    STRUCT(
-        s.health_date AS sleep_date,
-        s.sleep_overall_score AS overall_score,
-        s.sleep_overall_score_qualifier AS score_qualifier,
-        s.sleep_quality_key AS quality_key,
-        s.sleep_time_seconds AS total_sleep_s,
-        s.deep_sleep_seconds AS deep_s,
-        s.light_sleep_seconds AS light_s,
-        s.rem_sleep_seconds AS rem_s,
-        s.awake_sleep_seconds AS awake_s,
-        s.avgovernighthrv AS avg_overnight_hrv,
-        s.hrvstatus AS hrv_status,
-        s.restingheartrate AS resting_hr_bpm,
-        s.bodybatterychange AS body_battery_change,
-        s.sleep_avg_spo2_value AS avg_spo2,
-        s.sleep_lowest_spo2_value AS lowest_spo2,
-        s.sleep_avg_respiration AS avg_respiration_rpm,
-        s.sleep_score_feedback AS score_feedback,
-        s.sleep_start_timestamp_gmt AS start_gmt,
-        s.sleep_end_timestamp_gmt AS end_gmt
-    ) AS sleep,
-
-    -- ── Athletic context on the day of the activity (STRUCT) ─────────────────
-    STRUCT(
-        -- Training readiness (null when Garmin doesn't provide it for this date)
-        tr.score AS readiness_score,
-        tr.level AS readiness_level,
-        tr.feedbackshort AS readiness_feedback,
-        tr.sleepscorefactorpercent AS readiness_sleep_factor_pct,
-        tr.hrvfactorpercent AS readiness_hrv_factor_pct,
-        tr.stresshistoryfactorpercent AS readiness_stress_factor_pct,
-        tr.recoverytimefactorpercent AS readiness_recovery_factor_pct,
-        tr.acwrfactorpercent AS readiness_acwr_factor_pct,
-        tr.acuteload AS acute_training_load,
-        tr.recovery_time_hours,
-        tr.hrvweeklyaverage AS hrv_weekly_average,
-        -- Training status
-        ts.code AS training_status_code,
-        ts.feedback_phrase AS training_status_feedback,
-        ts.fitness_trend,
-        ts.acwr_status,
-        ts.acwr_percent,
-        ts.daily_load_acute AS ts_acute_load,
-        ts.daily_acwr_ratio AS ts_acwr_ratio,
-        -- VO2max (most recent valid measurement)
-        mm.vo2_max,
-        mm.vo2_max_precise,
-        mm.vo2_max_calendar_date AS vo2max_date,
-        -- Body composition (most recent valid measurement)
-        wm.weight_kg,
-        wm.bodyfat AS body_fat_pct,
-        wm.bmi,
-        CAST(ROUND(wm.muscle_mass_kg * 1000.0) AS INT64) AS muscle_mass_g,
-        CAST(ROUND(wm.bone_mass_kg * 1000.0) AS INT64) AS bone_mass_g
-    ) AS athletic_context
-
-FROM activities AS a
-LEFT JOIN activity_details AS ad
-    ON a.activityid = ad.activityid
-LEFT JOIN hr_zones_agg AS hrz
-    ON a.activityid = hrz.activityid
-LEFT JOIN splits_agg AS sp
-    ON a.activityid = sp.activityid
-LEFT JOIN weather AS w
-    ON a.activityid = w.activityid
-LEFT JOIN sleep AS s
-    ON s.health_date = DATE(a.starttimelocal)
-LEFT JOIN training_readiness AS tr
-    ON tr.calendardate = DATE(a.starttimelocal)
-LEFT JOIN max_metrics AS mm
-    ON
-        mm.calendar_date <= DATE(a.starttimelocal)
-        AND (mm.valid_until IS NULL OR mm.valid_until > DATE(a.starttimelocal))
-LEFT JOIN weight_measurements AS wm
-    ON
-        wm.calendardate <= DATE(a.starttimelocal)
-        AND (wm.valid_until IS NULL OR wm.valid_until > DATE(a.starttimelocal))
-LEFT JOIN training_status AS ts
-    ON ts.health_date = DATE(a.starttimelocal)
+        m.weather.temp_celsius, m.weather.apparent_temp_celsius, m.weather.dew_point_celsius,
+        m.weather.humidity_pct, m.weather.wind_speed_kph, m.weather.wind_direction_deg,
+        m.weather.wind_direction_compass, m.weather.weather_type, m.weather.latitude,
+        m.weather.longitude, m.weather.station_name
+    ) AS weather
+FROM {{ ref('hub_activities_svc__master_activities') }} AS m
+WHERE m.sport.type_key IN ('running', 'trail_running', 'treadmill_running')

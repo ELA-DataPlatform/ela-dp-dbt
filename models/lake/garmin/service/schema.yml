@@ -51,6 +51,11 @@ models:
           bounding box (min/max lat/lon), and full GPS polyline as ARRAY<STRUCT>.
       - name: _ingested_at
         description: Timestamp when the record was ingested.
+      - name: indexed_metric_samples
+        description: >
+          Position-preserving ARRAY of source sample_index and metric_values ARRAY of metric_index, source_text
+          and nullable metric_value. JSON null slots remain present. New Activities hub exclusively uses this
+          representation; the legacy dense activity_detail_metrics is not a safe positional interface.
 
   - name: dlk_garmin_svc__body_composition
     description: >
