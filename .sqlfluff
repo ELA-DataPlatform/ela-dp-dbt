@@ -1,5 +1,5 @@
 [sqlfluff]
-templater = dbt
+templater = jinja
 dialect = bigquery
 max_line_length = 120
 large_file_skip_byte_limit = 60000
@@ -7,14 +7,8 @@ large_file_skip_byte_limit = 60000
 # RF01 désactivé : faux positifs sur CROSS JOIN UNNEST BigQuery (SQLFluff ne résout pas le scope du tableau parent)
 exclude_rules = RF02,RF01
 
-[sqlfluff:templater:dbt]
-project_dir = ./
-profiles_dir = ./
-profile = ela_dp
-target = dev
-
 [sqlfluff:templater:jinja]
-# Expand the shared Health SQL during the CI lint that uses the Jinja templater.
+# Shared offline rendering for local commands, pre-commit and CI.
 load_macros_from_path = macros/garmin_health_timestamp.sql,macros/garmin_health_qualify_samples.sql,macros/garmin_activity_number.sql
 
 [sqlfluff:indentation]

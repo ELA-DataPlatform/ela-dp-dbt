@@ -1,17 +1,17 @@
 [project]
 name = "ela-dp-dbt"
 version = "0.1.0"
-description = "Add your description here"
+description = "BigQuery transformations for the ELA Data Platform"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dbt-bigquery>=1.9.0",
-    "sqlfluff>=4.0.4",
-    "sqlfluff-templater-dbt>=4.0.1",
+    "sqlfluff==4.0.4",
     "requests>=2.33.1",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.6.0",
+    "yamllint==1.35.1",
 ]

@@ -18,6 +18,8 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
       - 'entrypoint.sh'
+      - 'Makefile'
+      - 'scripts/dbt-docker.sh'
       - '.github/workflows/docker-ci.yml'
 
 jobs:
@@ -43,4 +45,5 @@ jobs:
       - name: Smoke test (dbt --version + dbt parse)
         run: |
           docker run --rm --entrypoint dbt ela-dp-dbt:ci --version
-          docker run --rm ela-dp-dbt:ci parse --target dev
+          make deps IMAGE=ela-dp-dbt:ci
+          make parse IMAGE=ela-dp-dbt:ci

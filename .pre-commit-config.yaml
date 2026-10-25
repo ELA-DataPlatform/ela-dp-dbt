@@ -9,24 +9,15 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=500']
 
-  - repo: https://github.com/sqlfluff/sqlfluff
-    rev: 3.3.1
+  - repo: local
     hooks:
       - id: sqlfluff-lint
-        additional_dependencies:
-          - sqlfluff-templater-dbt==3.3.1
-          - dbt-bigquery
-        args: ['--dialect', 'bigquery']
-        files: '(models|macros|snapshots)/.*\.sql$'
-      - id: sqlfluff-fix
-        additional_dependencies:
-          - sqlfluff-templater-dbt==3.3.1
-          - dbt-bigquery
-        args: ['--dialect', 'bigquery']
-        files: '(models|macros|snapshots)/.*\.sql$'
-
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
+        name: SQLFluff lint (uv.lock)
+        entry: scripts/sqlfluff.sh lint
+        language: system
+        files: '^(models|macros|snapshots)/.*\.sql$'
       - id: yamllint
-        args: ['-c', '.yamllint.yml']
+        name: YAML lint (uv.lock)
+        entry: uv run --locked yamllint -c .yamllint.yml
+        language: system
+        types: [yaml]
