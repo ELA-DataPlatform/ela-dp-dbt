@@ -23,6 +23,7 @@ models:
   # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__summary
     description: >
+      Consumes shared hub services directly, without product-to-product dependencies.
       One row per listened artist. Powers the Artist Focus hero card, the
       all-time artist rank and the artist selector (GET /webapp/artists, sorted
       by total_listening_time_min desc; GET /webapp/artist/{id}/summary).
@@ -256,6 +257,7 @@ models:
   # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__listening_daily
     description: >
+      Consumes shared hub services directly, without product-to-product dependencies.
       Dense daily listening per artist over the last 365 days (Europe/Paris):
       every artist/day pair is returned, including zero-listening days, together
       with a pre-bucketed heatmap level for direct rendering.
@@ -296,6 +298,7 @@ models:
   # ──────────────────────────────────────────────────────────────────────────
   - name: pct_webapp_artist__listening_weekly
     description: >
+      Consumes shared hub services directly, without product-to-product dependencies.
       Dense weekly listening per artist over the last 52 full weeks
       (Europe/Paris, weeks starting Monday; the in-progress week is excluded).
       Every (artist, week) is present even with zero listening, for every artist

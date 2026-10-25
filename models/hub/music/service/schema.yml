@@ -228,3 +228,66 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: ['album_id', 'artist_id']
+
+  - name: hub_music_svc__artist_listening_daily
+    description: >
+      Dense daily listening per artist over the last 365 days (Europe/Paris):
+      every artist/day pair is returned, including zero-listening days, together
+      with shared listening measures for product consumers.
+      Fully rebuilt each run to propagate historical corrections. Partitioned by listen_date, clustered by artist_id.
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+        tests:
+          - not_null
+      - name: listen_date
+        description: Calendar date of listening (Europe/Paris).
+        tests:
+          - not_null
+      - name: listening_time_min
+        description: Listening time on that day in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays on that day credited to the artist.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - listen_date
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"
+
+  - name: hub_music_svc__artist_listening_weekly
+    description: >
+      Dense weekly listening per artist over the last 52 full weeks
+      (Europe/Paris, weeks starting Monday; the in-progress week is excluded).
+      Every (artist, week) is present even with zero listening, for every artist
+      listened to at any point. Shared by artist summary and weekly products.
+      Fully rebuilt each run to propagate historical corrections. Partitioned by week_start_date, clustered by artist_id.
+    columns:
+      - name: artist_id
+        description: Spotify identifier of the primary artist (artist_position = 0).
+        tests:
+          - not_null
+      - name: week_start_date
+        description: Monday (Europe/Paris) that starts the week.
+        tests:
+          - not_null
+      - name: listening_time_min
+        description: Listening time that week in minutes (SUM(duration_ms)/60000).
+        tests:
+          - not_null
+      - name: plays
+        description: Number of plays that week credited to the artist.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - artist_id
+            - week_start_date
+      - dbt_utils.expression_is_true:
+          expression: "listening_time_min >= 0 and plays >= 0"

@@ -15,7 +15,7 @@ music AS (
         activity_id,
         COUNT(*) AS track_count,
         CAST(ROUND(SUM(duration_seconds) / 60) AS INT64) AS total_duration_minutes
-    FROM {{ ref('pct_webapp_activity_focus__music_timeline') }}
+    FROM {{ ref('hub_activities_svc__music_timeline') }}
     GROUP BY activity_id
 )
 
