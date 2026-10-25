@@ -421,3 +421,59 @@ models:
           see provenance for detail timestamps.
       - name: _silver_processed_at
         description: UTC rebuild time, not a business-change watermark.
+
+  - name: hub_activities_svc__music_timeline
+    description: >
+      Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
+      One row per Spotify track played during a running activity.
+      The starting kilometre is estimated from the nearest timeseries point
+      preceding the played_at timestamp. Shared by timeline and summary products.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier.
+        tests:
+          - not_null
+      - name: activity_date
+        description: Calendar date of the activity.
+        tests:
+          - not_null
+      - name: played_at
+        description: Timestamp (GMT) when the track started playing on Spotify.
+        tests:
+          - not_null
+      - name: track_id
+        description: Spotify track identifier.
+      - name: track_name
+        description: Name of the track.
+      - name: artist_id
+        description: Spotify artist selected by ascending artist_id, preserving the existing timeline contract.
+      - name: artist_name
+        description: Name of the selected artist.
+      - name: album_id
+        description: Spotify album identifier.
+      - name: album_name
+        description: Name of the album.
+      - name: album_image_url
+        description: >
+          URL of the album cover image (640x640) from the Spotify CDN.
+          Extracted from dlk_spotify_svc__album_detail. NULL if not available.
+      - name: duration_seconds
+        description: Track duration in seconds.
+      - name: km_start
+        description: >
+          Estimated kilometre at which the track started, derived from the timeseries
+          point whose GMT timestamp is closest to (and before) played_at.
+          NULL if the timeseries is unavailable for this activity.
+      - name: latitude
+        description: >
+          GPS latitude at the moment the track started playing, interpolated from
+          the nearest preceding timeseries point. NULL for treadmill activities.
+      - name: longitude
+        description: >
+          GPS longitude at the moment the track started playing, interpolated from
+          the nearest preceding timeseries point. NULL for treadmill activities.
+      - name: _ingested_at
+        description: Activity ingestion timestamp; does not track later music or recording corrections.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [activity_id, played_at, track_id]

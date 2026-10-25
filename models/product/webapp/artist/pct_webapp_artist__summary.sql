@@ -79,7 +79,7 @@ active_days_numbered AS (
             PARTITION BY artist_id
             ORDER BY listen_date
         ) AS active_day_number
-    FROM {{ ref('pct_webapp_artist__listening_daily') }}
+    FROM {{ ref('hub_music_svc__artist_listening_daily') }}
     WHERE plays > 0
 ),
 
@@ -109,7 +109,7 @@ daily_behavior AS (
             AS avg_active_day_listening_time_min,
         MAX(d.listening_time_min) AS max_day_listening_time_min,
         SUM(d.listening_time_min) AS total_listening_time_365d_min
-    FROM {{ ref('pct_webapp_artist__listening_daily') }} AS d
+    FROM {{ ref('hub_music_svc__artist_listening_daily') }} AS d
     GROUP BY d.artist_id
 ),
 
@@ -118,7 +118,7 @@ weekly_behavior AS (
         artist_id,
         CAST(ROUND(AVG(listening_time_min)) AS INT64) AS avg_weekly_listening_time_52w_min,
         MAX(listening_time_min) AS max_week_listening_time_min
-    FROM {{ ref('pct_webapp_artist__listening_weekly') }}
+    FROM {{ ref('hub_music_svc__artist_listening_weekly') }}
     GROUP BY artist_id
 ),
 

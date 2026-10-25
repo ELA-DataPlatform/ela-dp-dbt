@@ -451,6 +451,7 @@ models:
   # ── Timeline musicale ───────────────────────────────────────────────────────
   - name: pct_webapp_activity_focus__music_summary
     description: >
+      Consumes shared hub services directly, without product-to-product dependencies.
       One row per running activity with display-ready Spotify totals. Activities
       without music are retained with zero tracks and zero minutes.
     columns:
@@ -470,6 +471,7 @@ models:
 
   - name: pct_webapp_activity_focus__music_timeline
     description: >
+      Consumes shared hub services directly, without product-to-product dependencies.
       Fully rebuilt each run to propagate historical corrections, dependency changes and removed derived rows.
       One row per Spotify track played during a running activity.
       The starting kilometre is estimated from the nearest timeseries point
