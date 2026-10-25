@@ -1,5 +1,9 @@
 # ela-dp-dbt
 
+Le [README](README.md) décrit les domaines, interfaces publiques, commandes et
+promotions actuels. `dbt_project.yml` et les macros de naming font autorité pour
+les schémas physiques.
+
 ## Objectif
 
 Ce repo dbt assure la transformation des données à travers toutes les couches du médaillon de la plateforme de données ELA :
@@ -18,7 +22,9 @@ Le lake contient 3 sous-couches pour chaque source :
 | **staging** | Vue | Déduplique les données de la normalized |
 | **service** | Table | Table finale dans laquelle on merge la staging à chaque `dbt run` pour garantir l'unicité |
 
-Cette architecture évite de brasser l'intégralité de la normalized à chaque run : seules les nouvelles données de la staging sont mergées dans la table de service via un incremental merge.
+Les services réconcilient les enregistrements canoniques, y compris les corrections
+anciennes. Une matérialisation incrémentale ne signifie pas que seules les nouvelles
+lignes sont lues.
 
 Les données sont stockées dans **BigQuery**.
 
@@ -26,13 +32,30 @@ Les données sont stockées dans **BigQuery**.
 
 Sources actuellement intégrées :
 - **Spotify** — alimentée et disponible dans le lake (`dp_lake_spotify_<env>`)
+- **Garmin** — activités et santé (`dp_lake_garmin_<env>`)
 
 ## Environnements
 
-- `prod` — production
+- `prd` — production
 - `dev` — développement
 
-Les datasets BigQuery suivent la convention `dp_<couche>_<source>_<env>` pour le lake et `dp_<couche>_<env>` pour le hub et le product.
+Les sources normalized utilisent `dp_lake_<source>_<env>`. Les modèles utilisent
+les schémas explicites `lake_<source>_stg` / `_svc`, `hub_<domaine>_stg` / `_svc`
+et `product_<consommateur>`. La séparation dev/prd est portée par les projets GCP.
+
+## Contrôles locaux
+
+- `make check` : lint SQL/YAML et parsing dbt, sans écriture BigQuery.
+- `make hooks` : hooks sur tous les fichiers suivis.
+- `make fix-sql` : formatage SQL explicite.
+- `make docker-build`, `make deps`, puis `make run SELECT=...` : dbt dans l'image locale.
+- `make parse` : parsing dans Docker ; `make parse-local` : parsing via uv pour la CI.
+- `make docs` puis `make docs-serve` : catalogue dev et documentation locale dans Docker.
+
+SQLFluff utilise le templater Jinja et la version de `uv.lock`, via
+`scripts/sqlfluff.sh` en local, dans les hooks et en CI. Ne pas réintroduire un
+templater ou une version distincts dans les hooks. Utiliser `uv run --locked`
+pour les commandes dbt ; `make check` ne remplace pas une exécution en dev.
 
 ## Git workflow
 
@@ -51,6 +74,7 @@ Les datasets BigQuery suivent la convention `dp_<couche>_<source>_<env>` pour le
 ## Tags dbt
 
 - `spotify` : à appliquer sur **tous** les modèles qui consomment la donnée Spotify. Permet de lancer un run ciblé : `dbt run --select tag:spotify`.
+- `garmin` : modèles Garmin ; tags de domaine hérités `health` et `activities`.
 
 ## BigQuery
 

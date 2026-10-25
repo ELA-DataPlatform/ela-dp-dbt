@@ -1,5 +1,14 @@
 extends: default
 
+ignore: |
+  .venv/
+  .git/
+  dbt_packages/
+  dbt_internal_packages/
+  target/
+  logs/
+  .sqlfluff_cache/
+
 rules:
   line-length:
     max: 150

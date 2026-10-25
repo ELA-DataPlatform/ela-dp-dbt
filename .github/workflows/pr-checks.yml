@@ -13,6 +13,12 @@ on:
       - 'packages.yml'
       - '.sqlfluff'
       - '.yamllint.yml'
+      - '.pre-commit-config.yaml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Makefile'
+      - 'scripts/**'
+      - 'README.md'
       - '.github/workflows/pr-checks.yml'
 
 jobs:
@@ -31,10 +37,10 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Run SQLFluff
-        run: uv run sqlfluff lint --templater jinja --ignore templating models/ macros/ snapshots/
+        run: make lint-sql
 
   dbt-parse:
     name: dbt Parse
@@ -51,13 +57,13 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
 
       - name: Install dbt packages
-        run: uv run dbt deps --profiles-dir .
+        run: uv run --locked dbt deps --profiles-dir .
 
       - name: Parse dbt project
-        run: uv run dbt parse --profiles-dir .
+        run: make parse-local
         env:
           DBT_TARGET: dev
 
@@ -67,13 +73,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install yamllint
-        run: pip install yamllint
+        run: uv sync --locked
 
       - name: Run yamllint
-        run: yamllint -c .yamllint.yml .
+        run: make lint-yaml
