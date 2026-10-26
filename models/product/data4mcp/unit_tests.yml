@@ -1,0 +1,66 @@
+version: 2
+
+unit_tests:
+  - name: mcp_listening_preserves_collaborations_and_missing_metadata
+    model: pct_data4mcp__listening_history
+    given:
+      - input: ref('hub_music_svc__fact_played')
+        rows:
+          - played_at: '2026-10-25 23:30:00+00'
+            track_id: collaboration
+            album_id: album
+            context_type: null
+            context_uri: null
+            _ingested_at: '2026-10-26 01:00:00+00'
+          - played_at: '2026-10-26 02:00:00+00'
+            track_id: unknown
+            album_id: null
+            context_type: null
+            context_uri: null
+            _ingested_at: '2026-10-26 03:00:00+00'
+      - input: ref('hub_music_svc__ref_track')
+        rows:
+          - track_id: collaboration
+            track_name: Duet
+            track_uri: 'spotify:track:collaboration'
+            duration_ms: 180000
+            explicit: false
+            album_id: album
+            _ingested_at: '2026-10-26 01:00:00+00'
+      - input: ref('hub_music_svc__ref_album')
+        rows:
+          - album_id: album
+            album_name: Album
+            _ingested_at: '2026-10-26 01:00:00+00'
+      - input: ref('hub_music_svc__bridge_track_artist')
+        rows:
+          - track_id: collaboration
+            artist_id: first
+            artist_position: 0
+            _ingested_at: '2026-10-26 01:00:00+00'
+          - track_id: collaboration
+            artist_id: second
+            artist_position: 1
+            _ingested_at: '2026-10-26 01:00:00+00'
+      - input: ref('hub_music_svc__ref_artist')
+        rows:
+          - artist_id: first
+            artist_name: First artist
+            _ingested_at: '2026-10-26 01:00:00+00'
+          - artist_id: second
+            artist_name: Second artist
+            _ingested_at: '2026-10-26 04:00:00+00'
+    expect:
+      rows:
+        - track_id: collaboration
+          played_date: '2026-10-26'
+          primary_artist_id: first
+          track_duration_ms: 180000
+          quality_status: valid
+          _metadata_ingested_at: '2026-10-26 04:00:00+00'
+        - track_id: unknown
+          played_date: '2026-10-26'
+          primary_artist_id: null
+          track_duration_ms: null
+          quality_status: partial
+          _metadata_ingested_at: null

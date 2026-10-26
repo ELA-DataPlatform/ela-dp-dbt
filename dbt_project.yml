@@ -85,3 +85,10 @@ models:
         +schema: "product_data4agent"
         +materialized: table
         +tags: ["garmin", "data4agent"]
+      data4mcp:
+        +schema: "product_data4mcp"
+        +materialized: table
+        +tags: ["data4mcp"]
+        +persist_docs:
+          relation: true
+          columns: true

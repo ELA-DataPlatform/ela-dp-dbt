@@ -21,7 +21,9 @@ Ingestion → Lake normalized → Lake staging → Lake service
 | Lake staging | Parsing, préparation et sélection des enregistrements canoniques | `lake_garmin_stg`, `lake_spotify_stg`, `lake_spotify_legacy_stg` |
 | Lake service | Persistance des états canoniques ; réconciliation des corrections historiques | `lake_garmin_svc`, `lake_spotify_svc`, `lake_spotify_legacy_svc` |
 | Hub | Entités, mesures de domaine, unités, qualification et provenance | `hub_music_*`, `hub_health_*`, `hub_activities_*`, `hub_utils_stg` |
-| Product | Projections, calculs et formats adaptés à un consommateur | `product_webapp`, `product_data4agent` |
+| Product | Projections, calculs et formats adaptés à un consommateur | `product_webapp`, `product_data4agent`, `product_data4mcp` |
+
+Le contrat dédié au MCP est décrit dans [DATA4MCP.md](DATA4MCP.md).
 
 Les schémas `*_stg` contiennent les préparations ; `*_svc` expose les interfaces
 publiques du domaine. Le type de matérialisation dépend du modèle : certaines
