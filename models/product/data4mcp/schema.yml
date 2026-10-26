@@ -1,0 +1,967 @@
+version: 2
+models:
+  - name: pct_data4mcp__sleep_daily
+    description: >-
+      One Garmin account-level night per wake-up date. Date D represents the night D-1 to D; no identity is invented when
+      the source lacks a profile ID. Public silver table rebuilt completely on every run; no product date cutoff. MCP projection
+      of all hub history, including invalid and partial records. No timeseries arrays. NULL metrics mean unavailable or invalid,
+      never zero. Health dates retain Garmin local semantics; sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: sleep_calendar_date
+        description: Normalized sleep calendar date.
+      - name: sleep_score
+        description: >-
+          Normalized sleep score. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: score_qualifier
+        description: Normalized score qualifier.
+      - name: quality_key
+        description: Normalized quality key.
+      - name: score_feedback
+        description: Normalized score feedback.
+      - name: total_sleep_s
+        description: >-
+          Normalized total sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: deep_sleep_s
+        description: >-
+          Normalized deep sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: light_sleep_s
+        description: >-
+          Normalized light sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: rem_sleep_s
+        description: >-
+          Normalized rem sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream hub
+          source_values and quality_issues.
+      - name: awake_sleep_s
+        description: >-
+          Normalized awake sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: unmeasurable_sleep_s
+        description: >-
+          Normalized unmeasurable sleep s. Seconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: nap_s
+        description: >-
+          Normalized nap s. Seconds. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: avg_overnight_hrv_ms
+        description: >-
+          Normalized avg overnight hrv ms. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues.
+      - name: hrv_status
+        description: Normalized hrv status.
+      - name: resting_hr_bpm
+        description: >-
+          Normalized resting hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible in
+          upstream hub source_values and quality_issues.
+      - name: body_battery_change
+        description: Normalized body battery change.
+      - name: avg_spo2_pct
+        description: >-
+          Normalized avg spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL and remain
+          visible in upstream hub source_values and quality_issues.
+      - name: lowest_spo2_pct
+        description: >-
+          Normalized lowest spo2 pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in upstream hub source_values and quality_issues.
+      - name: avg_respiration_rpm
+        description: >-
+          Normalized avg respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues.
+      - name: lowest_respiration_rpm
+        description: >-
+          Normalized lowest respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain
+          visible in upstream hub source_values and quality_issues.
+      - name: highest_respiration_rpm
+        description: >-
+          Normalized highest respiration rpm. Breaths per minute. Values outside the declared domain become NULL and remain
+          visible in upstream hub source_values and quality_issues.
+      - name: restless_moments
+        description: >-
+          Normalized restless moments. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: sleep_start_at_utc
+        description: Normalized sleep start at utc. TIMESTAMP representing a UTC instant.
+      - name: sleep_end_at_utc
+        description: Normalized sleep end at utc. TIMESTAMP representing a UTC instant.
+      - name: sleep_start_at_local
+        description: Normalized sleep start at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: sleep_end_at_local
+        description: Normalized sleep end at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: body_battery_at_sleep
+        description: >-
+          Normalized body battery at sleep. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: body_battery_at_wake
+        description: >-
+          Normalized body battery at wake. Values outside the declared domain become NULL and remain visible in upstream hub
+          source_values and quality_issues.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__hrv_daily
+    description: >-
+      One HRV summary per Garmin source profile and local date. All HRV measurements use milliseconds. Public silver table
+      rebuilt completely on every run; no product date cutoff. MCP projection of all hub history, including invalid and partial
+      records. No timeseries arrays. NULL metrics mean unavailable or invalid, never zero. Health dates retain Garmin local
+      semantics; sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: hrv_calendar_date
+        description: Normalized hrv calendar date.
+      - name: hrv_status
+        description: Normalized hrv status.
+      - name: hrv_feedback_phrase
+        description: Normalized hrv feedback phrase.
+      - name: hrv_last_night_avg_ms
+        description: >-
+          Normalized hrv last night avg. Milliseconds. Values outside the declared domain become NULL and remain visible in
+          upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_last_night_5min_high_ms
+        description: >-
+          Normalized hrv last night 5min high. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_weekly_avg_ms
+        description: >-
+          Normalized hrv weekly avg. Milliseconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_baseline_low_upper_ms
+        description: >-
+          Normalized hrv baseline low upper. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_baseline_balanced_low_ms
+        description: >-
+          Normalized hrv baseline balanced low. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_baseline_balanced_upper_ms
+        description: >-
+          Normalized hrv baseline balanced upper. Milliseconds. Values outside the declared domain become NULL and remain
+          visible in upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: hrv_baseline_marker_value_ms
+        description: >-
+          Normalized hrv baseline marker value. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues. Unit: milliseconds.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__rhr_daily
+    description: >-
+      One resting heart rate summary per Garmin source profile and local date, in beats per minute. Public silver table rebuilt
+      completely on every run; no product date cutoff. MCP projection of all hub history, including invalid and partial records.
+      No timeseries arrays. NULL metrics mean unavailable or invalid, never zero. Health dates retain Garmin local semantics;
+      sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: rhr_calendar_date
+        description: Normalized rhr calendar date.
+      - name: resting_hr_bpm
+        description: >-
+          Normalized resting hr bpm. Beats per minute. Values outside the declared domain become NULL and remain visible in
+          upstream hub source_values and quality_issues.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__stress_daily
+    description: >-
+      One daily stress summary per Garmin source profile. Negative no-data sentinels are exposed in source_values and removed
+      from qualified scores. Public silver table rebuilt completely on every run; no product date cutoff. MCP projection of
+      all hub history, including invalid and partial records. No timeseries arrays. NULL metrics mean unavailable or invalid,
+      never zero. Health dates retain Garmin local semantics; sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: Normalized calendar date.
+      - name: avg_stress_level
+        description: >-
+          Normalized avg stress level. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: max_stress_level
+        description: >-
+          Normalized max stress level. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: start_at_utc
+        description: Normalized start at utc. TIMESTAMP representing a UTC instant.
+      - name: end_at_utc
+        description: Normalized end at utc. TIMESTAMP representing a UTC instant.
+      - name: start_at_local
+        description: Normalized start at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: end_at_local
+        description: Normalized end at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__training_readiness_daily
+    description: >-
+      One latest available daily readiness snapshot per Garmin source profile. The bronze already collapses intraday snapshots;
+      this model cannot recover them. Recovery time is minutes, with an explicit hours conversion and REACHED_ZERO handling.
+      Public silver table rebuilt completely on every run; no product date cutoff. MCP projection of all hub history, including
+      invalid and partial records. No timeseries arrays. NULL metrics mean unavailable or invalid, never zero. Health dates
+      retain Garmin local semantics; sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: observed_at_utc
+        description: Normalized observed at utc. TIMESTAMP representing a UTC instant.
+      - name: observed_at_local
+        description: Normalized observed at local. DATETIME preserving the source wall clock; no timezone is inferred.
+      - name: device_id
+        description: Normalized device id.
+      - name: readiness_score
+        description: >-
+          Normalized readiness score. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: readiness_level
+        description: Normalized readiness level.
+      - name: feedback_short
+        description: Normalized feedback short.
+      - name: input_context
+        description: Normalized input context.
+      - name: recovery_time_change_phrase
+        description: Normalized recovery time change phrase.
+      - name: source_recovery_time_min
+        description: >-
+          Normalized source recovery time min. Minutes. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues.
+      - name: recovery_time_min
+        description: >-
+          Normalized recovery time min. Minutes. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: recovery_time_hours
+        description: >-
+          Normalized recovery time hours. Hours, converted from source minutes. Values outside the declared domain become
+          NULL and remain visible in upstream hub source_values and quality_issues.
+      - name: sleep_factor_pct
+        description: >-
+          Normalized sleep factor pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in upstream hub source_values and quality_issues.
+      - name: hrv_factor_pct
+        description: >-
+          Normalized hrv factor pct. Milliseconds. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: stress_history_factor_pct
+        description: >-
+          Normalized stress history factor pct. Percentage points, not a fraction. Values outside the declared domain become
+          NULL and remain visible in upstream hub source_values and quality_issues.
+      - name: recovery_time_factor_pct
+        description: >-
+          Normalized recovery time factor pct. Percentage points, not a fraction. Values outside the declared domain become
+          NULL and remain visible in upstream hub source_values and quality_issues.
+      - name: acwr_factor_pct
+        description: >-
+          Normalized acwr factor pct. Percentage points, not a fraction. Values outside the declared domain become NULL and
+          remain visible in upstream hub source_values and quality_issues.
+      - name: hrv_weekly_average_ms
+        description: >-
+          Normalized hrv weekly average ms. Milliseconds. Values outside the declared domain become NULL and remain visible
+          in upstream hub source_values and quality_issues.
+      - name: acute_load
+        description: >-
+          Normalized acute load. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__training_status_daily
+    description: >-
+      One training status per Garmin source user and date, using the source device selection. Numeric code is preserved; unknown
+      codes have no invented label. Public silver table rebuilt completely on every run; no product date cutoff. MCP projection
+      of all hub history, including invalid and partial records. No timeseries arrays. NULL metrics mean unavailable or invalid,
+      never zero. Health dates retain Garmin local semantics; sleep date is the wake-up date.
+    columns:
+      - name: record_id
+        description: >-
+          Stable SHA256 key of the local date, identity scope and nullable source user ID; scoped to this table.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_date
+        description: Source local calendar date. Partition date for service tables; null dates are retained as invalid.
+      - name: source_user_id
+        description: >-
+          Original Garmin identifier as STRING, nullable for account-scoped sources; not a cross-source identity mapping.
+      - name: identity_scope
+        description: 'Identity namespace: profile, user or account. Account means the source provides no user identifier.'
+        data_tests:
+          - not_null
+      - name: source_system
+        description: Source system, always garmin.
+        data_tests:
+          - not_null
+      - name: source_table
+        description: Lake source contributing the canonical Garmin record in the hub.
+      - name: source_record_key
+        description: JSON representation of source key fields for traceability, not a global person identity.
+      - name: calendar_date
+        description: Normalized calendar date.
+      - name: status_code
+        description: Normalized status code.
+      - name: status_label
+        description: Normalized status label.
+      - name: feedback_phrase
+        description: Normalized feedback phrase.
+      - name: training_paused
+        description: Normalized training paused.
+      - name: sport
+        description: Normalized sport.
+      - name: sub_sport
+        description: Normalized sub sport.
+      - name: fitness_trend_sport
+        description: Normalized fitness trend sport.
+      - name: fitness_trend
+        description: Normalized fitness trend.
+      - name: acwr_status
+        description: Normalized acwr status.
+      - name: acwr_status_feedback
+        description: Normalized acwr status feedback.
+      - name: acwr_percent
+        description: >-
+          Normalized acwr percent. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: acwr_ratio
+        description: >-
+          Normalized acwr ratio. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: acute_load
+        description: >-
+          Normalized acute load. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: chronic_load
+        description: >-
+          Normalized chronic load. Values outside the declared domain become NULL and remain visible in upstream hub source_values
+          and quality_issues.
+      - name: chronic_load_lower_bound
+        description: >-
+          Normalized chronic load lower bound. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: chronic_load_upper_bound
+        description: >-
+          Normalized chronic load upper bound. Values outside the declared domain become NULL and remain visible in upstream
+          hub source_values and quality_issues.
+      - name: since_date
+        description: Normalized since date.
+      - name: device_id
+        description: Normalized device id.
+      - name: quality_status
+        description: >-
+          Row qualification: invalid for key, domain or coherence issues; partial for missing core metrics; valid otherwise.
+          Optional missing fields are allowed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: >-
+          Machine-readable reasons; empty only when no declared rule is triggered. This is data qualification, not a medical
+          interpretation.
+      - name: _ingested_at
+        description: >-
+          Original source ingestion timestamp, or latest contributing ingestion for reconciled body measurements.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: health_date, identity_scope, source_user_id (nullable)
+        timezone: Europe/Paris
+  - name: pct_data4mcp__activities
+    description: >-
+      One row per Garmin activity, all sports. All hub history; optional metrics remain NULL. No recording curves or GPS routes.
+    columns:
+      - name: activity_id
+        description: Garmin activity identifier; one row per activity in activities.
+        data_tests:
+          - not_null
+          - unique
+      - name: activity_name
+        description: Original Garmin activity name.
+      - name: activity_type
+        description: Original Garmin sport type key; use to filter disciplines before aggregating.
+      - name: activity_date
+        description: Garmin local calendar date of activity start; not the UTC date.
+      - name: start_at_local
+        description: Source local wall-clock start as DATETIME, without an invented UTC offset.
+      - name: start_at_utc
+        description: Start instant as UTC TIMESTAMP; nullable when unavailable.
+      - name: end_at_utc
+        description: End instant as UTC TIMESTAMP; nullable when unavailable.
+      - name: location_name
+        description: Original Garmin location name, nullable.
+      - name: distance_m
+        description: 'Distance m. Unit: metres. NULL means unavailable or invalid.'
+      - name: distance_km
+        description: 'Distance km. Unit: kilometres. NULL means unavailable or invalid.'
+      - name: duration_s
+        description: 'Duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: moving_duration_s
+        description: 'Moving duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: elapsed_duration_s
+        description: 'Elapsed duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: avg_pace_min_per_km
+        description: >-
+          Avg pace min per km. Unit: minutes per kilometre; NULL at zero or missing speed. NULL means unavailable or invalid.
+      - name: avg_speed_m_per_s
+        description: 'Avg speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: max_speed_m_per_s
+        description: 'Max speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: elevation_gain_m
+        description: 'Elevation gain m. Unit: metres. NULL means unavailable or invalid.'
+      - name: elevation_loss_m
+        description: 'Elevation loss m. Unit: metres. NULL means unavailable or invalid.'
+      - name: min_elevation_m
+        description: 'Min elevation m. Unit: metres. NULL means unavailable or invalid.'
+      - name: max_elevation_m
+        description: 'Max elevation m. Unit: metres. NULL means unavailable or invalid.'
+      - name: avg_hr_bpm
+        description: 'Avg hr bpm. Unit: beats per minute. NULL means unavailable or invalid.'
+      - name: max_hr_bpm
+        description: 'Max hr bpm. Unit: beats per minute. NULL means unavailable or invalid.'
+      - name: avg_cadence_spm
+        description: 'Avg cadence spm. Unit: steps per minute. NULL means unavailable or invalid.'
+      - name: max_cadence_spm
+        description: 'Max cadence spm. Unit: steps per minute. NULL means unavailable or invalid.'
+      - name: avg_power_w
+        description: 'Avg power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: max_power_w
+        description: 'Max power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: norm_power_w
+        description: 'Norm power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: avg_stride_length_m
+        description: 'Avg stride length m. Unit: metres. NULL means unavailable or invalid.'
+      - name: avg_ground_contact_ms
+        description: 'Avg ground contact ms. Unit: milliseconds. NULL means unavailable or invalid.'
+      - name: avg_vertical_oscillation_mm
+        description: 'Avg vertical oscillation mm. Unit: millimetres. NULL means unavailable or invalid.'
+      - name: avg_vertical_ratio_pct
+        description: 'Avg vertical ratio pct. Unit: percentage points, not a fraction. NULL means unavailable or invalid.'
+      - name: calories
+        description: Energy expenditure in kcal, as reported by Garmin.
+      - name: bmr_calories
+        description: Basal metabolic energy expenditure in kcal, as reported by Garmin.
+      - name: aerobic_te
+        description: Garmin aerobic Training Effect score, nullable.
+      - name: anaerobic_te
+        description: Garmin anaerobic Training Effect score, nullable.
+      - name: training_effect_label
+        description: Original Garmin Training Effect label.
+      - name: training_load
+        description: Garmin activity training load; source-defined score, not a duration.
+      - name: vo2max_during_activity
+        description: Garmin estimated VO2max in mL/kg/min, nullable.
+      - name: steps
+        description: Number of steps reported by Garmin.
+      - name: lap_count
+        description: Number of laps reported by Garmin; missing details need not match activity_intervals yet.
+      - name: is_pr
+        description: Garmin personal record flag.
+      - name: is_favorite
+        description: Garmin favourite flag.
+      - name: is_manual
+        description: Garmin manual-entry flag.
+      - name: quality_status
+        description: 'Hub qualification for this activity or lap: valid, partial or invalid.'
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: Hub issue codes; invalid optional metrics stay NULL.
+      - name: availability
+        description: Hub flags for available recording, laps, zones and other optional details.
+      - name: provenance
+        description: >-
+          Per-source ingestion timestamps, including late activity details; summary _ingested_at alone is insufficient.
+      - name: _ingested_at
+        description: >-
+          Source ingestion timestamp. For activities, the summary ingestion only; see provenance for child sources.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: activity_id
+        timezone: Europe/Paris
+  - name: pct_data4mcp__activity_intervals
+    description: >-
+      One row per source lap, keyed by interval_id; nullable lap_index is not a key. All hub history; optional metrics remain
+      NULL. No recording curves or GPS routes.
+    columns:
+      - name: interval_id
+        description: >-
+          Stable hub lap item key, based on activity ID and source array index; independent of nullable lap_index.
+        data_tests:
+          - not_null
+          - unique
+      - name: source_index
+        description: Zero-based source array offset. Preserves ordering and sparse source positions.
+      - name: activity_id
+        description: Garmin activity identifier; one row per activity in activities.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('pct_data4mcp__activities')
+                field: activity_id
+      - name: activity_name
+        description: Original Garmin activity name.
+      - name: activity_type
+        description: Original Garmin sport type key; use to filter disciplines before aggregating.
+      - name: activity_date
+        description: Garmin local calendar date of activity start; not the UTC date.
+      - name: lap_index
+        description: Garmin lap index, nullable; not the row key. Use source_index for source ordering.
+      - name: message_index
+        description: Original Garmin message index, nullable.
+      - name: intensity_type
+        description: Original Garmin lap intensity label, nullable.
+      - name: start_at_utc
+        description: Start instant as UTC TIMESTAMP; nullable when unavailable.
+      - name: duration_s
+        description: 'Duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: moving_duration_s
+        description: 'Moving duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: elapsed_duration_s
+        description: 'Elapsed duration s. Unit: seconds. NULL means unavailable or invalid.'
+      - name: distance_m
+        description: 'Distance m. Unit: metres. NULL means unavailable or invalid.'
+      - name: distance_km
+        description: 'Distance km. Unit: kilometres. NULL means unavailable or invalid.'
+      - name: avg_speed_m_per_s
+        description: 'Avg speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: avg_moving_speed_m_per_s
+        description: 'Avg moving speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: max_speed_m_per_s
+        description: 'Max speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: avg_pace_min_per_km
+        description: >-
+          Avg pace min per km. Unit: minutes per kilometre; NULL at zero or missing speed. NULL means unavailable or invalid.
+      - name: avg_grade_adjusted_speed_m_per_s
+        description: 'Avg grade adjusted speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: elevation_gain_m
+        description: 'Elevation gain m. Unit: metres. NULL means unavailable or invalid.'
+      - name: elevation_loss_m
+        description: 'Elevation loss m. Unit: metres. NULL means unavailable or invalid.'
+      - name: min_elevation_m
+        description: 'Min elevation m. Unit: metres. NULL means unavailable or invalid.'
+      - name: max_elevation_m
+        description: 'Max elevation m. Unit: metres. NULL means unavailable or invalid.'
+      - name: max_vertical_speed_m_per_s
+        description: 'Max vertical speed m per s. Unit: metres per second. NULL means unavailable or invalid.'
+      - name: avg_hr_bpm
+        description: 'Avg hr bpm. Unit: beats per minute. NULL means unavailable or invalid.'
+      - name: max_hr_bpm
+        description: 'Max hr bpm. Unit: beats per minute. NULL means unavailable or invalid.'
+      - name: avg_cadence_spm
+        description: 'Avg cadence spm. Unit: steps per minute. NULL means unavailable or invalid.'
+      - name: max_cadence_spm
+        description: 'Max cadence spm. Unit: steps per minute. NULL means unavailable or invalid.'
+      - name: avg_power_w
+        description: 'Avg power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: max_power_w
+        description: 'Max power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: min_power_w
+        description: 'Min power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: norm_power_w
+        description: 'Norm power w. Unit: watts. NULL means unavailable or invalid.'
+      - name: total_work_kj
+        description: >-
+          Total work kj. Unit: kilojoules; NULL until the source unit is known. NULL means unavailable or invalid.
+      - name: avg_stride_length_m
+        description: 'Avg stride length m. Unit: metres. NULL means unavailable or invalid.'
+      - name: avg_ground_contact_ms
+        description: 'Avg ground contact ms. Unit: milliseconds. NULL means unavailable or invalid.'
+      - name: avg_vertical_oscillation_mm
+        description: 'Avg vertical oscillation mm. Unit: millimetres. NULL means unavailable or invalid.'
+      - name: avg_vertical_ratio_pct
+        description: 'Avg vertical ratio pct. Unit: percentage points, not a fraction. NULL means unavailable or invalid.'
+      - name: calories
+        description: Energy expenditure in kcal, as reported by Garmin.
+      - name: bmr_calories
+        description: Basal metabolic energy expenditure in kcal, as reported by Garmin.
+      - name: avg_temp_celsius
+        description: 'Avg temp celsius. Unit: degrees Celsius. NULL means unavailable or invalid.'
+      - name: min_temp_celsius
+        description: 'Min temp celsius. Unit: degrees Celsius. NULL means unavailable or invalid.'
+      - name: max_temp_celsius
+        description: 'Max temp celsius. Unit: degrees Celsius. NULL means unavailable or invalid.'
+      - name: start_latitude
+        description: 'Start latitude. Unit: decimal degrees. NULL means unavailable or invalid.'
+      - name: start_longitude
+        description: 'Start longitude. Unit: decimal degrees. NULL means unavailable or invalid.'
+      - name: end_latitude
+        description: 'End latitude. Unit: decimal degrees. NULL means unavailable or invalid.'
+      - name: end_longitude
+        description: 'End longitude. Unit: decimal degrees. NULL means unavailable or invalid.'
+      - name: quality_status
+        description: 'Hub qualification for this activity or lap: valid, partial or invalid.'
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+                  - invalid
+      - name: quality_issues
+        description: Hub issue codes; invalid optional metrics stay NULL.
+      - name: _ingested_at
+        description: >-
+          Source ingestion timestamp. For activities, the summary ingestion only; see provenance for child sources.
+      - name: _hub_processed_at
+        description: UTC timestamp of the contributing hub service rebuild.
+      - name: timezone
+        description: >-
+          Calendar convention for MCP queries: Europe/Paris. Garmin source-local DATETIME values remain unconverted.
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or the latest measurement.
+    config:
+      meta:
+        consumer: mcp
+        grain: activity_id, source_index
+        timezone: Europe/Paris
+  - name: pct_data4mcp__listening_history
+    description: >-
+      One row per canonical Spotify listening event (played_at, track_id), enriched from hub metadata. All available history.
+      Artist aggregation prevents collaboration fanout; missing metadata never removes an event. Full rebuild propagates catalogue
+      corrections.
+    columns:
+      - name: listening_id
+        description: Stable SHA256 key of played_at and track_id, the canonical hub listening-event grain.
+        data_tests:
+          - not_null
+          - unique
+      - name: played_at
+        description: Listening start instant, UTC TIMESTAMP.
+        data_tests:
+          - not_null
+      - name: played_date
+        description: Listening calendar date in Europe/Paris, derived from played_at.
+      - name: played_at_local
+        description: Listening wall-clock DATETIME in Europe/Paris, including DST rules.
+      - name: track_id
+        description: Spotify track identifier.
+        data_tests:
+          - not_null
+      - name: track_name
+        description: Current canonical track name; NULL if metadata is unavailable.
+      - name: track_uri
+        description: Spotify track URI; nullable.
+      - name: track_duration_ms
+        description: >-
+          Catalogue track duration in milliseconds; not actual playback time. A play event does not prove a full listen.
+      - name: explicit
+        description: Spotify explicit-content flag; nullable.
+      - name: album_id
+        description: Album on the event, falling back to current track album only if absent.
+      - name: album_name
+        description: Current canonical album name; NULL if metadata is unavailable.
+      - name: primary_artist_id
+        description: Artist at bridge position zero; nullable. Use for rankings that attribute each play to one artist.
+      - name: primary_artist_name
+        description: Current canonical primary artist name; nullable.
+      - name: artists
+        description: >-
+          Ordered ARRAY<STRUCT<artist_id, artist_name, artist_position>>. Empty if relationships are unavailable. UNNEST multiplies
+          plays.
+      - name: context_type
+        description: Spotify context type as supplied by the listening event; nullable.
+      - name: context_uri
+        description: Spotify listening context URI; nullable.
+      - name: quality_status
+        description: >-
+          Presence of track/album names and artist relationships/names: valid or partial. Optional catalogue fields can remain
+          NULL. Partial events are retained and count as one play.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - valid
+                  - partial
+      - name: quality_issues
+        description: Missing track, album or artist metadata codes; empty when complete.
+      - name: _ingested_at
+        description: UTC ingestion time of the listening event, independent of metadata enrichment.
+      - name: _metadata_ingested_at
+        description: Latest UTC ingestion timestamp of contributing track, album, bridge or artist metadata; nullable.
+      - name: source_system
+        description: 'Source system: spotify.'
+      - name: timezone
+        description: 'Calendar convention: Europe/Paris.'
+      - name: _product_built_at
+        description: UTC timestamp of this product table rebuild; not the collection time or latest listening event.
+    config:
+      meta:
+        consumer: mcp
+        grain: played_at, track_id
+        timezone: Europe/Paris
