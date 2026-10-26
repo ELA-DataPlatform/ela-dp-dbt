@@ -155,6 +155,9 @@ qui déclarent un schéma personnalisé.
   produit**. Faire remonter la logique partagée dans le hub ; ne pas reproduire
   les exceptions héritées.
 - Utiliser `source()` et `ref()`, et préserver les contrats publics des consommateurs.
+- Toute conversion d'unité doit passer par une macro commune de `macros/`.
+  Réutiliser la macro existante ; si elle manque, la créer plutôt que recopier
+  une formule dans les modèles. Ne pas ajouter d'arrondi implicite.
 - Appliquer les tags `spotify` ou `garmin` aux modèles qui consomment ces sources.
   Les domaines Garmin héritent de `health` ou `activities` ; les produits disposent
   aussi de `webapp` et `data4agent`.

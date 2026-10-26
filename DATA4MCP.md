@@ -41,6 +41,11 @@ depuis `models/product/data4mcp/schema.yml`.
 - Les unités figurent dans les noms et descriptions : secondes, millisecondes,
   mètres, kilomètres, bpm, watts et points de pourcentage. Une mesure absente ou
   invalidée reste NULL. Les libellés Garmin et leur qualification sont conservés.
+- Toute conversion d'unité passe par les macros communes de `macros/`, par exemple
+  `meters_to_kilometers` et `speed_mps_to_pace_min_per_km`. Réutiliser les macros
+  existantes ; si une conversion manque, l'ajouter à cet emplacement. Les projections
+  conservent la précision disponible et ne demandent un arrondi que si le contrat
+  de la colonne le prévoit explicitement.
 - `quality_status` et `quality_issues` viennent du hub pour Garmin. Pour Spotify,
   ils décrivent la complétude des métadonnées, pas une validation de l'écoute.
   Les lignes partielles ou invalides ne sont pas supprimées silencieusement.

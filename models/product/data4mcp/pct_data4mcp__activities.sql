@@ -20,7 +20,7 @@ SELECT  -- noqa: ST06
 
     -- Distance & time
     a.performance.distance_m,
-    SAFE_DIVIDE(a.performance.distance_m, 1000.0) AS distance_km,
+    {{ meters_to_kilometers('a.performance.distance_m') }} AS distance_km,
     a.performance.duration_s,
     a.performance.moving_duration_s,
     a.performance.elapsed_duration_s,

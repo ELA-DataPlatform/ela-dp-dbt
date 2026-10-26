@@ -27,7 +27,7 @@ SELECT  -- noqa: ST06
 
     -- Distance & speed
     lap.distance_m,
-    SAFE_DIVIDE(lap.distance_m, 1000.0) AS distance_km,
+    {{ meters_to_kilometers('lap.distance_m') }} AS distance_km,
     lap.avg_speed_m_per_s,
     lap.avg_moving_speed_m_per_s,
     lap.max_speed_m_per_s,
